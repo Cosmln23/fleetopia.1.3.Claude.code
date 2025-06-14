@@ -33,9 +33,6 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { DialogFooter } from '@/components/ui/dialog';
 
 // Dynamic imports for Leaflet components (client-side only)
 const MapContainer = dynamic(() => import('react-leaflet').then((mod) => mod.MapContainer), { ssr: false });
@@ -211,15 +208,13 @@ export default function RealTimeAnalyticsPage() {
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
   const [activeTab, setActiveTab] = useState('realtime');
-  const [offerToEdit, setOfferToEdit] = useState<any>(null);
-  const [editing, setEditing] = useState(false);
 
   // Mock vehicle data
   const vehicleData = [
-    { id: 'V001', status: 'active', lat: 44.4268, lng: 26.1025, driver: 'Ion Popescu', route: 'Bucharest → Constanta' },
-    { id: 'V002', status: 'idle', lat: 45.7489, lng: 21.2087, driver: 'Maria Georgescu', route: 'Timisoara → Arad' },
-    { id: 'V003', status: 'active', lat: 46.7712, lng: 23.6236, driver: 'Andrei Moldovan', route: 'Cluj → Oradea' },
-    { id: 'V004', status: 'maintenance', lat: 47.1585, lng: 27.6014, driver: 'Elena Vasilescu', route: 'Iasi → Bacau' }
+    { id: 'V001', status: 'active', lat: 52.5200, lng: 13.4050, driver: 'John Smith', route: 'Berlin → Hamburg' },
+    { id: 'V002', status: 'idle', lat: 48.1351, lng: 11.5820, driver: 'Maria Garcia', route: 'Munich → Frankfurt' },
+    { id: 'V003', status: 'active', lat: 50.0755, lng: 14.4378, driver: 'Andrei Popov', route: 'Prague → Brno' },
+    { id: 'V004', status: 'maintenance', lat: 51.0504, lng: 13.7373, driver: 'Elena Petrova', route: 'Dresden → Leipzig' }
   ];
 
   useEffect(() => {
@@ -240,18 +235,18 @@ export default function RealTimeAnalyticsPage() {
       const mockData = {
         vehicleTracking: vehicleData,
         weatherAlerts: [
-          { id: 1, type: 'warning', message: 'Fog expected on A1 highway', severity: 'medium' },
+          { id: 1, type: 'warning', message: 'Fog expected on A9 highway', severity: 'medium' },
           { id: 2, type: 'info', message: 'Good weather conditions', severity: 'low' }
         ],
         trafficIncidents: [
           { id: 1, location: 'A2 km 45', description: 'Minor accident, expect delays', severity: 'high' }
         ],
         fuelPrices: [
-          { station: 'Petrom', price: 6.45, location: 'Bucharest' },
-          { station: 'OMV', price: 6.52, location: 'Cluj-Napoca' }
+          { station: 'Shell', price: 1.85, location: 'Berlin' },
+          { station: 'BP', price: 1.89, location: 'Munich' }
         ],
         systemAlerts: [
-          { id: 1, type: 'maintenance', message: 'Vehicle V002 needs inspection', priority: 'high' }
+          { id: 1, type: 'maintenance', message: 'Vehicle V004 needs inspection', priority: 'high' }
         ]
       };
       
@@ -386,59 +381,6 @@ export default function RealTimeAnalyticsPage() {
       </CardContent>
     </Card>
   );
-
-  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    if (!offerToEdit) return;
-    const { name, value } = e.target;
-    const updatedOffer = { ...offerToEdit, [name]: value };
-    // Format dates correctly if they are being changed
-    if (name === 'loadingDate' || name === 'deliveryDate') {
-        updatedOffer[name] = new Date(value).toISOString().split('T')[0];
-    }
-    setOfferToEdit(updatedOffer);
-  };
-
-  const handleUpdateCargo = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!offerToEdit) return;
-    setEditing(true);
-
-    // Prepare data for submission, ensuring correct types
-    const submissionData = {
-        ...offerToEdit,
-        weight: parseFloat(offerToEdit.weight as any),
-        price: parseFloat(offerToEdit.price as any),
-    };
-
-    try {
-        const response = await fetch(`/api/marketplace/cargo/${offerToEdit.id}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(submissionData),
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to update cargo offer');
-        }
-
-        toast({
-            title: "Success!",
-            description: "Cargo offer has been updated.",
-        });
-
-        fetchCargoOffers(); // Refresh the list
-    } catch (error) {
-        console.error(error);
-        toast({
-            title: "Error",
-            description: "Could not update the cargo offer.",
-            variant: "destructive",
-        });
-    } finally {
-        setEditing(false);
-        setOfferToEdit(null); // Close the dialog
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -891,45 +833,6 @@ export default function RealTimeAnalyticsPage() {
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Edit Dialog */}
-        <Dialog open={!!offerToEdit} onOpenChange={() => setOfferToEdit(null)}>
-          <DialogContent className="sm:max-w-[625px] bg-slate-900 border-slate-700 text-white">
-            <DialogHeader>
-              <DialogTitle>Edit Cargo Offer</DialogTitle>
-              <DialogDescription>
-                Make changes to your cargo offer here. Click save when you're done.
-              </DialogDescription>
-            </DialogHeader>
-            {offerToEdit && (
-              <form onSubmit={handleUpdateCargo} className="space-y-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                      <Input name="title" value={offerToEdit.title} onChange={handleEditInputChange} placeholder="Offer Title" required className="bg-slate-700 border-slate-600"/>
-                      <Input name="companyName" value={offerToEdit.companyName} onChange={handleEditInputChange} placeholder="Company Name" className="bg-slate-700 border-slate-600"/>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <Input name="fromLocation" value={offerToEdit.fromLocation} onChange={handleEditInputChange} placeholder="From" required className="bg-slate-700 border-slate-600"/>
-                    <Input name="toLocation" value={offerToEdit.toLocation} onChange={handleEditInputChange} placeholder="To" required className="bg-slate-700 border-slate-600"/>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4">
-                    <Input name="weight" type="number" value={offerToEdit.weight} onChange={handleEditInputChange} placeholder="Weight (kg)" required className="bg-slate-700 border-slate-600"/>
-                    <Input name="price" type="number" value={offerToEdit.price} onChange={handleEditInputChange} placeholder="Price (€)" required className="bg-slate-700 border-slate-600"/>
-                    <select name="urgency" value={offerToEdit.urgency} onChange={handleEditInputChange} className="bg-slate-700 border-slate-600 rounded-md p-2 w-full">
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                    </select>
-                  </div>
-                  <DialogFooter>
-                    <Button type="button" variant="secondary" onClick={() => setOfferToEdit(null)}>Cancel</Button>
-                    <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={editing}>
-                      {editing ? 'Saving...' : 'Save Changes'}
-                    </Button>
-                  </DialogFooter>
-              </form>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
