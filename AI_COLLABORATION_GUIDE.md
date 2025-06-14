@@ -50,12 +50,12 @@ Orice modificare adusă proiectului trebuie să urmeze acest protocol strict:
 1.  **Propunerea:** Asistentul AI analizează starea curentă și propune următorul pas logic de dezvoltare.
 2.  **Confirmarea:** Utilizatorul (tu) analizează propunerea și își dă acordul explicit pentru a începe.
 3.  **Implementarea:** Asistentul AI execută modificările tehnice necesare pentru a implementa pasul aprobat.
-4.  **Salvarea și Sincronizarea:** Imediat după implementare, progresul este salvat folosind următorul flux de comenzi Git:
+4.  **Salvarea Locală:** Imediat după implementare, progresul este salvat **doar local** folosind următoarele comenzi Git:
     *   `git add .`
     *   `git commit -m "feat: [descriere clară a modificării]"`
-    *   `git push`
-5.  **Actualizarea Documentației:** (Opcțional, dacă se fac schimbări majore) Se actualizează acest fișier sau alte documente relevante.
-6.  **Iterația:** Ciclul se reia cu propunerea următorului pas.
+5.  **Verificarea:** Utilizatorul verifică local modificările pentru a se asigura că totul funcționează corect și nu există erori.
+6.  **Sincronizarea (Push):** Doar la comanda **explicită** a utilizatorului, se va rula comanda `git push` pentru a urca modificările pe GitHub.
+7.  **Iterația:** Ciclul se reia cu propunerea următorului pas.
 
 ### Regula de Aur:
 

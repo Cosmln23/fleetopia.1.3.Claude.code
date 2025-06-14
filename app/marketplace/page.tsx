@@ -28,7 +28,8 @@ import {
   CheckCircle,
   AlertTriangle,
   Plus,
-  Trash2
+  Trash2,
+  FileEdit,
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast"
 import { Textarea } from '@/components/ui/textarea';
@@ -42,6 +43,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
 
 interface CargoOffer {
   id: string;
@@ -118,6 +127,8 @@ export default function MarketplacePage() {
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState<string | null>(null);
+  const [offerToEdit, setOfferToEdit] = useState<CargoOffer | null>(null);
+  const [editing, setEditing] = useState(false);
 
   const fetchCargoOffers = async () => {
     setLoading(true);
@@ -282,6 +293,19 @@ export default function MarketplacePage() {
     }
   };
 
+  const handleEditInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    if (!offerToEdit) return;
+    const { name, value } = e.target;
+    setOfferToEdit({ ...offerToEdit, [name]: value });
+  };
+
+  const handleUpdateCargo = async () => {
+    if (!offerToEdit) return;
+    // Logic to be implemented in the next step
+    console.log("Updating cargo:", offerToEdit);
+    setOfferToEdit(null);
+  };
+
   const getPriceDisplay = (offer: CargoOffer) => {
     switch (offer.priceType) {
       case 'fixed':
@@ -345,6 +369,20 @@ export default function MarketplacePage() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteCargo} className="bg-red-600 hover:bg-red-700">Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        <AlertDialog open={!!offerToEdit} onOpenChange={() => setOfferToEdit(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the cargo offer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => setOfferToEdit(null)} className="bg-red-600 hover:bg-red-700">Continue</AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
@@ -476,6 +514,14 @@ export default function MarketplacePage() {
                         <p className="text-xl font-bold text-green-400">{getPriceDisplay(offer)}</p>
                         <div className="flex items-center gap-2 mt-1">
                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 h-8 flex-1">Contact</Button>
+                           <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 bg-slate-800/70 hover:bg-slate-700 border-slate-600"
+                              onClick={() => setOfferToEdit(offer)}
+                           >
+                            <FileEdit className="h-4 w-4" />
+                           </Button>
                            <Button 
                               variant="destructive" 
                               size="icon" 
@@ -567,6 +613,44 @@ export default function MarketplacePage() {
           </div>
         </TabsContent>
       </Tabs>
+      {/* Edit Dialog */}
+      <Dialog open={!!offerToEdit} onOpenChange={() => setOfferToEdit(null)}>
+        <DialogContent className="sm:max-w-[625px] bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Edit Cargo Offer</DialogTitle>
+            <DialogDescription>
+              Make changes to your cargo offer here. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          {offerToEdit && (
+            <form onSubmit={handleUpdateCargo} className="space-y-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                   <Input name="title" value={offerToEdit.title} onChange={handleEditInputChange} placeholder="Offer Title" required className="bg-slate-700 border-slate-600"/>
+                   <Input name="companyName" value={offerToEdit.companyName} onChange={handleEditInputChange} placeholder="Company Name" className="bg-slate-700 border-slate-600"/>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <Input name="fromLocation" value={offerToEdit.fromLocation} onChange={handleEditInputChange} placeholder="From" required className="bg-slate-700 border-slate-600"/>
+                  <Input name="toLocation" value={offerToEdit.toLocation} onChange={handleEditInputChange} placeholder="To" required className="bg-slate-700 border-slate-600"/>
+                </div>
+                <div className="grid grid-cols-3 gap-4">
+                  <Input name="weight" type="number" value={offerToEdit.weight} onChange={handleEditInputChange} placeholder="Weight (kg)" required className="bg-slate-700 border-slate-600"/>
+                  <Input name="price" type="number" value={offerToEdit.price} onChange={handleEditInputChange} placeholder="Price (€)" required className="bg-slate-700 border-slate-600"/>
+                  <select name="urgency" value={offerToEdit.urgency} onChange={handleEditInputChange} className="bg-slate-700 border-slate-600 rounded-md p-2 w-full">
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                  </select>
+                </div>
+               <DialogFooter>
+                  <Button type="button" variant="secondary" onClick={() => setOfferToEdit(null)}>Cancel</Button>
+                  <Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={editing}>
+                    {editing ? 'Saving...' : 'Save Changes'}
+                  </Button>
+               </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
