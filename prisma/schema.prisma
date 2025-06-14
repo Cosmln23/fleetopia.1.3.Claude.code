@@ -252,35 +252,60 @@ model Maintenance {
 
 // Conexiune între AI Agents și API-uri
 model AgentAPIConnection {
-  id            String         @id @default(cuid())
+  id              String   @id @default(cuid())
+  agentId         String
+  integrationId   String
+  status          String   @default("active")
   
-  // AI Agent (poate fi din marketplace sau custom)
-  agent         AIAgent        @relation(fields: [agentId], references: [id])
-  agentId       String
-  
-  // API Integration (întotdeauna al clientului)
-  apiIntegration APIIntegration @relation(fields: [apiId], references: [id])
-  apiId         String
-  
-  // Configurație specifică conexiunii
-  mapping       Json           // Cum mapează agent-ul datele din API
-  permissions   Json           // Ce poate face agent-ul cu API-ul
-  priority      Int           @default(1) // Pentru multiple API-uri de același tip
-  
-  // Status
-  status        String        @default("active")
-  lastUsed      DateTime?
-  errorCount    Int           @default(0)
-  
-  // Ownership (conexiunea aparține clientului)
-  user          User          @relation("UserConnections", fields: [userId], references: [id])
-  userId        String
-  
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  // Relații
+  agent           AIAgent @relation(fields: [agentId], references: [id])
+  integration     APIIntegration @relation(fields: [integrationId], references: [id])
+  user            User @relation("UserConnections", fields: [userId], references: [id])
+  userId          String
 
-  @@unique([agentId, apiId, userId]) // Un agent poate avea un singur API de fiecare tip per user
-  @@index([agentId])
-  @@index([apiId])
-  @@index([userId])
+  createdAt       DateTime @default(now())
+
+  @@unique([agentId, integrationId])
+}
+
+// Marketplace Models
+model CargoOffer {
+  id            String    @id @default(cuid())
+  title         String
+  fromLocation  String
+  toLocation    String
+  distance      Float?
+  weight        Float
+  volume        Float?
+  cargoType     String
+  loadingDate   DateTime
+  deliveryDate  DateTime
+  price         Float
+  priceType     String // 'fixed', 'negotiable', 'per_km'
+  
+  companyName   String
+  companyRating Float?
+  
+  requirements  String[]
+  truckType     String?
+  status        String   @default("active") // active, pending, completed
+  urgency       String   @default("medium") // low, medium, high
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([status])
+  @@index([fromLocation])
+  @@index([toLocation])
+}
+
+model SystemAlert {
+  id        String   @id @default(cuid())
+  message   String
+  type      String   @default("info") // info, warning, urgent
+  read      Boolean  @default(false)
+  
+  createdAt DateTime @default(now())
+
+  @@index([read])
 }

@@ -29,30 +29,28 @@ import {
   AlertTriangle,
   Plus
 } from 'lucide-react';
+import { useToast } from "@/components/ui/use-toast"
+import { Textarea } from '@/components/ui/textarea';
 
 interface CargoOffer {
   id: string;
   title: string;
-  from: string;
-  to: string;
-  distance: number;
+  fromLocation: string;
+  toLocation: string;
+  distance: number | null;
   weight: number;
-  volume: number;
+  volume: number | null;
   cargoType: string;
   loadingDate: string;
   deliveryDate: string;
   price: number;
-  priceType: 'fixed' | 'negotiable' | 'per_km';
-  company: {
-    name: string;
-    rating: number;
-    verified: boolean;
-    totalTransports: number;
-  };
+  priceType: string;
+  companyName: string;
+  companyRating: number | null;
   requirements: string[];
-  truckType: string;
-  status: 'active' | 'pending' | 'completed';
-  urgency: 'low' | 'medium' | 'high';
+  truckType: string | null;
+  status: string;
+  urgency: string;
   createdAt: string;
 }
 
@@ -79,99 +77,54 @@ interface TransportRequest {
 
 export default function MarketplacePage() {
   const [activeTab, setActiveTab] = useState<'post-cargo' | 'find-cargo' | 'find-transport'>('find-cargo');
-  const [searchFilters, setSearchFilters] = useState({
-    from: '',
-    to: '',
-    loadingDate: '',
-    cargoType: '',
+  const { toast } = useToast();
+  
+  // State for the Post Cargo form
+  const [newCargo, setNewCargo] = useState({
+    title: '',
+    fromLocation: '',
+    toLocation: '',
     weight: '',
-    priceMax: '',
-    truckType: ''
+    volume: '',
+    cargoType: '',
+    loadingDate: '',
+    deliveryDate: '',
+    price: '',
+    priceType: 'fixed',
+    companyName: '',
+    requirements: '',
+    urgency: 'medium',
   });
+
   const [cargoOffers, setCargoOffers] = useState<CargoOffer[]>([]);
   const [transportRequests, setTransportRequests] = useState<TransportRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [posting, setPosting] = useState(false);
 
-  // Mock data for demonstration
-  useEffect(() => {
-    const mockCargoOffers: CargoOffer[] = [
-      {
-        id: '1',
-        title: 'Electronics Transport Bucharest - Hamburg',
-        from: 'Bucharest, Romania',
-        to: 'Hamburg, Germany',
-        distance: 1450,
-        weight: 15000,
-        volume: 45,
-        cargoType: 'electronics',
-        loadingDate: '2024-03-15',
-        deliveryDate: '2024-03-18',
-        price: 2500,
-        priceType: 'fixed',
-        company: {
-          name: 'LogiTrans SRL',
-          rating: 4.8,
-          verified: true,
-          totalTransports: 2547
-        },
-        requirements: ['Refrigerated', 'ADR', 'Extended Insurance'],
-        truckType: 'Semitrailer 13.6m',
-        status: 'active',
-        urgency: 'medium',
-        createdAt: '2024-03-10'
-      },
-      {
-        id: '2',
-        title: 'Urgent Food Freight Cluj - Paris',
-        from: 'Cluj-Napoca, Romania',
-        to: 'Paris, France',
-        distance: 1820,
-        weight: 22000,
-        volume: 65,
-        cargoType: 'foodstuff',
-        loadingDate: '2024-03-14',
-        deliveryDate: '2024-03-16',
-        price: 3200,
-        priceType: 'negotiable',
-        company: {
-          name: 'FreshCargo International',
-          rating: 4.9,
-          verified: true,
-          totalTransports: 1234
-        },
-        requirements: ['Refrigeration -18°C', 'HACCP', 'Express delivery'],
-        truckType: 'Refrigerated 13.6m',
-        status: 'active',
-        urgency: 'high',
-        createdAt: '2024-03-12'
-      },
-      {
-        id: '3',
-        title: 'Construction Materials Timisoara - Milan',
-        from: 'Timișoara, Romania',
-        to: 'Milan, Italy',
-        distance: 980,
-        weight: 24000,
-        volume: 35,
-        cargoType: 'construction_materials',
-        loadingDate: '2024-03-16',
-        deliveryDate: '2024-03-19',
-        price: 1.85,
-        priceType: 'per_km',
-        company: {
-          name: 'BuildLogistics Pro',
-          rating: 4.6,
-          verified: true,
-          totalTransports: 876
-        },
-        requirements: ['Crane Loading', 'Special Permit'],
-        truckType: 'Truck with crane',
-        status: 'active',
-        urgency: 'low',
-        createdAt: '2024-03-09'
+  const fetchCargoOffers = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/marketplace/cargo');
+      if (!response.ok) {
+        throw new Error('Failed to fetch cargo offers');
       }
-    ];
+      const data = await response.json();
+      setCargoOffers(data);
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Could not fetch cargo offers.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchCargoOffers();
+    // Transport requests still use mock data for now
     const mockTransportRequests: TransportRequest[] = [
       {
         id: '1',
@@ -208,11 +161,61 @@ export default function MarketplacePage() {
         status: 'available'
       }
     ];
-
-    setCargoOffers(mockCargoOffers);
     setTransportRequests(mockTransportRequests);
-    setLoading(false);
   }, []);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setNewCargo(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handlePostCargo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPosting(true);
+
+    const postData = {
+        ...newCargo,
+        requirements: newCargo.requirements.split(',').map(req => req.trim()).filter(Boolean),
+    };
+
+    try {
+      const response = await fetch('/api/marketplace/cargo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to post cargo');
+      }
+
+      toast({
+        title: "Success!",
+        description: "Your cargo offer has been posted.",
+        className: "bg-green-500 text-white",
+      });
+      
+      // Reset form and refetch offers
+      setNewCargo({
+        title: '', fromLocation: '', toLocation: '', weight: '', volume: '', cargoType: '',
+        loadingDate: '', deliveryDate: '', price: '', priceType: 'fixed',
+        companyName: '', requirements: '', urgency: 'medium',
+      });
+      fetchCargoOffers();
+      setActiveTab('find-cargo');
+
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "Could not post your cargo offer.",
+        variant: "destructive",
+      });
+    } finally {
+      setPosting(false);
+    }
+  };
+
 
   const getPriceDisplay = (offer: CargoOffer) => {
     switch (offer.priceType) {
@@ -273,11 +276,51 @@ export default function MarketplacePage() {
               <CardDescription className="text-blue-200">Fill in the details below to publish your cargo for carriers.</CardDescription>
             </CardHeader>
             <CardContent>
-              {/* Formularul pentru a posta marfă va fi implementat aici */}
-              <div className="flex flex-col items-center justify-center h-64 border-2 border-dashed border-slate-600 rounded-lg">
-                <p className="text-slate-400">Cargo posting form coming soon...</p>
-                <Button className="mt-4 bg-blue-600 hover:bg-blue-700">Get Notified</Button>
-              </div>
+              <form onSubmit={handlePostCargo} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input name="title" value={newCargo.title} onChange={handleInputChange} placeholder="Offer Title (e.g., Electronics to Berlin)" required className="bg-slate-700 border-slate-600"/>
+                  <Input name="companyName" value={newCargo.companyName} onChange={handleInputChange} placeholder="Your Company Name" className="bg-slate-700 border-slate-600"/>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input name="fromLocation" value={newCargo.fromLocation} onChange={handleInputChange} placeholder="From (City, Country)" required className="bg-slate-700 border-slate-600"/>
+                  <Input name="toLocation" value={newCargo.toLocation} onChange={handleInputChange} placeholder="To (City, Country)" required className="bg-slate-700 border-slate-600"/>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Input name="weight" type="number" value={newCargo.weight} onChange={handleInputChange} placeholder="Weight (kg)" required className="bg-slate-700 border-slate-600"/>
+                  <Input name="volume" type="number" value={newCargo.volume} onChange={handleInputChange} placeholder="Volume (m³)" className="bg-slate-700 border-slate-600"/>
+                  <Input name="cargoType" value={newCargo.cargoType} onChange={handleInputChange} placeholder="Cargo Type (e.g., Pallets)" required className="bg-slate-700 border-slate-600"/>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                     <label className="text-xs text-slate-400">Loading Date</label>
+                     <Input name="loadingDate" type="date" value={newCargo.loadingDate} onChange={handleInputChange} required className="bg-slate-700 border-slate-600"/>
+                  </div>
+                  <div>
+                    <label className="text-xs text-slate-400">Delivery Date</label>
+                    <Input name="deliveryDate" type="date" value={newCargo.deliveryDate} onChange={handleInputChange} required className="bg-slate-700 border-slate-600"/>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input name="price" type="number" value={newCargo.price} onChange={handleInputChange} placeholder="Price (€)" required className="bg-slate-700 border-slate-600"/>
+                  <select name="priceType" value={newCargo.priceType} onChange={handleInputChange} className="bg-slate-700 border-slate-600 rounded-md p-2 w-full">
+                    <option value="fixed">Fixed Price</option>
+                    <option value="negotiable">Negotiable</option>
+                    <option value="per_km">Per KM</option>
+                  </select>
+                </div>
+                 <div>
+                    <label className="text-xs text-slate-400">Urgency</label>
+                    <select name="urgency" value={newCargo.urgency} onChange={handleInputChange} className="bg-slate-700 border-slate-600 rounded-md p-2 w-full">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                 </div>
+                <Textarea name="requirements" value={newCargo.requirements} onChange={handleInputChange} placeholder="Requirements (comma-separated, e.g., Refrigerated, ADR)" className="bg-slate-700 border-slate-600"/>
+                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={posting}>
+                  {posting ? 'Posting...' : 'Post Cargo Offer'}
+                </Button>
+              </form>
             </CardContent>
           </Card>
         </TabsContent>
@@ -316,9 +359,9 @@ export default function MarketplacePage() {
                     </div>
                     <div className="flex items-center text-sm text-blue-300">
                       <MapPin className="h-4 w-4 mr-2" />
-                      <span className="font-semibold">{offer.from}</span>
+                      <span className="font-semibold">{offer.fromLocation}</span>
                       <ArrowRight className="h-4 w-4 mx-2" />
-                      <span className="font-semibold">{offer.to}</span>
+                      <span className="font-semibold">{offer.toLocation}</span>
                     </div>
                     <p className="text-xs text-slate-400 mt-1">Distance: {offer.distance} km</p>
                   </CardHeader>
@@ -341,11 +384,10 @@ export default function MarketplacePage() {
                   <div className="p-4 bg-slate-900/50 rounded-b-lg mt-auto">
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="text-sm font-semibold text-slate-300">{offer.company.name}</p>
+                        <p className="text-sm font-semibold text-slate-300">{offer.companyName}</p>
                         <div className="flex items-center text-xs text-slate-400">
-                          <Star className="h-3 w-3 mr-1 text-yellow-400" /> {offer.company.rating}
-                          <Users className="h-3 w-3 ml-2 mr-1 text-blue-400"/> {offer.company.totalTransports} transports
-                          {offer.company.verified && <Shield className="h-3 w-3 ml-2 text-green-400" />}
+                          <Star className="h-3 w-3 mr-1 text-yellow-400" /> {offer.companyRating || 'New'}
+                          {/* Verified status and total transports can be added later if needed */}
                         </div>
                       </div>
                       <div className="text-right">

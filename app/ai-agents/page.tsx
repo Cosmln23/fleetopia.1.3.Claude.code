@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import MetricCard from '@/components/metric-card';
+import { useToast } from "@/components/ui/use-toast";
 
 interface DispatcherAgent {
   id: string;
@@ -54,6 +55,13 @@ interface SystemConnection {
   lastSync: string;
   dataPoints: number;
   icon: any;
+}
+
+interface SystemAlert {
+  id: string;
+  message: string;
+  type: 'info' | 'warning' | 'urgent';
+  createdAt: string;
 }
 
 export default function DispatcherAIPage() {
@@ -149,6 +157,9 @@ export default function DispatcherAIPage() {
     { system: 'API Integrations', status: 'connected', lastSync: '14:30:55', dataPoints: 234, icon: Zap }
   ]);
 
+  const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([]);
+  const { toast } = useToast();
+
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [newMessage, setNewMessage] = useState('');
@@ -158,7 +169,8 @@ export default function DispatcherAIPage() {
     const interval = setInterval(() => {
       updateOperationsProgress();
       updateSystemConnections();
-    }, 3000);
+      fetchSystemAlerts();
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -176,6 +188,31 @@ export default function DispatcherAIPage() {
       lastSync: new Date().toLocaleTimeString(),
       dataPoints: conn.dataPoints + Math.floor(Math.random() * 10)
     })));
+  };
+
+  const fetchSystemAlerts = async () => {
+    try {
+      const response = await fetch('/api/dispatcher/alerts');
+      if (response.ok) {
+        const newAlerts = await response.json();
+        if (newAlerts.length > 0) {
+          setSystemAlerts(prevAlerts => {
+            const existingIds = new Set(prevAlerts.map(a => a.id));
+            const uniqueNewAlerts = newAlerts.filter((a: SystemAlert) => !existingIds.has(a.id));
+            if (uniqueNewAlerts.length > 0) {
+               toast({
+                title: "New System Alert",
+                description: uniqueNewAlerts[0].message,
+              });
+              return [...uniqueNewAlerts, ...prevAlerts];
+            }
+            return prevAlerts;
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch system alerts", error);
+    }
   };
 
   const toggleAgentStatus = () => {

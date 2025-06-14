@@ -28,7 +28,8 @@ import {
   Calendar,
   Users,
   Award,
-  CheckCircle
+  CheckCircle,
+  Bell
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
@@ -735,6 +736,26 @@ export default function RealTimeAnalyticsPage() {
                     </div>
                   ))}
                 </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle>System Alerts</CardTitle>
+                <CardDescription>Notifications from other system modules.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3 max-h-96 overflow-y-auto">
+                {realTimeData.systemAlerts?.map(alert => (
+                  <div key={alert.id} className="p-3 rounded-lg bg-slate-900/70 flex items-start space-x-3">
+                    <div className="flex-shrink-0 pt-1">
+                      {alert.type === 'urgent' ? <AlertTriangle className="w-5 h-5 text-red-400"/> : <Bell className="w-5 h-5 text-blue-400"/>}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-slate-200">{alert.message}</p>
+                      <p className="text-xs text-slate-500">{new Date(alert.createdAt).toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
               </CardContent>
             </Card>
           </TabsContent>
