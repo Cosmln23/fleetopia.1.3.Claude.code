@@ -506,12 +506,40 @@ export default function RealTimeAnalyticsPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="h-96 bg-slate-700 rounded-lg flex items-center justify-center">
-                      <div className="text-center text-slate-400">
-                        <MapPin className="w-12 h-12 mx-auto mb-4" />
-                        <p>Interactive Map</p>
-                        <p className="text-sm">Showing {vehicleData.length} vehicles</p>
-                      </div>
+                    <div className="h-96 bg-slate-700 rounded-lg overflow-hidden">
+                    {typeof window !== 'undefined' && (
+                        <MapContainer 
+                            center={[51.505, -0.09]} 
+                            zoom={5} 
+                            style={{ height: '100%', width: '100%' }}
+                            className="bg-slate-800"
+                        >
+                            <TileLayer
+                                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                            />
+                            {vehicleData.map((vehicle) => {
+                                const icon = createCustomIcon(vehicle.status);
+                                if (!icon) return null;
+                                return (
+                                    <Marker 
+                                        key={vehicle.id} 
+                                        position={[vehicle.lat, vehicle.lng]}
+                                        icon={icon}
+                                    >
+                                        <Popup>
+                                            <div className="text-sm">
+                                                <p className="font-bold">{vehicle.id}</p>
+                                                <p>Driver: {vehicle.driver}</p>
+                                                <p>Route: {vehicle.route}</p>
+                                                <p>Status: <span className="capitalize">{vehicle.status}</span></p>
+                                            </div>
+                                        </Popup>
+                                    </Marker>
+                                );
+                            })}
+                        </MapContainer>
+                    )}
                     </div>
                     
                     {/* Vehicle List */}
