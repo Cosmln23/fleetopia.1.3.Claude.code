@@ -27,10 +27,21 @@ import {
   Mail,
   CheckCircle,
   AlertTriangle,
-  Plus
+  Plus,
+  Trash2
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast"
 import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface CargoOffer {
   id: string;
@@ -100,6 +111,7 @@ export default function MarketplacePage() {
   const [transportRequests, setTransportRequests] = useState<TransportRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
+  const [offerToDelete, setOfferToDelete] = useState<string | null>(null);
 
   const fetchCargoOffers = async () => {
     setLoading(true);
@@ -216,6 +228,35 @@ export default function MarketplacePage() {
     }
   };
 
+  const handleDeleteCargo = async () => {
+    if (!offerToDelete) return;
+
+    try {
+      const response = await fetch(`/api/marketplace/cargo/${offerToDelete}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete cargo offer');
+      }
+      
+      toast({
+        title: "Success",
+        description: "Cargo offer has been deleted.",
+      });
+
+      fetchCargoOffers(); // Refresh the list
+    } catch (error) {
+       console.error(error);
+       toast({
+        title: "Error",
+        description: "Could not delete the cargo offer.",
+        variant: "destructive",
+      });
+    } finally {
+      setOfferToDelete(null); // Close the dialog
+    }
+  };
 
   const getPriceDisplay = (offer: CargoOffer) => {
     switch (offer.priceType) {
@@ -269,6 +310,20 @@ export default function MarketplacePage() {
             <Truck className="mr-2 h-4 w-4"/> Find Transport
           </TabsTrigger>
         </TabsList>
+        <AlertDialog open={!!offerToDelete} onOpenChange={() => setOfferToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the cargo offer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteCargo} className="bg-red-600 hover:bg-red-700">Continue</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         <TabsContent value="post-cargo" className="mt-6">
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
@@ -392,7 +447,17 @@ export default function MarketplacePage() {
                       </div>
                       <div className="text-right">
                         <p className="text-xl font-bold text-green-400">{getPriceDisplay(offer)}</p>
-                        <Button size="sm" className="mt-1 bg-blue-600 hover:bg-blue-700 h-8">Contact</Button>
+                        <div className="flex items-center gap-2 mt-1">
+                           <Button size="sm" className="bg-blue-600 hover:bg-blue-700 h-8 flex-1">Contact</Button>
+                           <Button 
+                              variant="destructive" 
+                              size="icon" 
+                              className="h-8 w-8 bg-red-800/70 hover:bg-red-700"
+                              onClick={() => setOfferToDelete(offer.id)}
+                            >
+                             <Trash2 className="h-4 w-4"/>
+                           </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
