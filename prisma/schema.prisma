@@ -68,27 +68,22 @@ model AIAgent {
   version       String
   category      String
   
-  // Capabilități și configurație flexibilă
-  capabilities  Json     // Ce poate face agent-ul
-  configuration Json     // Configurația de bază
-  performance   Json     // Metrici de performanță
+  capabilities  Json
+  configuration Json
+  performance   Json
   
-  // Marketplace info
-  marketplace   Boolean  @default(false) // Dacă e în marketplace
-  price         Float?   // Preț dacă e premium
+  marketplace   Boolean  @default(false)
+  price         Float?
   rating        Float    @default(0)
   downloads     Int      @default(0)
   
-  // Status și metadata
   status        String   @default("active")
-  isTemplate    Boolean  @default(false) // Dacă e template reutilizabil
-  requiresAPI   Json     // Ce tipuri de API-uri necesită
+  isTemplate    Boolean  @default(false)
+  requiresAPI   Json
   
-  // Ownership
   createdBy     User     @relation("CreatedAIAgents", fields: [userId], references: [id])
   userId        String
   
-  // Relations
   reviews       Review[]
   metrics       AgentMetric[]
   apiConnections AgentAPIConnection[]
@@ -117,26 +112,6 @@ model Fleet {
   @@index([userId])
 }
 
-model Vehicle {
-  id           String   @id @default(cuid())
-  name         String
-  type         String
-  licensePlate String   @unique
-  status       String   @default("active")
-  location     Json?
-  fuelLevel    Float?
-  mileage      Float?
-  fleet        Fleet    @relation(fields: [fleetId], references: [id])
-  fleetId      String
-  routes       Route[]
-  maintenances Maintenance[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  @@index([fleetId])
-  @@index([status])
-}
-
 model Route {
   id          String   @id @default(cuid())
   name        String
@@ -148,13 +123,13 @@ model Route {
   fuelCost    Float?
   tollCost    Float?
   status      String   @default("planned")
-  fleet       Fleet    @relation(fields: [fleetId], references: [id])
+  fleet       Fleet     @relation(fields: [fleetId], references: [id])
   fleetId     String
-  vehicle     Vehicle? @relation(fields: [vehicleId], references: [id])
+  vehicle     Vehicle?  @relation(fields: [vehicleId], references: [id])
   vehicleId   String?
-  optimized   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  optimized   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([fleetId])
   @@index([status])
@@ -163,28 +138,24 @@ model Route {
 model APIIntegration {
   id            String   @id @default(cuid())
   name          String
-  type          String   // transport, fuel, weather, custom, etc.
-  provider      String   // OMV, Petrom, Custom, etc.
+  type          String
+  provider      String
   
-  // Complet flexibil - clientul adaugă ce vrea
-  configuration Json     // Orice configurație dorește clientul
-  credentials   Json     // Orice credențiale (criptate)
-  endpoints     Json     // Endpoints custom definite de client
-  headers       Json?    // Headers custom
-  settings      Json?    // Setări personalizate
+  configuration Json
+  credentials   Json
+  endpoints     Json
+  headers       Json?
+  settings      Json?
   
-  // Metadata
   description   String?
-  documentation String?  // Link către doc API
+  documentation String?
   status        String   @default("active")
   lastSync      DateTime?
   lastError     String?
   
-  // Ownership
-  user          User     @relation("UserIntegrations", fields: [userId], references: [id])
+  user          User      @relation("UserIntegrations", fields: [userId], references: [id])
   userId        String
   
-  // Connections cu AI Agents
   connectedAgents AgentAPIConnection[]
   
   createdAt     DateTime @default(now())
@@ -199,11 +170,11 @@ model Review {
   id        String   @id @default(cuid())
   rating    Float
   comment   String?
-  agent     AIAgent  @relation(fields: [agentId], references: [id])
+  agent     AIAgent   @relation(fields: [agentId], references: [id])
   agentId   String
-  user      User     @relation("UserReviews", fields: [userId], references: [id])
+  user      User       @relation("UserReviews", fields: [userId], references: [id])
   userId    String
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
   @@index([agentId])
   @@index([rating])
@@ -216,7 +187,7 @@ model AgentMetric {
   usage       Json
   errors      Json?
   timestamp   DateTime @default(now())
-  agent       AIAgent  @relation(fields: [agentId], references: [id])
+  agent       AIAgent   @relation(fields: [agentId], references: [id])
 
   @@index([agentId])
   @@index([timestamp])
@@ -227,7 +198,7 @@ model FleetMetric {
   fleetId   String
   metrics   Json
   timestamp DateTime @default(now())
-  fleet     Fleet    @relation(fields: [fleetId], references: [id])
+  fleet     Fleet      @relation(fields: [fleetId], references: [id])
 
   @@index([fleetId])
   @@index([timestamp])
@@ -241,71 +212,104 @@ model Maintenance {
   scheduledAt DateTime
   completedAt DateTime?
   status      String   @default("scheduled")
-  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+  vehicle     Vehicle    @relation(fields: [vehicleId], references: [id])
   vehicleId   String
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   @@index([vehicleId])
   @@index([status])
   @@index([scheduledAt])
 }
 
-// Conexiune între AI Agents și API-uri
 model AgentAPIConnection {
-  id              String   @id @default(cuid())
+  id              String         @id @default(cuid())
   agentId         String
   integrationId   String
-  status          String   @default("active")
   
-  // Relații
-  agent           AIAgent @relation(fields: [agentId], references: [id])
+  agent           AIAgent    @relation(fields: [agentId], references: [id])
   integration     APIIntegration @relation(fields: [integrationId], references: [id])
-  user            User @relation("UserConnections", fields: [userId], references: [id])
+  user            User          @relation("UserConnections", fields: [userId], references: [id])
   userId          String
-
-  createdAt       DateTime @default(now())
-
+  
+  createdAt       DateTime  @default(now())
+  
   @@unique([agentId, integrationId])
+  @@index([agentId])
+  @@index([integrationId])
+  @@index([userId])
 }
 
-// Marketplace Models
 model CargoOffer {
-  id            String    @id @default(cuid())
+  id            String   @id @default(cuid())
   title         String
+  companyName   String?
   fromLocation  String
   toLocation    String
-  distance      Float?
   weight        Float
-  volume        Float?
-  cargoType     String
-  loadingDate   DateTime
-  deliveryDate  DateTime
   price         Float
-  priceType     String // 'fixed', 'negotiable', 'per_km'
-  
-  companyName   String
-  companyRating Float?
-  
-  requirements  String[]
-  truckType     String?
-  status        String   @default("active") // active, pending, completed
-  urgency       String   @default("medium") // low, medium, high
-
+  urgency       String // "low", "medium", "high"
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  status        String   @default("open")
+  userId        String? // Optional: link to a user
 
   @@index([status])
   @@index([fromLocation])
   @@index([toLocation])
+  @@index([urgency])
 }
 
 model SystemAlert {
   id        String   @id @default(cuid())
   message   String
-  type      String   @default("info") // info, warning, urgent
+  type      String
   read      Boolean  @default(false)
-  
   createdAt DateTime @default(now())
+}
 
-  @@index([read])
+model Vehicle {
+  id            String    @id @default(cuid())
+  name          String
+  type          String
+  licensePlate  String    @unique
+  status        String
+  driverName    String
+  currentRoute  String
+  lat           Float
+  lng           Float
+  
+  logs          GpsLog[]
+  metrics       RealTimeMetric[]
+  
+  // Inverse relations
+  fleetId       String
+  fleet         Fleet     @relation(fields: [fleetId], references: [id])
+  routes        Route[]
+  maintenances  Maintenance[]
+
+  @@index([fleetId])
+}
+
+model GpsLog {
+  id        String   @id @default(cuid())
+  lat       Float
+  lng       Float
+  timestamp DateTime @default(now())
+  vehicleId String
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+}
+
+model RealTimeMetric {
+  id             String   @id @default(cuid())
+  fuelEfficiency Float
+  averageSpeed   Float
+  alertsCount    Int
+  compliance     Float
+  timestamp      DateTime @default(now())
+  vehicleId      String
+  vehicle        Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
 }

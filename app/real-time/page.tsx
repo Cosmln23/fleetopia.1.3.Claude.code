@@ -204,53 +204,35 @@ export default function RealTimeAnalyticsPage() {
 
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
   const [selectedTimeframe, setSelectedTimeframe] = useState('week');
   const [activeTab, setActiveTab] = useState('realtime');
 
-  // Mock vehicle data
-  const vehicleData = [
-    { id: 'V001', status: 'active', lat: 52.5200, lng: 13.4050, driver: 'John Smith', route: 'Berlin → Hamburg' },
-    { id: 'V002', status: 'idle', lat: 48.1351, lng: 11.5820, driver: 'Maria Garcia', route: 'Munich → Frankfurt' },
-    { id: 'V003', status: 'active', lat: 50.0755, lng: 14.4378, driver: 'Andrei Popov', route: 'Prague → Brno' },
-    { id: 'V004', status: 'maintenance', lat: 51.0504, lng: 13.7373, driver: 'Elena Petrova', route: 'Dresden → Leipzig' }
-  ];
-
   useEffect(() => {
-    // Set up real-time updates every 10 seconds
+    fetchRealTimeData();
     const interval = setInterval(() => {
       fetchRealTimeData(true);
-      updateAnalytics();
-    }, 10000);
+    }, 10000); // Refresh data every 10 seconds
 
     return () => clearInterval(interval);
   }, []);
 
   const fetchRealTimeData = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
+    else setLoading(true);
     
     try {
-      // Simulate API call with mock data
-      const mockData = {
-        vehicleTracking: vehicleData,
-        weatherAlerts: [
-          { id: 1, type: 'warning', message: 'Fog expected on A9 highway', severity: 'medium' },
-          { id: 2, type: 'info', message: 'Good weather conditions', severity: 'low' }
-        ],
-        trafficIncidents: [
-          { id: 1, location: 'A2 km 45', description: 'Minor accident, expect delays', severity: 'high' }
-        ],
-        fuelPrices: [
-          { station: 'Shell', price: 1.85, location: 'Berlin' },
-          { station: 'BP', price: 1.89, location: 'Munich' }
-        ],
-        systemAlerts: [
-          { id: 1, type: 'maintenance', message: 'Vehicle V004 needs inspection', priority: 'high' }
-        ]
-      };
+      const response = await fetch('/api/real-time/data');
+      if (!response.ok) {
+        throw new Error('Failed to fetch data');
+      }
+      const data = await response.json();
       
-      setRealTimeData(mockData);
+      setRealTimeData(prev => ({
+        ...prev,
+        vehicleTracking: data.vehicleTracking || [],
+      }));
       setLastUpdate(new Date());
     } catch (error) {
       console.error('Failed to fetch real-time data:', error);
@@ -404,7 +386,7 @@ export default function RealTimeAnalyticsPage() {
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2 text-sm text-slate-400">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                Last updated: {lastUpdate.toLocaleTimeString()}
+                Last updated: {lastUpdate ? lastUpdate.toLocaleTimeString() : '...'}
               </div>
               <Button 
                 onClick={() => fetchRealTimeData(true)} 
@@ -507,10 +489,9 @@ export default function RealTimeAnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="h-96 bg-slate-700 rounded-lg overflow-hidden">
-                    {typeof window !== 'undefined' && (
                         <MapContainer 
-                            center={[51.505, -0.09]} 
-                            zoom={5} 
+                            center={[51.505, 10.5]} // Centered on Germany
+                            zoom={6} 
                             style={{ height: '100%', width: '100%' }}
                             className="bg-slate-800"
                         >
@@ -518,7 +499,7 @@ export default function RealTimeAnalyticsPage() {
                                 url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
                                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                             />
-                            {vehicleData.map((vehicle) => {
+                            {realTimeData.vehicleTracking.map((vehicle) => {
                                 const icon = createCustomIcon(vehicle.status);
                                 if (!icon) return null;
                                 return (
@@ -529,9 +510,9 @@ export default function RealTimeAnalyticsPage() {
                                     >
                                         <Popup>
                                             <div className="text-sm">
-                                                <p className="font-bold">{vehicle.id}</p>
-                                                <p>Driver: {vehicle.driver}</p>
-                                                <p>Route: {vehicle.route}</p>
+                                                <p className="font-bold">{vehicle.licensePlate}</p>
+                                                <p>Driver: {vehicle.driverName}</p>
+                                                <p>Route: {vehicle.currentRoute}</p>
                                                 <p>Status: <span className="capitalize">{vehicle.status}</span></p>
                                             </div>
                                         </Popup>
@@ -539,12 +520,11 @@ export default function RealTimeAnalyticsPage() {
                                 );
                             })}
                         </MapContainer>
-                    )}
                     </div>
                     
                     {/* Vehicle List */}
                     <div className="mt-4 space-y-2">
-                      {vehicleData.map((vehicle) => (
+                      {realTimeData.vehicleTracking.map((vehicle) => (
                         <div 
                           key={vehicle.id}
                           className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg cursor-pointer hover:bg-slate-700"
@@ -557,12 +537,12 @@ export default function RealTimeAnalyticsPage() {
                               'bg-red-400'
                             }`} />
                             <div>
-                              <p className="text-sm font-medium text-white">{vehicle.id}</p>
-                              <p className="text-xs text-slate-400">{vehicle.driver}</p>
+                              <p className="text-sm font-medium text-white">{vehicle.licensePlate}</p>
+                              <p className="text-xs text-slate-400">{vehicle.driverName}</p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm text-slate-300">{vehicle.route}</p>
+                            <p className="text-sm text-slate-300">{vehicle.currentRoute}</p>
                             <Badge variant="outline" className="text-xs">
                               {vehicle.status}
                             </Badge>
