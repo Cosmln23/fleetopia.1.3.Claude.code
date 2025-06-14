@@ -28,6 +28,8 @@ Platforma a depășit stadiul de prototip static și are un prim flux funcționa
 *   **Ștergere Securizată:** Fiecare ofertă are un buton de ștergere care deschide un dialog de confirmare. La confirmare, oferta este eliminată definitiv din baza de date printr-un API dedicat (`/api/marketplace/cargo/[id]`).
 *   **Notificarea Dispecerului:** La publicarea unei noi oferte, se creează automat o `SystemAlert` în baza de date.
 *   **Recepția Alertei:** Pagina `AI Dispatcher` interoghează periodic un API (`/api/dispatcher/alerts`) și afișează noile alerte, închizând astfel bucla funcțională între Marketplace și centrul de comandă.
+*   **Editare Oferte:** A fost implementată funcționalitatea de editare a ofertelor, incluzând un API `PUT` și un dialog de modificare care se pre-completează cu datele existente.
+*   **Curățare și Refactorizare:** Pagina `Real-time Analytics` a fost curățată de cod redundant și datele simulate au fost traduse pentru consistență.
 
 ---
 
@@ -61,4 +63,12 @@ Orice modificare adusă proiectului trebuie să urmeze acest protocol strict:
 
 **Nu se modifică codul existent, ci se extinde.** Se adaugă funcționalități noi fără a altera fundamental logica deja implementată și confirmată. Obiectivul este să construim peste fundația existentă, nu să o reconstruim.
 
-Acest proces asigură o dezvoltare incrementală, sigură și foarte bine documentată. 
+Acest proces asigură o dezvoltare incrementală, sigură și foarte bine documentată.
+
+---
+
+## 5. Istoric Modificări (tasks)
+
+*   **Task 1:** Descrierea task-ului 1
+*   **Task 2:** Descrierea task-ului 2
+*   **Task 3:** Descrierea task-ului 3 
