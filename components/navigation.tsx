@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -14,7 +13,8 @@ import {
   Zap,
   Activity,
   Settings,
-  BarChart3
+  BarChart3,
+  TestTube2
 } from 'lucide-react';
 
 const navigation = [
@@ -54,6 +54,12 @@ const navigation = [
     href: '/real-time',
     icon: Activity,
     description: 'Live Monitoring, Data & Performance Insights'
+  },
+  {
+    name: 'Simulator',
+    href: '/admin/simulator',
+    icon: TestTube2,
+    description: 'Live test vehicle data and system reactions'
   }
 ];
 

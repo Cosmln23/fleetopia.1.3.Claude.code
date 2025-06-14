@@ -1,22 +1,20 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const vehicles = await prisma.vehicle.findMany();
-    
-    // In the future, we can add more data here, like alerts, metrics, etc.
-    const realTimeData = {
-      vehicleTracking: vehicles,
-      // a
-    };
 
-    return NextResponse.json(realTimeData);
+    // Prisma returns lat and lng as separate fields, so we just pass them through.
+    // The previous error was because I was trying to destructure a non-existent 'location' object.
+    return NextResponse.json({ vehicles });
   } catch (error) {
     console.error('Failed to fetch real-time data:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch real-time data' },
-      { status: 500 }
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal Server Error' }), 
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
 } 
