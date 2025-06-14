@@ -193,9 +193,17 @@ export default function FleetMindHome() {
         >
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                FleetMind.ai Dashboard
-              </h1>
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white"
+              >
+                Welcome to the
+                <span className="block bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent mt-2">
+                  Fleetopia.co Dashboard
+                </span>
+              </motion.h1>
               <p className="text-slate-400 text-lg">
                 Self-Evolving AI Marketplace for Transport Paradise
               </p>

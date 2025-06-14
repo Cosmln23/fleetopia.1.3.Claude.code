@@ -1,4 +1,4 @@
-# 🚀 PLAN DE IMPLEMENTARE FLEETMIND.AI
+# 🚀 PLAN DE IMPLEMENTARE FLEETOPIA.CO
 
 ## 📋 CUPRINS
 1. [Arhitectura Sistemului](#1-arhitectura-sistemului)

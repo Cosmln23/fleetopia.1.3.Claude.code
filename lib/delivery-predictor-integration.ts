@@ -1,4 +1,4 @@
-// 🔌 DELIVERYPREDICTOR INTEGRATION - Conectarea cu FleetMind.ai ecosystem
+// 🔌 DELIVERYPREDICTOR INTEGRATION - Conectarea cu Fleetopia.co ecosystem
 
 import { DeliveryPredictorAPI } from './delivery-predictor-api';
 

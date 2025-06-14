@@ -210,10 +210,10 @@ export default function RealTimeAnalyticsPage() {
 
   // Mock vehicle data
   const vehicleData = [
-    { id: 'V001', status: 'active', lat: 44.4268, lng: 26.1025, driver: 'Ion Popescu', route: 'București → Constanța' },
-    { id: 'V002', status: 'idle', lat: 45.7489, lng: 21.2087, driver: 'Maria Georgescu', route: 'Timișoara → Arad' },
+    { id: 'V001', status: 'active', lat: 44.4268, lng: 26.1025, driver: 'Ion Popescu', route: 'Bucharest → Constanta' },
+    { id: 'V002', status: 'idle', lat: 45.7489, lng: 21.2087, driver: 'Maria Georgescu', route: 'Timisoara → Arad' },
     { id: 'V003', status: 'active', lat: 46.7712, lng: 23.6236, driver: 'Andrei Moldovan', route: 'Cluj → Oradea' },
-    { id: 'V004', status: 'maintenance', lat: 47.1585, lng: 27.6014, driver: 'Elena Vasilescu', route: 'Iași → Bacău' }
+    { id: 'V004', status: 'maintenance', lat: 47.1585, lng: 27.6014, driver: 'Elena Vasilescu', route: 'Iasi → Bacau' }
   ];
 
   useEffect(() => {
@@ -241,7 +241,7 @@ export default function RealTimeAnalyticsPage() {
           { id: 1, location: 'A2 km 45', description: 'Minor accident, expect delays', severity: 'high' }
         ],
         fuelPrices: [
-          { station: 'Petrom', price: 6.45, location: 'București' },
+          { station: 'Petrom', price: 6.45, location: 'Bucharest' },
           { station: 'OMV', price: 6.52, location: 'Cluj-Napoca' }
         ],
         systemAlerts: [
