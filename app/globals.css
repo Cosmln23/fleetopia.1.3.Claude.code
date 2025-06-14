@@ -1,0 +1,209 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 15, 23, 42;
+  --background-end-rgb: 30, 58, 138;
+  --background: linear-gradient(to bottom right, #0f172a, #1e3a8a, #0f172a);
+  --foreground: #ffffff;
+  --muted: #cccccc;
+  --accent: #3b82f6;
+  --border: #475569;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', sans-serif;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+  line-height: 1.6;
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--background-start-rgb)),
+    rgb(var(--background-end-rgb))
+  );
+}
+
+body {
+  background: linear-gradient(to bottom right, #0f172a, #1e3a8a, #0f172a);
+  color: #ffffff;
+  min-height: 100vh;
+}
+
+.matrix-text {
+  font-family: 'Inter', monospace;
+  font-weight: 300;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+}
+
+.digital-glow {
+  box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+  border: 1px solid rgba(0, 255, 0, 0.3);
+}
+
+.pulse-green {
+  animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.flicker {
+  animation: flicker 3s infinite;
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+  75% { opacity: 0.9; }
+}
+
+.scan-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.scan-line::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00ff00, transparent);
+  animation: scan 3s infinite;
+}
+
+@keyframes scan {
+  0% { left: -100%; }
+  100% { left: 100%; }
+}
+
+.terminal-border {
+  border: 1px solid #333333;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.metric-card {
+  background: rgba(0, 20, 0, 0.3);
+  border: 1px solid rgba(0, 255, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+.metric-card:hover {
+  border-color: rgba(0, 255, 0, 0.5);
+  box-shadow: 0 0 30px rgba(0, 255, 0, 0.1);
+}
+
+.nav-link {
+  transition: all 0.3s ease;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-link:hover {
+  border-bottom-color: #00ff00;
+  text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+}
+
+.nav-link.active {
+  border-bottom-color: #00ff00;
+  color: #00ff00;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #000000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00ff00;
+}
+
+/* Leaflet Map Styles */
+.leaflet-container {
+  height: 100% !important;
+  width: 100% !important;
+  background: #1e293b !important;
+  color: #ffffff !important;
+  z-index: 1 !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #1e293b !important;
+  border-radius: 8px !important;
+  border: 1px solid #475569 !important;
+}
+
+.leaflet-popup-tip {
+  background: #1e293b !important;
+  border: 1px solid #475569 !important;
+}
+
+.leaflet-popup-content {
+  color: #ffffff !important;
+  margin: 0 !important;
+  padding: 12px !important;
+}
+
+.leaflet-popup-close-button {
+  color: #ffffff !important;
+  font-size: 18px !important;
+  font-weight: bold !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #00ff00 !important;
+}
+
+.leaflet-control-attribution {
+  background: rgba(30, 41, 59, 0.8) !important;
+  color: #94a3b8 !important;
+  font-size: 10px !important;
+}
+
+.leaflet-control-attribution a {
+  color: #00ff00 !important;
+}
+
+.leaflet-control-zoom a {
+  background: #1e293b !important;
+  border: 1px solid #475569 !important;
+  color: #ffffff !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: #334155 !important;
+  color: #00ff00 !important;
+}

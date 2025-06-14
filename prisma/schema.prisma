@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String           @id @default(cuid())
+  name              String?
+  email             String?          @unique
+  emailVerified     DateTime?
+  image             String?
+  role              String           @default("client")
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  accounts          Account[]
+  sessions          Session[]
+  // FleetMind relations
+  aiAgents          AIAgent[]        @relation("CreatedAIAgents")
+  fleets            Fleet[]          @relation("OwnedFleets")
+  integrations      APIIntegration[] @relation("UserIntegrations")
+  reviews           Review[]         @relation("UserReviews")
+  apiConnections    AgentAPIConnection[] @relation("UserConnections")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// FleetMind Models
+model AIAgent {
+  id            String   @id @default(cuid())
+  name          String
+  description   String
+  version       String
+  category      String
+  
+  // Capabilități și configurație flexibilă
+  capabilities  Json     // Ce poate face agent-ul
+  configuration Json     // Configurația de bază
+  performance   Json     // Metrici de performanță
+  
+  // Marketplace info
+  marketplace   Boolean  @default(false) // Dacă e în marketplace
+  price         Float?   // Preț dacă e premium
+  rating        Float    @default(0)
+  downloads     Int      @default(0)
+  
+  // Status și metadata
+  status        String   @default("active")
+  isTemplate    Boolean  @default(false) // Dacă e template reutilizabil
+  requiresAPI   Json     // Ce tipuri de API-uri necesită
+  
+  // Ownership
+  createdBy     User     @relation("CreatedAIAgents", fields: [userId], references: [id])
+  userId        String
+  
+  // Relations
+  reviews       Review[]
+  metrics       AgentMetric[]
+  apiConnections AgentAPIConnection[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([marketplace])
+  @@index([category])
+  @@index([isTemplate])
+  @@map("ai_agents")
+}
+
+model Fleet {
+  id        String    @id @default(cuid())
+  name      String
+  status    String    @default("active")
+  vehicles  Vehicle[]
+  routes    Route[]
+  metrics   FleetMetric[]
+  owner     User      @relation("OwnedFleets", fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+model Vehicle {
+  id           String   @id @default(cuid())
+  name         String
+  type         String
+  licensePlate String   @unique
+  status       String   @default("active")
+  location     Json?
+  fuelLevel    Float?
+  mileage      Float?
+  fleet        Fleet    @relation(fields: [fleetId], references: [id])
+  fleetId      String
+  routes       Route[]
+  maintenances Maintenance[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([fleetId])
+  @@index([status])
+}
+
+model Route {
+  id          String   @id @default(cuid())
+  name        String
+  startPoint  Json
+  endPoint    Json
+  waypoints   Json?
+  distance    Float?
+  duration    Float?
+  fuelCost    Float?
+  tollCost    Float?
+  status      String   @default("planned")
+  fleet       Fleet    @relation(fields: [fleetId], references: [id])
+  fleetId     String
+  vehicle     Vehicle? @relation(fields: [vehicleId], references: [id])
+  vehicleId   String?
+  optimized   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([fleetId])
+  @@index([status])
+}
+
+model APIIntegration {
+  id            String   @id @default(cuid())
+  name          String
+  type          String   // transport, fuel, weather, custom, etc.
+  provider      String   // OMV, Petrom, Custom, etc.
+  
+  // Complet flexibil - clientul adaugă ce vrea
+  configuration Json     // Orice configurație dorește clientul
+  credentials   Json     // Orice credențiale (criptate)
+  endpoints     Json     // Endpoints custom definite de client
+  headers       Json?    // Headers custom
+  settings      Json?    // Setări personalizate
+  
+  // Metadata
+  description   String?
+  documentation String?  // Link către doc API
+  status        String   @default("active")
+  lastSync      DateTime?
+  lastError     String?
+  
+  // Ownership
+  user          User     @relation("UserIntegrations", fields: [userId], references: [id])
+  userId        String
+  
+  // Connections cu AI Agents
+  connectedAgents AgentAPIConnection[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@index([provider])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Float
+  comment   String?
+  agent     AIAgent  @relation(fields: [agentId], references: [id])
+  agentId   String
+  user      User     @relation("UserReviews", fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@index([agentId])
+  @@index([rating])
+}
+
+model AgentMetric {
+  id          String   @id @default(cuid())
+  agentId     String
+  performance Json
+  usage       Json
+  errors      Json?
+  timestamp   DateTime @default(now())
+  agent       AIAgent  @relation(fields: [agentId], references: [id])
+
+  @@index([agentId])
+  @@index([timestamp])
+}
+
+model FleetMetric {
+  id        String   @id @default(cuid())
+  fleetId   String
+  metrics   Json
+  timestamp DateTime @default(now())
+  fleet     Fleet    @relation(fields: [fleetId], references: [id])
+
+  @@index([fleetId])
+  @@index([timestamp])
+}
+
+model Maintenance {
+  id          String   @id @default(cuid())
+  type        String
+  description String?
+  cost        Float?
+  scheduledAt DateTime
+  completedAt DateTime?
+  status      String   @default("scheduled")
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id])
+  vehicleId   String
+  createdAt   DateTime @default(now())
+
+  @@index([vehicleId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+// Conexiune între AI Agents și API-uri
+model AgentAPIConnection {
+  id            String         @id @default(cuid())
+  
+  // AI Agent (poate fi din marketplace sau custom)
+  agent         AIAgent        @relation(fields: [agentId], references: [id])
+  agentId       String
+  
+  // API Integration (întotdeauna al clientului)
+  apiIntegration APIIntegration @relation(fields: [apiId], references: [id])
+  apiId         String
+  
+  // Configurație specifică conexiunii
+  mapping       Json           // Cum mapează agent-ul datele din API
+  permissions   Json           // Ce poate face agent-ul cu API-ul
+  priority      Int           @default(1) // Pentru multiple API-uri de același tip
+  
+  // Status
+  status        String        @default("active")
+  lastUsed      DateTime?
+  errorCount    Int           @default(0)
+  
+  // Ownership (conexiunea aparține clientului)
+  user          User          @relation("UserConnections", fields: [userId], references: [id])
+  userId        String
+  
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@unique([agentId, apiId, userId]) // Un agent poate avea un singur API de fiecare tip per user
+  @@index([agentId])
+  @@index([apiId])
+  @@index([userId])
+}
