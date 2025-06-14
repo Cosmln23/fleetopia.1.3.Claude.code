@@ -67,7 +67,31 @@ Acest proces asigură o dezvoltare incrementală, sigură și foarte bine docume
 
 ---
 
-## 5. Istoric Modificări (tasks)
+## 5. Depanare Majoră și Stabilizare (14 Iunie 2024)
+
+Înainte de a continua dezvoltarea, am trecut printr-o etapă critică de depanare și stabilizare.
+
+1.  **Context:** După implementarea hărții interactive pe pagina `Real-time & Analytics`, aplicația a început să genereze erori de conectivitate la baza de date și erori de "hidratare" a componentelor pe client.
+2.  **Cauza Rădăcină:** Problema a fost identificată ca fiind o gestionare ineficientă a clientului Prisma. Se crea o nouă instanță `PrismaClient` pentru fiecare request API, epuizând pool-ul de conexiuni la baza de date și corupând starea clientului.
+3.  **Soluția:**
+    *   Am refactorizat codul pentru a utiliza un **singleton PrismaClient** (`lib/prisma.ts`), asigurând o singură instanță partajată în întreaga aplicație.
+    *   Am refactorizat componenta hărții (`RealTimeVehicleMap`) pentru a utiliza corect hook-urile `useRef` și `useEffect`, eliminând eroarea `Map container is already initialized`.
+    *   Deoarece problemele persistau, am efectuat o resetare completă: am oprit serverul, am șters `node_modules`, am reinstalat pachetele și am regenerat clientul Prisma. Această acțiune a curățat orice stare coruptă și a rezolvat definitiv erorile.
+
+**Status Curent:** Aplicația este acum stabilă, performantă și complet funcțională pe toate modulele implementate (Marketplace, AI Dispatcher, Real-time).
+
+---
+
+## 6. Următorii Pași: Funcționalități Noi
+
+Cu platforma stabilizată, începem implementarea a două noi funcționalități:
+
+1.  **Calculator de Rută:** Un panou pe pagina `Real-time` unde utilizatorul poate introduce adrese pentru a calcula și vizualiza rute pe hartă.
+2.  **Simulator de Vehicule:** O pagină dedicată pentru a modifica manual starea vehiculelor (locație, status) și a testa reactivitatea sistemului în timp real.
+
+---
+
+## 7. Istoric Modificări (tasks)
 
 *   **Task 1:** Descrierea task-ului 1
 *   **Task 2:** Descrierea task-ului 2

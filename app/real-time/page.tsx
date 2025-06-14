@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,11 +34,10 @@ import {
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
 
-// Dynamic imports for Leaflet components (client-side only)
-const MapContainer = dynamic(() => import('react-leaflet').then((mod) => mod.MapContainer), { ssr: false });
-const TileLayer = dynamic(() => import('react-leaflet').then((mod) => mod.TileLayer), { ssr: false });
-const Marker = dynamic(() => import('react-leaflet').then((mod) => mod.Marker), { ssr: false });
-const Popup = dynamic(() => import('react-leaflet').then((mod) => mod.Popup), { ssr: false });
+const RealTimeVehicleMap = dynamic(() => import('@/components/real-time-vehicle-map'), {
+  ssr: false,
+  loading: () => <div className="h-full w-full bg-slate-800 flex items-center justify-center"><p className="text-white">Loading Map...</p></div>
+});
 
 // Custom marker icons
 const createCustomIcon = (status: string) => {
@@ -489,37 +488,7 @@ export default function RealTimeAnalyticsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="h-96 bg-slate-700 rounded-lg overflow-hidden">
-                        <MapContainer 
-                            center={[51.505, 10.5]} // Centered on Germany
-                            zoom={6} 
-                            style={{ height: '100%', width: '100%' }}
-                            className="bg-slate-800"
-                        >
-                            <TileLayer
-                                url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-                                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
-                            />
-                            {realTimeData.vehicleTracking.map((vehicle) => {
-                                const icon = createCustomIcon(vehicle.status);
-                                if (!icon) return null;
-                                return (
-                                    <Marker 
-                                        key={vehicle.id} 
-                                        position={[vehicle.lat, vehicle.lng]}
-                                        icon={icon}
-                                    >
-                                        <Popup>
-                                            <div className="text-sm">
-                                                <p className="font-bold">{vehicle.licensePlate}</p>
-                                                <p>Driver: {vehicle.driverName}</p>
-                                                <p>Route: {vehicle.currentRoute}</p>
-                                                <p>Status: <span className="capitalize">{vehicle.status}</span></p>
-                                            </div>
-                                        </Popup>
-                                    </Marker>
-                                );
-                            })}
-                        </MapContainer>
+                      <RealTimeVehicleMap vehicles={realTimeData.vehicleTracking} />
                     </div>
                     
                     {/* Vehicle List */}

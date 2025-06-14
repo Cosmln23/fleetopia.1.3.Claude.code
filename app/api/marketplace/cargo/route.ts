@@ -1,39 +1,34 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 // GET all cargo offers with optional filtering
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const fromLocation = searchParams.get('fromLocation');
-  const toLocation = searchParams.get('toLocation');
-  const maxWeight = searchParams.get('maxWeight');
+  const from = searchParams.get('from');
+  const to = searchParams.get('to');
+  const weight = searchParams.get('weight');
+  const urgency = searchParams.get('urgency');
 
-  const where: any = {};
-
-  if (fromLocation) {
-    where.fromLocation = { contains: fromLocation, mode: 'insensitive' };
-  }
-  if (toLocation) {
-    where.toLocation = { contains: toLocation, mode: 'insensitive' };
-  }
-  if (maxWeight) {
-    where.weight = { lte: parseFloat(maxWeight) };
-  }
-
+  const filters: any = {};
+  if (from) filters.fromLocation = { contains: from, mode: 'insensitive' };
+  if (to) filters.toLocation = { contains: to, mode: 'insensitive' };
+  if (weight) filters.weight = { gte: parseFloat(weight) };
+  if (urgency) filters.urgency = urgency;
 
   try {
     const cargoOffers = await prisma.cargoOffer.findMany({
-      where,
+      where: filters,
       orderBy: {
         createdAt: 'desc',
       },
     });
     return NextResponse.json(cargoOffers);
   } catch (error) {
-    console.error('Error fetching cargo offers:', error);
-    return NextResponse.json({ message: 'Error fetching cargo offers' }, { status: 500 });
+    console.error('Failed to fetch cargo offers:', error);
+    return NextResponse.json(
+      { error: 'Failed to fetch cargo offers' },
+      { status: 500 }
+    );
   }
 }
 
@@ -79,11 +74,11 @@ export async function POST(request: Request) {
       },
     });
 
-    // Create a system alert for the AI Dispatcher
+    // Create a system alert
     await prisma.systemAlert.create({
       data: {
-        message: `New cargo posted: ${title} from ${fromLocation} to ${toLocation}.`,
-        type: urgency === 'high' ? 'urgent' : 'info',
+        message: `New cargo offer posted: ${newCargoOffer.title} from ${newCargoOffer.fromLocation} to ${newCargoOffer.toLocation}`,
+        type: 'new_offer',
       },
     });
 

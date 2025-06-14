@@ -1,31 +1,22 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const id = params.id;
-
+  const { id } = params;
   try {
-    const cargoOffer = await prisma.cargoOffer.findUnique({
-      where: { id },
-    });
-
-    if (!cargoOffer) {
-      return NextResponse.json({ message: 'Cargo offer not found' }, { status: 404 });
-    }
-
     await prisma.cargoOffer.delete({
       where: { id },
     });
-
-    return NextResponse.json({ message: 'Cargo offer deleted successfully' }, { status: 200 });
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error(`Error deleting cargo offer with id ${id}:`, error);
-    return NextResponse.json({ message: 'Error deleting cargo offer' }, { status: 500 });
+    console.error(`Failed to delete cargo offer ${id}:`, error);
+    return NextResponse.json(
+      { error: 'Failed to delete cargo offer' },
+      { status: 500 }
+    );
   }
 }
 
