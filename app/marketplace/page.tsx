@@ -90,6 +90,12 @@ export default function MarketplacePage() {
   const [activeTab, setActiveTab] = useState<'post-cargo' | 'find-cargo' | 'find-transport'>('find-cargo');
   const { toast } = useToast();
   
+  const [searchFilters, setSearchFilters] = useState({
+    fromLocation: '',
+    toLocation: '',
+    maxWeight: '',
+  });
+
   // State for the Post Cargo form
   const [newCargo, setNewCargo] = useState({
     title: '',
@@ -115,8 +121,16 @@ export default function MarketplacePage() {
 
   const fetchCargoOffers = async () => {
     setLoading(true);
+
+    const params = new URLSearchParams();
+    if (searchFilters.fromLocation) params.append('fromLocation', searchFilters.fromLocation);
+    if (searchFilters.toLocation) params.append('toLocation', searchFilters.toLocation);
+    if (searchFilters.maxWeight) params.append('maxWeight', searchFilters.maxWeight);
+    
+    const queryString = params.toString();
+
     try {
-      const response = await fetch('/api/marketplace/cargo');
+      const response = await fetch(`/api/marketplace/cargo?${queryString}`);
       if (!response.ok) {
         throw new Error('Failed to fetch cargo offers');
       }
@@ -175,6 +189,16 @@ export default function MarketplacePage() {
     ];
     setTransportRequests(mockTransportRequests);
   }, []);
+
+  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setSearchFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetchCargoOffers();
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -386,15 +410,18 @@ export default function MarketplacePage() {
               <CardDescription className="text-blue-200">Use the filters below to find the perfect load for your truck.</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                <Input placeholder="From (e.g., Bucharest)" className="bg-slate-700 border-slate-600 text-white" />
-                <Input placeholder="To (e.g., Berlin)" className="bg-slate-700 border-slate-600 text-white" />
-                <Input type="date" placeholder="Loading Date" className="bg-slate-700 border-slate-600 text-white" />
-                <Input placeholder="Max. Weight (kg)" className="bg-slate-700 border-slate-600 text-white" />
-                <Button className="bg-blue-600 hover:bg-blue-700 lg:col-span-1 xl:col-span-1 w-full">
+              <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <Input name="fromLocation" value={searchFilters.fromLocation} onChange={handleFilterChange} placeholder="From (e.g., Bucharest)" className="bg-slate-700 border-slate-600 text-white" />
+                <Input name="toLocation" value={searchFilters.toLocation} onChange={handleFilterChange} placeholder="To (e.g., Berlin)" className="bg-slate-700 border-slate-600 text-white" />
+                <Input name="maxWeight" type="number" value={searchFilters.maxWeight} onChange={handleFilterChange} placeholder="Max. Weight (kg)" className="bg-slate-700 border-slate-600 text-white" />
+                <div className="bg-slate-700 border-slate-600 text-white rounded-md flex items-center px-3">
+                  <Calendar className="h-4 w-4 text-slate-400 mr-2" />
+                  <span>Any Date</span>
+                </div>
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 lg:col-span-1 xl:col-span-1 w-full">
                   <Search className="mr-2 h-4 w-4" /> Search
                 </Button>
-              </div>
+              </form>
             </CardContent>
           </Card>
 

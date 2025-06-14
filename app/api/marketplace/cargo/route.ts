@@ -1,12 +1,31 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// GET all cargo offers
-export async function GET() {
+// GET all cargo offers with optional filtering
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const fromLocation = searchParams.get('fromLocation');
+  const toLocation = searchParams.get('toLocation');
+  const maxWeight = searchParams.get('maxWeight');
+
+  const where: any = {};
+
+  if (fromLocation) {
+    where.fromLocation = { contains: fromLocation, mode: 'insensitive' };
+  }
+  if (toLocation) {
+    where.toLocation = { contains: toLocation, mode: 'insensitive' };
+  }
+  if (maxWeight) {
+    where.weight = { lte: parseFloat(maxWeight) };
+  }
+
+
   try {
     const cargoOffers = await prisma.cargoOffer.findMany({
+      where,
       orderBy: {
         createdAt: 'desc',
       },
