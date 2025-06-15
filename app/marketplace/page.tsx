@@ -65,23 +65,22 @@ import { AssignOfferDialog } from '@/components/assign-offer-dialog';
 interface CargoOffer {
   id: string;
   title: string;
-  fromLocation: string;
-  toLocation: string;
-  distance: number | null;
+  fromAddress: string;
+  fromCountry: string;
+  toAddress: string;
+  toCountry: string;
   weight: number;
   volume: number | null;
-  cargoType: string;
+  cargoType: string | null;
   loadingDate: string;
   deliveryDate: string;
   price: number;
   priceType: string;
-  companyName: string;
-  companyRating: number | null;
+  companyName: string | null;
   requirements: string[];
-  truckType: string | null;
-  status: string;
   urgency: string;
   createdAt: string;
+  status: string;
 }
 
 interface TransportRequest {
@@ -599,9 +598,9 @@ export default function MarketplacePage() {
                     </div>
                     <div className="flex items-center text-sm text-blue-300">
                       <MapPin className="h-4 w-4 mr-2" />
-                      <span className="font-semibold">{offer.fromLocation}</span>
+                      <span className="font-semibold">{offer.fromCountry}</span>
                       <ArrowRight className="h-4 w-4 mx-2" />
-                      <span className="font-semibold">{offer.toLocation}</span>
+                      <span className="font-semibold">{offer.toCountry}</span>
                     </div>
                     <p className="text-xs text-slate-400 mt-1">Distance: {offer.distance} km</p>
                   </CardHeader>
@@ -758,8 +757,8 @@ export default function MarketplacePage() {
                    <Input name="companyName" value={offerToEdit.companyName} onChange={handleEditInputChange} placeholder="Company Name" className="bg-slate-700 border-slate-600"/>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Input name="fromLocation" value={offerToEdit.fromLocation} onChange={handleEditInputChange} placeholder="From" required className="bg-slate-700 border-slate-600"/>
-                  <Input name="toLocation" value={offerToEdit.toLocation} onChange={handleEditInputChange} placeholder="To" required className="bg-slate-700 border-slate-600"/>
+                  <Input name="fromCountry" value={offerToEdit.fromCountry} onChange={handleEditInputChange} placeholder="From" required className="bg-slate-700 border-slate-600"/>
+                  <Input name="toCountry" value={offerToEdit.toCountry} onChange={handleEditInputChange} placeholder="To" required className="bg-slate-700 border-slate-600"/>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <Input name="weight" type="number" value={offerToEdit.weight} onChange={handleEditInputChange} placeholder="Weight (kg)" required className="bg-slate-700 border-slate-600"/>

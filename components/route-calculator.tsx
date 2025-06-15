@@ -3,15 +3,21 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MapPin, Plus, Trash2, Route } from "lucide-react";
+import { MapPin, Plus, Trash2, Route, Loader2 } from "lucide-react";
 import { useState } from "react";
 
 interface RouteCalculatorProps {
-  onCalculate: (waypoints: string[]) => void;
+  isLoaded: boolean;
+  onCalculate: (waypoints: google.maps.LatLngLiteral[]) => void;
 }
 
-export function RouteCalculator({ onCalculate }: RouteCalculatorProps) {
+// We need to load the places library to use geocoding
+const libraries: "places"[] = ["places"];
+
+export function RouteCalculator({ isLoaded, onCalculate }: RouteCalculatorProps) {
   const [waypoints, setWaypoints] = useState<string[]>(["", ""]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleWaypointChange = (index: number, value: string) => {
     const newWaypoints = [...waypoints];
@@ -28,21 +34,57 @@ export function RouteCalculator({ onCalculate }: RouteCalculatorProps) {
     setWaypoints(newWaypoints);
   };
   
-  const handleCalculate = () => {
-    // Filter out empty waypoints before calculating
+  const handleCalculate = async () => {
     const nonEmptyWaypoints = waypoints.filter(wp => wp.trim() !== "");
-    if (nonEmptyWaypoints.length >= 2) {
-      onCalculate(nonEmptyWaypoints);
-    } else {
-      // Maybe show an error to the user
-      console.log("Please enter at least two points to calculate a route.");
+    if (nonEmptyWaypoints.length < 2 || !isLoaded) {
+      setError("Please enter at least two points to calculate a route.");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const geocoder = new window.google.maps.Geocoder();
+      const geocodedWaypointsPromises = nonEmptyWaypoints.map((address, index) =>
+        geocoder.geocode({ address }).then(result => ({ result, address, index }))
+      );
+
+      const geocoderResults = await Promise.all(geocodedWaypointsPromises);
+      
+      const coordinates = geocoderResults.map(({ result, address }) => {
+        if (result.results[0]) {
+          const location = result.results[0].geometry.location;
+          return { lat: location.lat(), lng: location.lng() };
+        }
+        throw new Error(`Could not find coordinates for: "${address}"`);
+      });
+
+      onCalculate(coordinates);
+
+    } catch (e) {
+      console.error("Geocoding failed", e);
+      setError(e instanceof Error ? e.message : "Failed to geocode addresses.");
+      onCalculate([]); // Clear previous route on error
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const clearAll = () => {
     setWaypoints(["", ""]);
     onCalculate([]); // Clear the route on the map
+    setError(null);
   };
+
+  if (!isLoaded) {
+    return (
+        <Card>
+            <CardHeader><CardTitle>Route Planner</CardTitle></CardHeader>
+            <CardContent><p>Loading route planner...</p></CardContent>
+        </Card>
+    );
+  }
 
   return (
     <Card>
@@ -62,28 +104,35 @@ export function RouteCalculator({ onCalculate }: RouteCalculatorProps) {
                   value={waypoint}
                   onChange={(e) => handleWaypointChange(index, e.target.value)}
                   className="pl-8"
+                  disabled={isLoading}
                 />
                 <MapPin className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               </div>
               {waypoints.length > 2 && (
-                <Button variant="ghost" size="icon" onClick={() => removeWaypoint(index)}>
+                <Button variant="ghost" size="icon" onClick={() => removeWaypoint(index)} disabled={isLoading}>
                   <Trash2 className="h-4 w-4 text-red-500" />
                 </Button>
               )}
             </div>
           ))}
         </div>
+        
+        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
+
         <div className="mt-4 space-y-2">
-           <Button variant="outline" size="sm" className="w-full" onClick={addWaypoint}>
+           <Button variant="outline" size="sm" className="w-full" onClick={addWaypoint} disabled={isLoading}>
               <Plus className="mr-2 h-4 w-4" />
               Add Stop
             </Button>
           <div className="flex justify-between items-center gap-2">
-            <Button variant="ghost" className="w-full text-muted-foreground" onClick={clearAll}>
+            <Button variant="ghost" className="w-full text-muted-foreground" onClick={clearAll} disabled={isLoading}>
                 <Trash2 className="mr-2 h-4 w-4" />
                 Clear
             </Button>
-            <Button className="w-full" onClick={handleCalculate}>Calculate Route</Button>
+            <Button className="w-full" onClick={handleCalculate} disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Calculate Route
+            </Button>
           </div>
         </div>
       </CardContent>

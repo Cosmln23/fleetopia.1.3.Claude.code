@@ -1,43 +1,36 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import dynamic from 'next/dynamic';
 import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
-import L from "leaflet";
+import { useJsApiLoader } from '@react-google-maps/api';
 
-// Import components
+// Import our new MapView and its types
+import MapView, { VehicleWithGps } from '@/components/MapView';
+
+// Import other components
 import { IntegrationStatusCard } from "@/components/integration-status-card";
 import { LiveAlerts } from "@/components/live-alerts";
 import { RouteCalculator } from "@/components/route-calculator";
-import { Vehicle } from '@prisma/client';
 
-// Re-defining the extended type here to solve the type mismatch
-type VehicleWithGps = Vehicle & {
-  lat: number;
-  lng: number;
-  driverName?: string;
-  currentRoute?: string;
-};
-
-// Dynamically import the map component
-const RealTimeVehicleMap = dynamic(() => import('@/components/real-time-vehicle-map'), {
-  ssr: false,
-  loading: () => (
-    <div className="h-[600px] w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
-      <p className="text-gray-500">Loading Map...</p>
-    </div>
-  )
-});
+// Centralize library loading
+const libraries: "places"[] = ["places"];
 
 function RealTimePageContent() {
   const [vehicles, setVehicles] = useState<VehicleWithGps[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [routeWaypoints, setRouteWaypoints] = useState<(string | L.LatLng)[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [routeWaypoints, setRouteWaypoints] = useState<google.maps.LatLngLiteral[]>([]);
   const [focusedVehicle, setFocusedVehicle] = useState<VehicleWithGps | null>(null);
 
   const searchParams = useSearchParams();
   const focusVehicleId = searchParams.get('focus');
+
+  // Centralized Google Maps API script loader
+  const { isLoaded: isMapScriptLoaded, loadError } = useJsApiLoader({
+    id: 'google-map-script', // A single ID for the entire page
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+    libraries,
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -61,7 +54,7 @@ function RealTimePageContent() {
         console.error(error);
         setVehicles([]);
       } finally {
-        setIsLoading(false);
+        setIsLoadingData(false);
       }
     };
 
@@ -70,6 +63,12 @@ function RealTimePageContent() {
 
     return () => clearInterval(interval);
   }, [focusVehicleId]);
+
+  if (loadError) {
+    return <div className="h-screen w-full flex items-center justify-center text-red-500"><p>Error loading Google Maps script. Please check the API key.</p></div>
+  }
+
+  const isLoading = isLoadingData || !isMapScriptLoaded;
 
   return (
     <main className="flex-1 p-4 sm:p-6">
@@ -83,16 +82,21 @@ function RealTimePageContent() {
           <div className="lg:col-span-2">
             {isLoading ? (
                <div className="h-[600px] w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
-                <p className="text-gray-500">Loading Vehicle Data...</p>
+                <p className="text-gray-500">Loading Vehicle Data & Map...</p>
                </div>
             ) : (
-              <RealTimeVehicleMap vehicles={vehicles} routeWaypoints={routeWaypoints} focusedVehicle={focusedVehicle} />
+              <MapView 
+                isLoaded={isMapScriptLoaded}
+                vehicles={vehicles} 
+                routeWaypoints={routeWaypoints} 
+                focusedVehicle={focusedVehicle} 
+              />
             )}
           </div>
 
           {/* Sidebar */}
           <aside className="space-y-6">
-            <RouteCalculator onCalculate={setRouteWaypoints} />
+            <RouteCalculator isLoaded={isMapScriptLoaded} onCalculate={setRouteWaypoints} />
             <IntegrationStatusCard />
             <LiveAlerts />
           </aside>
@@ -104,7 +108,7 @@ function RealTimePageContent() {
 
 export default function RealTimePage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="h-screen w-full flex items-center justify-center"><p>Loading Page...</p></div>}>
       <RealTimePageContent />
     </Suspense>
   );

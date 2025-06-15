@@ -16,8 +16,10 @@ export async function GET(request: NextRequest) {
 
   if (statusParam) {
     const statuses = statusParam.split(',');
-    // Basic validation to ensure they are valid enum values
-    const validStatuses = statuses.filter(s => validCargoStatuses.includes(s.toUpperCase()));
+    // Convert to uppercase FIRST, then filter for valid enum values
+    const validStatuses = statuses
+      .map(s => s.toUpperCase())
+      .filter(s => validCargoStatuses.includes(s));
     
     if (validStatuses.length > 0) {
        whereClause = {
