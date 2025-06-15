@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
-import { GoogleMap, Marker, InfoWindow, useGoogleMap, Polyline } from '@react-google-maps/api';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import { GoogleMap, Marker, InfoWindow, useGoogleMap, Polyline, useJsApiLoader } from '@react-google-maps/api';
 import { Vehicle, VehicleStatus } from '@/types';
+import { ROUTE_COLORS } from "@/lib/constants";
 
 // Define the missing GpsData type
 interface GpsData {
@@ -125,9 +126,10 @@ function MapView({ isLoaded, vehicles, focusedVehicle, directions, onMapLoad, se
           key={index}
           path={path}
           options={{
-            strokeColor: leg.color,
+            strokeColor: ROUTE_COLORS[index],
             strokeOpacity: 0.8,
             strokeWeight: 6,
+            geodesic: true,
           }}
         />
       );

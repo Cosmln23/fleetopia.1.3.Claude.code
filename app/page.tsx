@@ -36,7 +36,8 @@ import {
   Brain,
   ChevronDown,
   ChevronUp,
-  ClipboardList
+  ClipboardList,
+  Map
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -371,10 +372,10 @@ export default function FleetMindHome() {
                     <span>Track Fleet</span>
                   </Button>
                 </Link>
-                <Link href="/analytics">
+                <Link href="/real-time">
                   <Button variant="outline" className="w-full h-20 flex-col space-y-2">
-                    <BarChart3 className="w-6 h-6" />
-                    <span>View Analytics</span>
+                    <Map className="w-6 h-6" />
+                    <span>Real-time Map</span>
                   </Button>
                 </Link>
                 <Link href="/dispatch">

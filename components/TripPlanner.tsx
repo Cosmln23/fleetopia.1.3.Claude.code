@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { MapIcon, Route, X, ArrowUp, ArrowDown } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { ROUTE_COLORS } from "@/lib/constants";
 
 interface TripPlannerProps {
   onRouteCalculated: (
@@ -95,7 +97,10 @@ const TripPlanner: React.FC<TripPlannerProps> = ({
   };
   
   const addStop = () => {
-    if (stops.length >= 6) return; // Limit to 6 stops (5 legs)
+    if (stops.length >= 7) {
+      toast.warning("Maximum number of stops reached (7).");
+      return;
+    }
     const newStop: Stop = { id: uuidv4(), value: "" };
     const newStops = [...stops];
     newStops.splice(stops.length - 1, 0, newStop);
@@ -207,7 +212,7 @@ const TripPlanner: React.FC<TripPlannerProps> = ({
   }
 
   return (
-    <Card className="bg-[--card] text-[--card-foreground] shadow-lg">
+    <Card className="bg-[--card] text-[--card-foreground] shadow-lg border-0">
       <CardHeader>
         <CardTitle className="flex items-center text-xl">
           <MapIcon className="mr-3 h-6 w-6 text-[--accent]" />
@@ -219,14 +224,19 @@ const TripPlanner: React.FC<TripPlannerProps> = ({
           {stops.map((stop, index) => (
             <div key={stop.id} className="relative group">
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-lg w-6 text-center">{getStopLabel(index)}</span>
+                <span 
+                  className="font-bold text-lg w-6 text-center"
+                  style={{ color: ROUTE_COLORS[index] }}
+                >
+                  {getStopLabel(index)}
+                </span>
                 <Input
                   type="text"
                   placeholder={`Stop ${getStopLabel(index)}`}
                   value={stop.value}
                   onChange={(e) => handleInputChange(e, stop.id)}
                   onFocus={() => setActiveInput(stop.id)}
-                  className="flex-grow"
+                  className="flex-grow border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
                 <div className="flex space-x-0">
                     <Button variant="ghost" size="icon" onClick={() => moveStop(index, 'up')} disabled={index === 0}>
@@ -260,7 +270,7 @@ const TripPlanner: React.FC<TripPlannerProps> = ({
         </div>
 
         <div className="flex justify-between items-center mt-4">
-            <Button onClick={addStop} disabled={stops.length >= 6}>
+            <Button onClick={addStop} disabled={stops.length >= 7}>
               Add Stop
             </Button>
             <div className="space-x-2">
@@ -284,7 +294,12 @@ const TripPlanner: React.FC<TripPlannerProps> = ({
             <ScrollArea className="h-40">
               {legDetails.map((leg, index) => (
                 <div key={index} className="mb-3 p-2 rounded-md bg-[--secondary]/50">
-                  <p className="font-bold">{getLegLabel(index)}: {leg.start_address}</p>
+                  <p 
+                    className="font-bold"
+                    style={{ color: ROUTE_COLORS[index] }}
+                  >
+                    {getLegLabel(index)}: {leg.start_address}
+                  </p>
                   <p className="text-sm text-[--muted-foreground] -mt-1">{leg.end_address}</p>
                   <div className="flex justify-between text-sm mt-1">
                     <span>{leg.distance}</span>
