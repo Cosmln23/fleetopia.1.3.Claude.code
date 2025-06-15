@@ -7,6 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
+  Dialog,
+  DialogContent,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { 
   Truck, 
   MapPin, 
   Navigation, 
@@ -20,10 +25,12 @@ import {
   Users,
   Settings,
   Eye,
-  Zap
+  Zap,
+  PlusCircle
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
-import { VehicleForm } from '@/components/vehicle-form';
+import { AddVehicleForm } from '@/components/add-vehicle-form';
+import Link from 'next/link';
 
 interface Vehicle {
   id: string;
@@ -48,6 +55,8 @@ export default function FleetManagementPage() {
     idleVehicles: 0,
     maintenanceVehicles: 0,
   });
+
+  const [isAddVehicleOpen, setAddVehicleOpen] = useState(false);
 
   const fetchVehicleData = async () => {
     try {
@@ -126,7 +135,20 @@ export default function FleetManagementPage() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <VehicleForm onVehicleAdded={fetchVehicleData} />
+              <Dialog open={isAddVehicleOpen} onOpenChange={setAddVehicleOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <PlusCircle className="mr-2 h-4 w-4" /> Add Vehicle
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-slate-900 border-slate-700 text-white">
+                  <AddVehicleForm onVehicleAdded={() => {
+                    fetchVehicleData();
+                    setAddVehicleOpen(false);
+                  }} />
+                </DialogContent>
+              </Dialog>
+
               <Badge variant="outline" className="text-green-400 border-green-400">
                 <Activity className="w-4 h-4 mr-2" />
                 {fleetStats.activeVehicles} Active
@@ -261,10 +283,12 @@ export default function FleetManagementPage() {
                           </div>
                         </CardContent>
                         <div className="p-4 pt-0">
+                          <Link href={`/real-time?focus=${vehicle.id}`} passHref>
                             <Button variant="outline" className="w-full border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300">
-                              <Eye className="w-4 h-4 mr-2" />
-                              View Details
+                              <MapPin className="w-4 h-4 mr-2" />
+                              Show on Map
                             </Button>
+                          </Link>
                         </div>
                       </Card>
                     </motion.div>

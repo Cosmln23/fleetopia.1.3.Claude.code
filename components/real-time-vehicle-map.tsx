@@ -18,6 +18,7 @@ type VehicleWithGps = Vehicle & {
 interface RealTimeVehicleMapProps {
   vehicles: VehicleWithGps[];
   routeWaypoints: (string | L.LatLng)[];
+  focusedVehicle: VehicleWithGps | null;
 }
 
 const createCustomIcon = (status: string) => {
@@ -59,7 +60,7 @@ const createCustomIcon = (status: string) => {
   return null;
 };
 
-const RealTimeVehicleMap: React.FC<RealTimeVehicleMapProps> = ({ vehicles, routeWaypoints }) => {
+const RealTimeVehicleMap: React.FC<RealTimeVehicleMapProps> = ({ vehicles, routeWaypoints, focusedVehicle }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
   const markers = useRef<L.Marker[]>([]);
@@ -105,6 +106,24 @@ const RealTimeVehicleMap: React.FC<RealTimeVehicleMapProps> = ({ vehicles, route
     }
 
   }, [vehicles]);
+
+  useEffect(() => {
+    if (focusedVehicle && mapInstance.current) {
+      const markerToOpen = markers.current.find(m => {
+        const vehicle: VehicleWithGps = (m as any).vehicleData;
+        return vehicle && vehicle.id === focusedVehicle.id;
+      });
+
+      mapInstance.current.flyTo([focusedVehicle.lat, focusedVehicle.lng], 15, {
+        animate: true,
+        duration: 1.5
+      });
+
+      if (markerToOpen) {
+        markerToOpen.openPopup();
+      }
+    }
+  }, [focusedVehicle]);
 
   return (
     <div ref={mapRef} style={{ height: '600px', width: '100%' }} className="bg-slate-800 rounded-lg relative z-0">

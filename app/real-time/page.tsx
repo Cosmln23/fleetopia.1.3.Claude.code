@@ -2,7 +2,8 @@
 
 import { motion } from 'framer-motion';
 import dynamic from 'next/dynamic';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import L from "leaflet";
 
 // Import components
@@ -29,10 +30,14 @@ const RealTimeVehicleMap = dynamic(() => import('@/components/real-time-vehicle-
   )
 });
 
-export default function RealTimePage() {
+function RealTimePageContent() {
   const [vehicles, setVehicles] = useState<VehicleWithGps[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [routeWaypoints, setRouteWaypoints] = useState<(string | L.LatLng)[]>([]);
+  const [focusedVehicle, setFocusedVehicle] = useState<VehicleWithGps | null>(null);
+
+  const searchParams = useSearchParams();
+  const focusVehicleId = searchParams.get('focus');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -42,7 +47,16 @@ export default function RealTimePage() {
           throw new Error('Failed to fetch real-time data');
         }
         const data = await response.json();
-        setVehicles(data.vehicles || []);
+        const fetchedVehicles = data.vehicles || [];
+        setVehicles(fetchedVehicles);
+
+        if (focusVehicleId) {
+          const vehicleToFocus = fetchedVehicles.find((v: VehicleWithGps) => v.id === focusVehicleId);
+          if (vehicleToFocus) {
+            setFocusedVehicle(vehicleToFocus);
+          }
+        }
+
       } catch (error) {
         console.error(error);
         setVehicles([]);
@@ -52,10 +66,10 @@ export default function RealTimePage() {
     };
 
     fetchData();
-    const interval = setInterval(fetchData, 15000); // Refresh data every 15 seconds
+    const interval = setInterval(fetchData, 15000); 
 
     return () => clearInterval(interval);
-  }, []);
+  }, [focusVehicleId]);
 
   return (
     <main className="flex-1 p-4 sm:p-6">
@@ -72,7 +86,7 @@ export default function RealTimePage() {
                 <p className="text-gray-500">Loading Vehicle Data...</p>
                </div>
             ) : (
-              <RealTimeVehicleMap vehicles={vehicles} routeWaypoints={routeWaypoints} />
+              <RealTimeVehicleMap vehicles={vehicles} routeWaypoints={routeWaypoints} focusedVehicle={focusedVehicle} />
             )}
           </div>
 
@@ -85,5 +99,13 @@ export default function RealTimePage() {
         </div>
       </motion.div>
     </main>
+  );
+}
+
+export default function RealTimePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <RealTimePageContent />
+    </Suspense>
   );
 } 
