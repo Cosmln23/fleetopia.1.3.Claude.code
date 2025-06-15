@@ -1,5 +1,26 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const status = searchParams.get('status');
+
+  try {
+    const vehicles = await prisma.vehicle.findMany({
+      where: status ? { status: { equals: status as any } } : {},
+      orderBy: {
+        name: 'asc',
+      },
+    });
+    return NextResponse.json(vehicles);
+  } catch (error) {
+    console.error('Failed to fetch vehicles:', error);
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal Server Error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}
 
 export async function POST(request: Request) {
   try {

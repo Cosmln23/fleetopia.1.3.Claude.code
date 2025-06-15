@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -30,6 +30,7 @@ import {
   Plus,
   Trash2,
   FileEdit,
+  Hand,
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast"
 import { Textarea } from '@/components/ui/textarea';
@@ -59,6 +60,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { AssignOfferDialog } from '@/components/assign-offer-dialog';
 
 interface CargoOffer {
   id: string;
@@ -140,6 +142,7 @@ export default function MarketplacePage() {
   const [posting, setPosting] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState<string | null>(null);
   const [offerToEdit, setOfferToEdit] = useState<CargoOffer | null>(null);
+  const [offerToAssign, setOfferToAssign] = useState<CargoOffer | null>(null);
   const [editing, setEditing] = useState(false);
 
   const fetchCargoOffers = async () => {
@@ -338,6 +341,43 @@ export default function MarketplacePage() {
       case 'medium': return 'bg-yellow-500 text-black';
       case 'low': return 'bg-green-500 text-white';
       default: return 'bg-gray-500 text-white';
+    }
+  };
+
+  const handleAssignOffer = async (vehicleId: string) => {
+    if (!offerToAssign) return;
+
+    try {
+      const response = await fetch('/api/assignments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cargoOfferId: offerToAssign.id,
+          vehicleId: vehicleId,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'Failed to assign the offer.');
+      }
+
+      toast({
+        title: "Success!",
+        description: `Offer "${offerToAssign.title}" has been assigned.`,
+        className: "bg-green-500 text-white",
+      });
+
+      setOfferToAssign(null); // Close the dialog
+      fetchCargoOffers(); // Refresh the list of offers
+
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Assignment Failed",
+        description: error instanceof Error ? error.message : "An unknown error occurred.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -583,21 +623,29 @@ export default function MarketplacePage() {
                   </CardContent>
                   <div className="p-4 bg-slate-900/50 rounded-b-lg mt-auto">
                     <div className="flex justify-between items-center">
-                      <div>
+                       <div>
                         <p className="text-sm font-semibold text-slate-300">{offer.companyName}</p>
                         <div className="flex items-center text-xs text-slate-400">
                           <Star className="h-3 w-3 mr-1 text-yellow-400" /> {offer.companyRating || 'New'}
-                          {/* Verified status and total transports can be added later if needed */}
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="text-xl font-bold text-green-400">{getPriceDisplay(offer)}</p>
                         <div className="flex items-center gap-2 mt-1">
-                           <Button size="sm" className="bg-blue-600 hover:bg-blue-700 h-8 flex-1">Contact</Button>
+                           <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 bg-green-800/70 hover:bg-green-700 border-slate-600"
+                              title="Assign Offer"
+                              onClick={() => setOfferToAssign(offer)}
+                           >
+                            <Hand className="h-4 w-4" />
+                           </Button>
                            <Button
                               variant="outline"
                               size="icon"
                               className="h-8 w-8 bg-slate-800/70 hover:bg-slate-700 border-slate-600"
+                              title="Edit Offer"
                               onClick={() => setOfferToEdit(offer)}
                            >
                             <FileEdit className="h-4 w-4" />
@@ -606,6 +654,7 @@ export default function MarketplacePage() {
                               variant="destructive" 
                               size="icon" 
                               className="h-8 w-8 bg-red-800/70 hover:bg-red-700"
+                              title="Delete Offer"
                               onClick={() => setOfferToDelete(offer.id)}
                             >
                              <Trash2 className="h-4 w-4"/>
@@ -731,6 +780,11 @@ export default function MarketplacePage() {
           )}
         </DialogContent>
       </Dialog>
+      <AssignOfferDialog
+        offer={offerToAssign}
+        onClose={() => setOfferToAssign(null)}
+        onAssign={handleAssignOffer}
+      />
     </div>
   );
 }

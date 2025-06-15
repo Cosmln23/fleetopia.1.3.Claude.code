@@ -262,7 +262,7 @@ model AgentAPIConnection {
 model CargoOffer {
   id            String    @id @default(cuid())
   userId        String?
-  user          User?     @relation(fields: [userId], references: [id])
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
   title         String
   companyName   String?
   fromAddress   String

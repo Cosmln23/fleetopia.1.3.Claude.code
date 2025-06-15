@@ -1,21 +1,21 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
 
 // GET all cargo offers with optional filtering
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const from = searchParams.get('from');
-  const to = searchParams.get('to');
-  const weight = searchParams.get('weight');
-  const urgency = searchParams.get('urgency');
+  const fromLocation = searchParams.get('fromLocation');
+  const toLocation = searchParams.get('toLocation');
+  const maxWeight = searchParams.get('maxWeight');
 
-  const filters: any = {};
-  if (from) filters.fromLocation = { contains: from, mode: 'insensitive' };
-  if (to) filters.toLocation = { contains: to, mode: 'insensitive' };
-  if (weight) filters.weight = { gte: parseFloat(weight) };
-  if (urgency) filters.urgency = urgency;
+  const filters: any = {
+    status: 'NEW'
+  };
 
+  if (fromLocation) filters.fromLocation = { contains: fromLocation, mode: 'insensitive' };
+  if (toLocation) filters.toLocation = { contains: toLocation, mode: 'insensitive' };
+  if (maxWeight) filters.weight = { gte: parseFloat(maxWeight) };
+  
   try {
     const cargoOffers = await prisma.cargoOffer.findMany({
       where: filters,
@@ -80,7 +80,6 @@ export async function POST(request: Request) {
         companyName: companyName || 'Private User',
         requirements: requirements || [],
         urgency,
-        userId: null
       },
     });
 

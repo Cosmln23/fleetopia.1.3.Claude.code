@@ -299,30 +299,31 @@ export default function DispatcherAIPage() {
       }
       
       try {
-        const response = await fetch('/api/dispatcher/create-route', {
+        // UNIFIED LOGIC: Use the same transactional assignment endpoint as the manual flow
+        const response = await fetch('/api/assignments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             vehicleId: alert.chosenVehicleId,
             cargoOfferId: alert.relatedId,
-            proposal: alert.proposal,
           }),
         });
 
         if (!response.ok) {
-          throw new Error('Failed to create route on the server.');
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Failed to assign on the server.');
         }
 
         toast({
-          title: "Action Successful",
-          description: "A new route has been created and assigned.",
+          title: "Assignment Successful",
+          description: "The AI's proposed assignment has been confirmed and executed.",
         });
 
-      } catch (error) {
+      } catch (error: any) {
         console.error("Failed to accept proposal:", error);
         toast({
-          title: "Action Failed",
-          description: "An error occurred while creating the route.",
+          title: "Assignment Failed",
+          description: error.message || "An error occurred while assigning the vehicle.",
           variant: "destructive",
         });
          // Revert optimistic update
