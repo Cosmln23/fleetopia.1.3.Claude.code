@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   DialogHeader,
@@ -20,23 +20,17 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 
-interface VehicleFormData {
-  name: string;
-  type: string;
-  licensePlate: string;
-  driverName: string;
-  status: 'active' | 'idle' | 'maintenance' | 'offline';
-  lat: number;
-  lng: number;
-  currentRoute: string;
-}
+// Re-using the Vehicle type from the management page
+// A centralized types file would be a good refactor for later
+import { type Vehicle } from '../app/fleet-management/page';
 
 interface AddVehicleFormProps {
   onVehicleAdded: () => void;
+  initialData?: Vehicle | null;
 }
 
-export function AddVehicleForm({ onVehicleAdded }: AddVehicleFormProps) {
-  const [formData, setFormData] = useState<Partial<VehicleFormData>>({
+export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormProps) {
+  const [formData, setFormData] = useState<Partial<Vehicle>>({
     name: '',
     type: 'Truck',
     licensePlate: '',
@@ -47,6 +41,23 @@ export function AddVehicleForm({ onVehicleAdded }: AddVehicleFormProps) {
     currentRoute: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const isEditMode = !!initialData;
+
+  useEffect(() => {
+    if (isEditMode && initialData) {
+      setFormData({
+        name: initialData.name,
+        type: initialData.type,
+        licensePlate: initialData.licensePlate,
+        driverName: initialData.driverName,
+        status: initialData.status,
+        lat: initialData.lat,
+        lng: initialData.lng,
+        currentRoute: initialData.currentRoute,
+      });
+    }
+  }, [initialData, isEditMode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -67,19 +78,24 @@ export function AddVehicleForm({ onVehicleAdded }: AddVehicleFormProps) {
       return;
     }
 
+    const apiEndpoint = isEditMode ? `/api/vehicles/${initialData.id}` : '/api/vehicles';
+    const httpMethod = isEditMode ? 'PUT' : 'POST';
+    const successMessage = isEditMode ? 'Vehicle updated successfully!' : 'Vehicle added successfully!';
+    const errorMessage = isEditMode ? 'Failed to update vehicle' : 'Failed to create vehicle';
+
     try {
-      const response = await fetch('/api/vehicles', {
-        method: 'POST',
+      const response = await fetch(apiEndpoint, {
+        method: httpMethod,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create vehicle');
+        throw new Error(errorData.error || errorMessage);
       }
 
-      toast.success('Vehicle added successfully!');
+      toast.success(successMessage);
       onVehicleAdded();
     } catch (error) {
       console.error(error);
@@ -92,9 +108,11 @@ export function AddVehicleForm({ onVehicleAdded }: AddVehicleFormProps) {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Add New Vehicle</DialogTitle>
+        <DialogTitle>{isEditMode ? 'Edit Vehicle' : 'Add New Vehicle'}</DialogTitle>
         <DialogDescription>
-          Fill in the details below to add a new vehicle to your fleet.
+          {isEditMode 
+            ? 'Update the details for this vehicle.' 
+            : 'Fill in the details below to add a new vehicle to your fleet.'}
         </DialogDescription>
       </DialogHeader>
       <form onSubmit={handleSubmit}>
@@ -152,7 +170,9 @@ export function AddVehicleForm({ onVehicleAdded }: AddVehicleFormProps) {
             <Button type="button" variant="secondary">Cancel</Button>
           </DialogClose>
           <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Adding...' : 'Add Vehicle'}
+            {isSubmitting 
+              ? (isEditMode ? 'Saving...' : 'Adding...')
+              : (isEditMode ? 'Save Changes' : 'Add Vehicle')}
           </Button>
         </DialogFooter>
       </form>

@@ -1,68 +1,46 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-// GET handler to fetch a single vehicle's data (useful for pre-populating forms)
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// GET /api/vehicles/[id] - Not typically needed, but good practice to have
+export async function GET(request: Request, { params }: { params: { id: string } }) {
   try {
     const vehicle = await prisma.vehicle.findUnique({
       where: { id: params.id },
     });
-
     if (!vehicle) {
-      return new NextResponse(JSON.stringify({ error: 'Vehicle not found' }), {
-        status: 404,
-        headers: { 'Content-Type': 'application/json' },
-      });
+      return new NextResponse(JSON.stringify({ error: 'Vehicle not found' }), { status: 404 });
     }
-
     return NextResponse.json(vehicle);
   } catch (error) {
-    console.error('Error fetching vehicle:', error);
-    return new NextResponse(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    console.error('Failed to fetch vehicle:', error);
+    return new NextResponse(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
   }
 }
 
-// PUT handler to update a vehicle's data
-export async function PUT(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+// PUT /api/vehicles/[id] - To update a vehicle's details or status
+export async function PUT(request: Request, { params }: { params: { id: string } }) {
   try {
     const body = await request.json();
-    const { status, location } = body;
-
-    // Basic validation
-    if (!status && !location) {
-      return new NextResponse(
-        JSON.stringify({ error: 'At least one field to update must be provided' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const dataToUpdate: { status?: string, lat?: number, lng?: number } = {};
-    if (status) dataToUpdate.status = status;
-    if (location && typeof location.lat === 'number' && typeof location.lng === 'number') {
-      dataToUpdate.lat = location.lat;
-      dataToUpdate.lng = location.lng;
-    }
-
     const updatedVehicle = await prisma.vehicle.update({
       where: { id: params.id },
-      data: dataToUpdate,
+      data: body,
     });
-
     return NextResponse.json(updatedVehicle);
   } catch (error) {
-    console.error('Error updating vehicle:', error);
-    return new NextResponse(JSON.stringify({ error: 'Internal server error' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' },
+    console.error(`Failed to update vehicle ${params.id}:`, error);
+    return new NextResponse(JSON.stringify({ error: 'Failed to update vehicle' }), { status: 500 });
+  }
+}
+
+// DELETE /api/vehicles/[id] - To delete a vehicle
+export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+  try {
+    await prisma.vehicle.delete({
+      where: { id: params.id },
     });
+    return new NextResponse(null, { status: 204 }); // 204 No Content for successful deletion
+  } catch (error) {
+    console.error(`Failed to delete vehicle ${params.id}:`, error);
+    return new NextResponse(JSON.stringify({ error: 'Failed to delete vehicle' }), { status: 500 });
   }
 } 

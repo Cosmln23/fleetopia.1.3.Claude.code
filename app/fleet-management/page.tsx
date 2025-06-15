@@ -11,6 +11,17 @@ import {
   DialogContent,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent
+} from "@/components/ui/dropdown-menu";
 import { 
   Truck, 
   MapPin, 
@@ -26,11 +37,16 @@ import {
   Settings,
   Eye,
   Zap,
-  PlusCircle
+  PlusCircle,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+  ToggleRight
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { AddVehicleForm } from '@/components/add-vehicle-form';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface Vehicle {
   id: string;
@@ -57,6 +73,8 @@ export default function FleetManagementPage() {
   });
 
   const [isAddVehicleOpen, setAddVehicleOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
+  const [isEditModalOpen, setEditModalOpen] = useState(false);
 
   const fetchVehicleData = async () => {
     try {
@@ -115,6 +133,77 @@ export default function FleetManagementPage() {
     }
   };
 
+  const handleStatusChange = async (vehicleId: string, status: string) => {
+    const promise = fetch(`/api/vehicles/${vehicleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    }).then(response => {
+      if (!response.ok) {
+        throw new Error('Failed to update status.');
+      }
+      return response.json();
+    });
+
+    toast.promise(promise, {
+      loading: 'Updating status...',
+      success: (data) => {
+        fetchVehicleData(); // Refresh data to show changes
+        return `Vehicle status updated to ${status}.`;
+      },
+      error: 'Error updating status.',
+    });
+  };
+
+  const handleEdit = (vehicle: Vehicle) => {
+    setEditingVehicle(vehicle);
+    setEditModalOpen(true);
+  };
+
+  const handleDelete = (vehicleId: string) => {
+    const promise = () => new Promise(async (resolve, reject) => {
+      const response = await fetch(`/api/vehicles/${vehicleId}`, {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        resolve({ success: true });
+      } else {
+        reject({ error: true });
+      }
+    });
+
+    toast.warning('Are you sure you want to delete this vehicle?', {
+      classNames: {
+        toast: 'bg-slate-900 border-2 border-red-500/50 text-white',
+        actionButton: 'bg-red-700 hover:bg-red-800 text-white',
+        cancelButton: 'bg-slate-700 hover:bg-slate-800 text-white',
+      },
+      action: {
+        label: 'Delete',
+        onClick: () => {
+          toast.promise(promise(), {
+            loading: 'Deleting vehicle...',
+            success: () => {
+              fetchVehicleData();
+              return 'Vehicle deleted successfully.';
+            },
+            error: 'Failed to delete vehicle.',
+          });
+        },
+      },
+      cancel: {
+        label: 'Cancel',
+      },
+    });
+  };
+
+  const onFormSubmit = () => {
+    fetchVehicleData();
+    setAddVehicleOpen(false);
+    setEditModalOpen(false);
+    setEditingVehicle(null);
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="container mx-auto px-6 py-8">
@@ -142,10 +231,7 @@ export default function FleetManagementPage() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="bg-slate-900 border-slate-700 text-white">
-                  <AddVehicleForm onVehicleAdded={() => {
-                    fetchVehicleData();
-                    setAddVehicleOpen(false);
-                  }} />
+                  <AddVehicleForm onVehicleAdded={onFormSubmit} />
                 </DialogContent>
               </Dialog>
 
@@ -254,21 +340,54 @@ export default function FleetManagementPage() {
                         <CardHeader>
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-lg text-white">{vehicle.name}</CardTitle>
-                            <Badge className={`px-2 py-1 text-xs ${getStatusColor(vehicle.status)}`}>
-                              {getStatusText(vehicle.status)}
-                            </Badge>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                  <span className="sr-only">Open menu</span>
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700 text-slate-300">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => handleEdit(vehicle)}>
+                                  <Pencil className="mr-2 h-4 w-4" />
+                                  <span>Edit</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleDelete(vehicle.id)}>
+                                  <Trash2 className="mr-2 h-4 w-4" />
+                                  <span>Delete</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator className="bg-slate-700" />
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <ToggleRight className="mr-2 h-4 w-4" />
+                                    <span>Change Status</span>
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent className="bg-slate-800 border-slate-700 text-slate-300">
+                                    <DropdownMenuItem onClick={() => handleStatusChange(vehicle.id, 'active')}>Active</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleStatusChange(vehicle.id, 'idle')}>Idle</DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleStatusChange(vehicle.id, 'maintenance')}>Maintenance</DropdownMenuItem>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                           <CardDescription className="text-slate-400">{vehicle.licensePlate} • {vehicle.type}</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-grow space-y-4">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-400">
-                              <Users className="w-5 h-5" />
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-400">
+                                <Users className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-white">{vehicle.driverName}</p>
+                                <p className="text-sm text-slate-400">Driver</p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-medium text-white">{vehicle.driverName}</p>
-                              <p className="text-sm text-slate-400">Driver</p>
-                            </div>
+                             <Badge className={`px-2 py-1 text-xs ${getStatusColor(vehicle.status)}`}>
+                                {getStatusText(vehicle.status)}
+                              </Badge>
                           </div>
 
                           <div className="space-y-3 pt-2">
@@ -400,6 +519,16 @@ export default function FleetManagementPage() {
             </TabsContent>
           </Tabs>
         </motion.div>
+
+        {/* Edit Vehicle Dialog */}
+        <Dialog open={isEditModalOpen} onOpenChange={setEditModalOpen}>
+          <DialogContent className="bg-slate-900 border-slate-700 text-white">
+            <AddVehicleForm 
+              onVehicleAdded={onFormSubmit}
+              initialData={editingVehicle}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
