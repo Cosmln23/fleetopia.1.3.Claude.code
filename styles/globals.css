@@ -1,0 +1,134 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 222.2 84% 4.9%;
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 215 20.2% 65.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Print-specific styles */
+@media print {
+  body {
+    background-color: #fff;
+    color: #000;
+  }
+  .print\:hidden {
+    display: none;
+  }
+  .print\:block {
+    display: block;
+  }
+  main, .main-container { /* Adjust your main content container selector */
+    padding: 0;
+    margin: 0;
+    border: none;
+    box-shadow: none;
+  }
+  aside { /* Hide side navigation if you have one */
+    display: none;
+  }
+
+  .print\:p-0 { padding: 0 !important; }
+  .print\:m-0 { margin: 0 !important; }
+  .print\:max-w-full { max-width: 100% !important; }
+  .print\:text-2xl { font-size: 1.875rem !important; line-height: 2.25rem !important; }
+  .print\:text-lg { font-size: 1.125rem !important; line-height: 1.75rem !important; }
+  .print\:text-sm { font-size: 0.875rem !important; line-height: 1.25rem !important; }
+  .print\:text-base { font-size: 1rem !important; line-height: 1.5rem !important; }
+  .print\:mb-4 { margin-bottom: 1rem !important; }
+  .print\:space-x-2 > :not([hidden]) ~ :not([hidden]) {
+    margin-right: calc(0.5rem * var(--tw-space-x-reverse));
+    margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));
+  }
+  .print\:w-5 { width: 1.25rem !important; }
+  .print\:h-5 { height: 1.25rem !important; }
+  .print\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+  .print\:col-span-1 { grid-column: span 1 / span 1 !important; }
+  .print\:col-span-2 { grid-column: span 2 / span 2 !important; }
+  .print\:gap-4 { gap: 1rem !important; }
+  .print\:mt-4 { margin-top: 1rem !important; }
+  .print\:space-y-2 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+  }
+   .print\:space-y-3 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0.75rem * var(--tw-space-y-reverse));
+  }
+  .print\:shadow-none { box-shadow: none !important; }
+  .print\:border { border-width: 1px !important; }
+  
+  @page {
+    size: A4;
+    margin: 1cm;
+  }
+} 

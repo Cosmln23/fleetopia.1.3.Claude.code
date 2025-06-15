@@ -20,6 +20,7 @@ import {
   Loader,
   ServerCrash,
 } from 'lucide-react';
+import Link from 'next/link';
 
 // Define the type for a Job based on the expected API response
 interface Job {
@@ -135,7 +136,9 @@ export default function DispatchPage() {
               </TableCell>
               <TableCell>{getStatusBadge(job.status)}</TableCell>
               <TableCell>
-                <Button variant="outline" size="sm">View Details</Button>
+                <Link href={`/dispatch/${job.id}`} passHref>
+                  <Button variant="outline" size="sm">View Details</Button>
+                </Link>
               </TableCell>
             </TableRow>
           ))}
