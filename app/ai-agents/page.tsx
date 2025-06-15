@@ -8,7 +8,7 @@ import {
   FileCheck, Calculator, Users, DollarSign, Clock, MapPin, Navigation,
   Phone, MessageSquare, Calendar, Bell, CheckCircle, ArrowRight,
   BarChart3, Route, Fuel, Eye, Headphones, Radio, Monitor,
-  AlertTriangle, RefreshCw, Send, Map, Layers, Timer, Award
+  AlertTriangle, RefreshCw, Send, Map, Layers, Timer, Award, Inbox
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -60,9 +60,17 @@ interface SystemConnection {
 interface SystemAlert {
   id: string;
   message: string;
-  type: 'info' | 'warning' | 'urgent';
+  type: 'info' | 'warning' | 'urgent' | 'cargo';
   createdAt: string;
+  isProcessed: boolean;
+  relatedId?: string;
 }
+
+type AlertWithProposal = SystemAlert & { 
+  proposal?: string;
+  proposalStatus?: 'accepted' | 'rejected';
+  chosenVehicleId?: string | null;
+};
 
 export default function DispatcherAIPage() {
   const [agent, setAgent] = useState<DispatcherAgent>({
@@ -157,7 +165,7 @@ export default function DispatcherAIPage() {
     { system: 'API Integrations', status: 'connected', lastSync: '14:30:55', dataPoints: 234, icon: Zap }
   ]);
 
-  const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([]);
+  const [systemAlerts, setSystemAlerts] = useState<AlertWithProposal[]>([]);
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(false);
@@ -165,7 +173,8 @@ export default function DispatcherAIPage() {
   const [newMessage, setNewMessage] = useState('');
 
   useEffect(() => {
-    // Simulate real-time updates
+    fetchSystemAlerts(); 
+
     const interval = setInterval(() => {
       updateOperationsProgress();
       updateSystemConnections();
@@ -212,6 +221,121 @@ export default function DispatcherAIPage() {
       }
     } catch (error) {
       console.error("Failed to fetch system alerts", error);
+    }
+  };
+
+  const handleAnalyze = async (alertId: string, cargoOfferId: string | undefined) => {
+    if (!cargoOfferId) {
+      toast({ title: "Analysis Error", description: "No related cargo offer found for this alert.", variant: "destructive" });
+      return;
+    }
+
+    const { id } = toast({
+      title: "Analyzing Offer",
+      description: "The AI is processing the cargo offer...",
+    });
+
+    try {
+      const response = await fetch('/api/ai/analyze-cargo-offer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cargoOfferId }),
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Analysis request failed.');
+      }
+
+      const data = await response.json();
+
+      toast({
+        id,
+        title: "Analysis Complete",
+        description: "AI has generated a proposal.",
+        variant: "default",
+      });
+
+      setSystemAlerts(prevAlerts => prevAlerts.map(alert =>
+        alert.id === alertId ? { 
+          ...alert, 
+          proposal: data.proposal, 
+          isProcessed: true,
+          chosenVehicleId: data.chosenVehicleId 
+        } : alert
+      ));
+
+    } catch (err: any) {
+      toast({
+        id,
+        title: "Analysis Failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleProposalAction = async (alertId: string, action: 'accepted' | 'rejected') => {
+    const alert = systemAlerts.find(a => a.id === alertId);
+    if (!alert) return;
+
+    // Optimistically update the UI
+    setSystemAlerts(prevAlerts => prevAlerts.map(a =>
+      a.id === alertId ? { ...a, proposalStatus: action } : a
+    ));
+
+    if (action === 'accepted') {
+      if (!alert.chosenVehicleId || !alert.relatedId) {
+        toast({
+          title: "Action Failed",
+          description: "Cannot create route due to missing vehicle or cargo offer information.",
+          variant: "destructive",
+        });
+        // Revert optimistic update
+        setSystemAlerts(prevAlerts => prevAlerts.map(a =>
+          a.id === alertId ? { ...a, proposalStatus: undefined } : a
+        ));
+        return;
+      }
+      
+      try {
+        const response = await fetch('/api/dispatcher/create-route', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vehicleId: alert.chosenVehicleId,
+            cargoOfferId: alert.relatedId,
+            proposal: alert.proposal,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create route on the server.');
+        }
+
+        toast({
+          title: "Action Successful",
+          description: "A new route has been created and assigned.",
+        });
+
+      } catch (error) {
+        console.error("Failed to accept proposal:", error);
+        toast({
+          title: "Action Failed",
+          description: "An error occurred while creating the route.",
+          variant: "destructive",
+        });
+         // Revert optimistic update
+        setSystemAlerts(prevAlerts => prevAlerts.map(a =>
+          a.id === alertId ? { ...a, proposalStatus: undefined } : a
+        ));
+      }
+
+    } else { // 'rejected'
+        toast({
+          title: `Proposal Rejected`,
+          description: `The AI proposal has been marked as rejected.`,
+        });
     }
   };
 
@@ -299,7 +423,7 @@ export default function DispatcherAIPage() {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-slate-800/50 border border-slate-700">
+          <TabsList className="grid w-full grid-cols-5 bg-slate-800/50 border border-slate-700">
             <TabsTrigger value="dashboard" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <Monitor className="w-4 h-4 mr-2" />
               Dashboard
@@ -307,6 +431,10 @@ export default function DispatcherAIPage() {
             <TabsTrigger value="operations" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <Activity className="w-4 h-4 mr-2" />
               Operations
+            </TabsTrigger>
+            <TabsTrigger value="inbox" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
+              <Inbox className="w-4 h-4 mr-2" />
+              Alerts & Inbox
             </TabsTrigger>
             <TabsTrigger value="communications" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
               <MessageSquare className="w-4 h-4 mr-2" />
@@ -463,6 +591,88 @@ export default function DispatcherAIPage() {
                 </div>
               </div>
             </motion.div>
+          </TabsContent>
+
+          {/* Alerts & Inbox Tab */}
+          <TabsContent value="inbox" className="mt-6">
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-white flex items-center">
+                  <Inbox className="w-5 h-5 mr-2 text-blue-400" />
+                  System Alerts Inbox
+                </CardTitle>
+                <CardDescription className="text-slate-400">
+                  Incoming alerts and events requiring dispatcher attention.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {systemAlerts.length > 0 ? (
+                    systemAlerts.map((alert) => (
+                      <div key={alert.id} className="p-4 bg-slate-700/30 rounded-lg flex flex-col items-start">
+                        <div className="w-full flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="p-2 bg-blue-500/20 rounded-lg">
+                              {alert.type === 'cargo' ? <Package className="w-5 h-5 text-blue-400" /> : <AlertCircle className="w-5 h-5 text-yellow-400" />}
+                            </div>
+                            <div>
+                              <p className="font-medium text-white">{alert.message}</p>
+                              <p className="text-xs text-slate-400">Received at: {new Date(alert.createdAt).toLocaleString()}</p>
+                            </div>
+                          </div>
+                          {!alert.isProcessed && (
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="border-blue-500 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
+                              onClick={() => handleAnalyze(alert.id, alert.relatedId)}
+                              disabled={alert.type !== 'cargo'}
+                            >
+                              <Zap className="w-4 h-4 mr-2" />
+                              Analyze & Propose
+                            </Button>
+                          )}
+                        </div>
+                        {alert.proposal && (
+                          <div className="mt-4 p-4 bg-primary/10 rounded-lg">
+                            <p className="font-semibold text-primary">AI Proposal:</p>
+                            <p className="text-sm text-foreground">{alert.proposal}</p>
+                            
+                            {!alert.proposalStatus && (
+                               <div className="mt-4 flex space-x-2">
+                                <Button size="sm" onClick={() => handleProposalAction(alert.id, 'accepted')}>
+                                  <CheckCircle className="mr-2 h-4 w-4" /> Accept
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => handleProposalAction(alert.id, 'rejected')}>
+                                  <AlertCircle className="mr-2 h-4 w-4" /> Reject
+                                </Button>
+                              </div>
+                            )}
+
+                            {alert.proposalStatus === 'accepted' && (
+                              <div className="mt-4 text-green-600 flex items-center">
+                                <CheckCircle className="mr-2 h-4 w-4" /> Proposal Accepted
+                              </div>
+                            )}
+                             {alert.proposalStatus === 'rejected' && (
+                              <div className="mt-4 text-red-600 flex items-center">
+                                <AlertCircle className="mr-2 h-4 w-4" /> Proposal Rejected
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-12 text-slate-400">
+                      <Bell className="w-12 h-12 mx-auto mb-4 text-slate-600" />
+                      <h3 className="text-xl font-semibold">All Quiet</h3>
+                      <p>There are no new system alerts.</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Operations Tab */}

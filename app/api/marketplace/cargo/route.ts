@@ -38,8 +38,12 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       title,
-      fromLocation,
-      toLocation,
+      fromAddress,
+      fromCountry,
+      fromPostalCode,
+      toAddress,
+      toCountry,
+      toPostalCode,
       weight,
       volume,
       cargoType,
@@ -52,15 +56,19 @@ export async function POST(request: Request) {
       urgency,
     } = body;
 
-    if (!title || !fromLocation || !toLocation || !weight || !loadingDate || !deliveryDate || !price) {
+    if (!title || !fromAddress || !fromCountry || !toAddress || !toCountry || !weight || !loadingDate || !deliveryDate || !price) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
 
     const newCargoOffer = await prisma.cargoOffer.create({
       data: {
         title,
-        fromLocation,
-        toLocation,
+        fromAddress,
+        fromCountry,
+        fromPostalCode,
+        toAddress,
+        toCountry,
+        toPostalCode,
         weight: parseFloat(weight),
         volume: volume ? parseFloat(volume) : null,
         cargoType,
@@ -71,20 +79,23 @@ export async function POST(request: Request) {
         companyName: companyName || 'Private User',
         requirements: requirements || [],
         urgency,
+        userId: (await prisma.user.findFirstOrThrow()).id
       },
     });
 
     // Create a system alert
     await prisma.systemAlert.create({
       data: {
-        message: `New cargo offer posted: ${newCargoOffer.title} from ${newCargoOffer.fromLocation} to ${newCargoOffer.toLocation}`,
-        type: 'new_offer',
+        message: `New cargo offer: ${newCargoOffer.title} from ${newCargoOffer.fromAddress}, ${newCargoOffer.fromCountry} to ${newCargoOffer.toAddress}, ${newCargoOffer.toCountry}`,
+        type: 'cargo',
+        relatedId: newCargoOffer.id,
       },
     });
 
     return NextResponse.json(newCargoOffer, { status: 201 });
   } catch (error) {
     console.error('Error creating cargo offer:', error);
-    return NextResponse.json({ message: 'Error creating cargo offer' }, { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ message: 'Error creating cargo offer', error: errorMessage }, { status: 500 });
   }
 } 

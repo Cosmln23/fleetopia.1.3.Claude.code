@@ -18,6 +18,7 @@ model User {
   updatedAt         DateTime         @updatedAt
   accounts          Account[]
   sessions          Session[]
+  cargoOffers       CargoOffer[]
   // FleetMind relations
   aiAgents          AIAgent[]        @relation("CreatedAIAgents")
   fleets            Fleet[]          @relation("OwnedFleets")
@@ -58,6 +59,16 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+enum VehicleStatus {
+  idle
+  in_transit
+  loading
+  unloading
+  maintenance
+  assigned
+  out_of_service
 }
 
 // FleetMind Models
@@ -125,8 +136,9 @@ model Route {
   status      String   @default("planned")
   fleet       Fleet     @relation(fields: [fleetId], references: [id])
   fleetId     String
-  vehicle     Vehicle?  @relation(fields: [vehicleId], references: [id])
-  vehicleId   String?
+  vehicle     Vehicle   @relation(fields: [vehicleId], references: [id])
+  vehicleId   String
+  cargoOfferId String?
   optimized   Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -240,31 +252,39 @@ model AgentAPIConnection {
 }
 
 model CargoOffer {
-  id            String   @id @default(cuid())
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
   title         String
   companyName   String?
-  fromLocation  String
-  toLocation    String
+  fromAddress   String
+  fromCountry   String
+  toAddress     String
+  toCountry     String
+  fromPostalCode String?
+  toPostalCode   String?
   weight        Float
+  volume        Float?
+  cargoType     String?
   price         Float
-  urgency       String // "low", "medium", "high"
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  status        String   @default("open")
-  userId        String? // Optional: link to a user
-
-  @@index([status])
-  @@index([fromLocation])
-  @@index([toLocation])
-  @@index([urgency])
+  priceType     String
+  urgency       String    @default("medium")
+  status        String    @default("new")
+  loadingDate   DateTime
+  deliveryDate  DateTime
+  requirements  String[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model SystemAlert {
-  id        String   @id @default(cuid())
-  message   String
-  type      String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id          String   @id @default(cuid())
+  message     String
+  type        String
+  relatedId   String?
+  read        Boolean  @default(false)
+  isProcessed Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }
 
 model Vehicle {
@@ -272,7 +292,7 @@ model Vehicle {
   name          String
   type          String
   licensePlate  String    @unique
-  status        String
+  status        VehicleStatus @default(idle)
   driverName    String
   currentRoute  String
   lat           Float

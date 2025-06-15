@@ -10,6 +10,9 @@ import {
   Dialog,
   DialogContent,
   DialogTrigger,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -41,23 +44,57 @@ import {
   MoreHorizontal,
   Pencil,
   Trash2,
-  ToggleRight
+  ToggleRight,
+  FileText
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { AddVehicleForm } from '@/components/add-vehicle-form';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { useToast } from '@/components/ui/use-toast';
+
+interface CargoOffer {
+  id: string;
+  title: string;
+  fromLocation: string;
+  toLocation: string;
+  fromPostalCode?: string;
+  toPostalCode?: string;
+  distance: number | null;
+  weight: number;
+  volume: number | null;
+  cargoType: string;
+  loadingDate: string;
+  deliveryDate: string;
+  price: number;
+  priceType: string;
+  companyName: string;
+  companyRating: number | null;
+  requirements: string[];
+  truckType: string | null;
+  status: string;
+  urgency: string;
+  createdAt: string;
+  fromAddress: string;
+  toAddress: string;
+  fromCountry: string;
+  toCountry: string;
+}
 
 interface Vehicle {
   id: string;
   name: string;
   type: string;
   licensePlate: string;
-  status: 'active' | 'idle' | 'maintenance' | 'offline';
+  status: 'active' | 'idle' | 'maintenance' | 'offline' | 'assigned';
   driverName: string;
   currentRoute: string; // Assuming this is a string representation for now
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
+}
+
+interface CargoDetails extends CargoOffer {
+  // we can extend this if needed
 }
 
 export default function FleetManagementPage() {
@@ -74,7 +111,9 @@ export default function FleetManagementPage() {
 
   const [isAddVehicleOpen, setAddVehicleOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<Vehicle | null>(null);
-  const [isEditModalOpen, setEditModalOpen] = useState(false);
+  const [vehicleForDetails, setVehicleForDetails] = useState<Vehicle | null>(null);
+  const [cargoDetails, setCargoDetails] = useState<CargoOffer | null>(null);
+  const [isDetailsLoading, setIsDetailsLoading] = useState(false);
 
   const fetchVehicleData = async () => {
     try {
@@ -119,6 +158,7 @@ export default function FleetManagementPage() {
       case 'idle': return 'bg-yellow-500';
       case 'maintenance': return 'bg-red-500';
       case 'offline': return 'bg-gray-500';
+      case 'assigned': return 'bg-blue-500';
       default: return 'bg-gray-500';
     }
   };
@@ -129,6 +169,7 @@ export default function FleetManagementPage() {
       case 'idle': return 'Available';
       case 'maintenance': return 'Maintenance';
       case 'offline': return 'Offline';
+      case 'assigned': return 'Assigned';
       default: return 'Unknown';
     }
   };
@@ -157,7 +198,6 @@ export default function FleetManagementPage() {
 
   const handleEdit = (vehicle: Vehicle) => {
     setEditingVehicle(vehicle);
-    setEditModalOpen(true);
   };
 
   const handleDelete = (vehicleId: string) => {
@@ -200,9 +240,140 @@ export default function FleetManagementPage() {
   const onFormSubmit = () => {
     fetchVehicleData();
     setAddVehicleOpen(false);
-    setEditModalOpen(false);
     setEditingVehicle(null);
-  }
+  };
+
+  const handleCloseEdit = () => {
+    setEditingVehicle(null);
+  };
+
+  const handleOpenDetails = async (vehicle: Vehicle) => {
+    if (vehicle.status !== 'assigned' && vehicle.status !== 'active') {
+      toast.info("No Details Available", {
+        description: "Cargo details are only available for assigned or active vehicles.",
+      });
+      return;
+    }
+
+    setVehicleForDetails(vehicle);
+    setIsDetailsLoading(true);
+    try {
+      const response = await fetch(`/api/vehicles/${vehicle.id}/details`);
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || 'Failed to fetch details');
+      }
+      const data = await response.json();
+      setCargoDetails(data);
+    } catch (error: any) {
+      toast.error("Error fetching details", { description: error.message });
+      setVehicleForDetails(null); // Close modal on error
+    } finally {
+      setIsDetailsLoading(false);
+    }
+  };
+
+  const handleCloseDetails = () => {
+    setVehicleForDetails(null);
+    setCargoDetails(null);
+  };
+
+  const VehicleCard = ({ vehicle, onStatusChange, onDelete, onEdit, onViewDetails, index }: { vehicle: Vehicle, onStatusChange: (id: string, status: string) => void, onDelete: (id: string) => void, onEdit: (vehicle: Vehicle) => void, onViewDetails: (vehicle: Vehicle) => void, index: number }) => {
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const { toast } = useToast();
+
+    return (
+      <motion.div
+        key={vehicle.id}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.05 }}
+        className="h-full"
+      >
+        <Card className="bg-slate-800/60 border-slate-700 h-full flex flex-col">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg text-white">{vehicle.name}</CardTitle>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700 text-slate-300">
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => onEdit(vehicle)}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    <span>Edit</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onDelete(vehicle.id)}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    <span>Delete</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-slate-700" />
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger>
+                      <ToggleRight className="mr-2 h-4 w-4" />
+                      <span>Change Status</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="bg-slate-900 border-slate-700 text-white">
+                      <DropdownMenuItem onClick={() => onStatusChange(vehicle.id, 'idle')}>Idle</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onStatusChange(vehicle.id, 'active')}>Active</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onStatusChange(vehicle.id, 'maintenance')}>Maintenance</DropdownMenuItem>
+                       <DropdownMenuItem onClick={() => onStatusChange(vehicle.id, 'assigned')}>Assigned</DropdownMenuItem>
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <CardDescription className="text-slate-400">{vehicle.licensePlate} • {vehicle.type}</CardDescription>
+          </CardHeader>
+          <CardContent className="flex-grow space-y-4">
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-400">
+                  <Users className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="font-medium text-white">{vehicle.driverName}</p>
+                  <p className="text-sm text-slate-400">Driver</p>
+                </div>
+              </div>
+               <Badge className={`px-2 py-1 text-xs ${getStatusColor(vehicle.status)}`}>
+                  {getStatusText(vehicle.status)}
+                </Badge>
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <div>
+                <p className="text-slate-400 text-sm">Current Route</p>
+                <p className="text-white truncate font-medium">{vehicle.currentRoute || 'N/A'}</p>
+              </div>
+              <div>
+                <p className="text-slate-400 text-sm">Last Known Location</p>
+                <p className="text-white truncate font-medium">{`Lat: ${vehicle.lat?.toFixed(4) || 'N/A'}, Lng: ${vehicle.lng?.toFixed(4) || 'N/A'}`}</p>
+              </div>
+            </div>
+          </CardContent>
+          <div className="p-4 pt-0">
+            <div className="flex items-center justify-between mt-4 text-sm text-slate-400">
+              <Link href={`/real-time?focus=${vehicle.id}`} passHref>
+                <Button variant="link" className="p-0 h-auto text-blue-400 hover:text-blue-300">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  View on Map
+                </Button>
+              </Link>
+              <Button variant="link" className="p-0 h-auto text-blue-400 hover:text-blue-300" onClick={() => onViewDetails(vehicle)}>
+                <FileText className="mr-2 h-4 w-4" />
+                View Details
+              </Button>
+            </div>
+          </div>
+        </Card>
+      </motion.div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -329,88 +500,15 @@ export default function FleetManagementPage() {
               {!isLoading && !error && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {vehicles.map((vehicle, index) => (
-                    <motion.div
+                    <VehicleCard
                       key={vehicle.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="h-full"
-                    >
-                      <Card className="bg-slate-800/60 border-slate-700 h-full flex flex-col">
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg text-white">{vehicle.name}</CardTitle>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                  <span className="sr-only">Open menu</span>
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700 text-slate-300">
-                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                <DropdownMenuItem onClick={() => handleEdit(vehicle)}>
-                                  <Pencil className="mr-2 h-4 w-4" />
-                                  <span>Edit</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDelete(vehicle.id)}>
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  <span>Delete</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator className="bg-slate-700" />
-                                <DropdownMenuSub>
-                                  <DropdownMenuSubTrigger>
-                                    <ToggleRight className="mr-2 h-4 w-4" />
-                                    <span>Change Status</span>
-                                  </DropdownMenuSubTrigger>
-                                  <DropdownMenuSubContent className="bg-slate-800 border-slate-700 text-slate-300">
-                                    <DropdownMenuItem onClick={() => handleStatusChange(vehicle.id, 'active')}>Active</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleStatusChange(vehicle.id, 'idle')}>Idle</DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleStatusChange(vehicle.id, 'maintenance')}>Maintenance</DropdownMenuItem>
-                                  </DropdownMenuSubContent>
-                                </DropdownMenuSub>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                          <CardDescription className="text-slate-400">{vehicle.licensePlate} • {vehicle.type}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-grow space-y-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-400">
-                                <Users className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <p className="font-medium text-white">{vehicle.driverName}</p>
-                                <p className="text-sm text-slate-400">Driver</p>
-                              </div>
-                            </div>
-                             <Badge className={`px-2 py-1 text-xs ${getStatusColor(vehicle.status)}`}>
-                                {getStatusText(vehicle.status)}
-                              </Badge>
-                          </div>
-
-                          <div className="space-y-3 pt-2">
-                            <div>
-                              <p className="text-slate-400 text-sm">Current Route</p>
-                              <p className="text-white truncate font-medium">{vehicle.currentRoute || 'N/A'}</p>
-                            </div>
-                            <div>
-                              <p className="text-slate-400 text-sm">Last Known Location</p>
-                              <p className="text-white truncate font-medium">{`Lat: ${vehicle.lat.toFixed(4)}, Lng: ${vehicle.lng.toFixed(4)}`}</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                        <div className="p-4 pt-0">
-                          <Link href={`/real-time?focus=${vehicle.id}`} passHref>
-                            <Button variant="outline" className="w-full border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300">
-                              <MapPin className="w-4 h-4 mr-2" />
-                              Show on Map
-                            </Button>
-                          </Link>
-                        </div>
-                      </Card>
-                    </motion.div>
+                      vehicle={vehicle}
+                      onStatusChange={handleStatusChange}
+                      onDelete={handleDelete}
+                      onEdit={handleEdit}
+                      onViewDetails={handleOpenDetails}
+                      index={index}
+                    />
                   ))}
                 </div>
               )}
@@ -521,12 +619,43 @@ export default function FleetManagementPage() {
         </motion.div>
 
         {/* Edit Vehicle Dialog */}
-        <Dialog open={isEditModalOpen} onOpenChange={setEditModalOpen}>
+        <Dialog open={!!editingVehicle} onOpenChange={(isOpen) => !isOpen && handleCloseEdit()}>
           <DialogContent className="bg-slate-900 border-slate-700 text-white">
             <AddVehicleForm 
               onVehicleAdded={onFormSubmit}
               initialData={editingVehicle}
             />
+          </DialogContent>
+        </Dialog>
+
+        {/* Details Modal */}
+        <Dialog open={!!vehicleForDetails} onOpenChange={(isOpen) => !isOpen && handleCloseDetails()}>
+          <DialogContent className="bg-slate-900 border-slate-700 text-white">
+            <DialogHeader>
+              <DialogTitle>Cargo Details for {vehicleForDetails?.name}</DialogTitle>
+              <DialogDescription>
+                Now transporting: {cargoDetails?.title}
+              </DialogDescription>
+            </DialogHeader>
+            {isDetailsLoading ? (
+              <div className="py-8 text-center">Loading details...</div>
+            ) : cargoDetails ? (
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div><strong>From:</strong> {cargoDetails.fromAddress}, {cargoDetails.fromCountry} ({cargoDetails.fromPostalCode})</div>
+                  <div><strong>To:</strong> {cargoDetails.toAddress}, {cargoDetails.toCountry} ({cargoDetails.toPostalCode})</div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div><strong>Weight:</strong> {cargoDetails.weight} kg</div>
+                  <div><strong>Volume:</strong> {cargoDetails.volume} m³</div>
+                </div>
+                <div><strong>Cargo Type:</strong> {cargoDetails.cargoType}</div>
+                <div><strong>Company:</strong> {cargoDetails.companyName}</div>
+                <div><strong>Price:</strong> {cargoDetails.price} {cargoDetails.priceType}</div>
+              </div>
+            ) : (
+              <div className="py-8 text-center">No cargo information available.</div>
+            )}
           </DialogContent>
         </Dialog>
       </div>

@@ -51,6 +51,14 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
+import { europeanCountries } from '@/lib/countries';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 interface CargoOffer {
   id: string;
@@ -108,8 +116,12 @@ export default function MarketplacePage() {
   // State for the Post Cargo form
   const [newCargo, setNewCargo] = useState({
     title: '',
-    fromLocation: '',
-    toLocation: '',
+    fromAddress: '',
+    fromCountry: '',
+    fromPostalCode: '',
+    toAddress: '',
+    toCountry: '',
+    toPostalCode: '',
     weight: '',
     volume: '',
     cargoType: '',
@@ -233,7 +245,8 @@ export default function MarketplacePage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to post cargo');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to post cargo');
       }
 
       toast({
@@ -244,7 +257,7 @@ export default function MarketplacePage() {
       
       // Reset form and refetch offers
       setNewCargo({
-        title: '', fromLocation: '', toLocation: '', weight: '', volume: '', cargoType: '',
+        title: '', fromAddress: '', fromCountry: '', fromPostalCode: '', toAddress: '', toCountry: '', toPostalCode: '', weight: '', volume: '', cargoType: '',
         loadingDate: '', deliveryDate: '', price: '', priceType: 'fixed',
         companyName: '', requirements: '', urgency: 'medium',
       });
@@ -254,8 +267,8 @@ export default function MarketplacePage() {
     } catch (error) {
       console.error(error);
       toast({
-        title: "Error",
-        description: "Could not post your cargo offer.",
+        title: "Error Posting Cargo",
+        description: error instanceof Error ? error.message : "An unknown error occurred.",
         variant: "destructive",
       });
     } finally {
@@ -389,24 +402,91 @@ export default function MarketplacePage() {
         <TabsContent value="post-cargo" className="mt-6">
           <Card className="bg-slate-800/50 border-slate-700">
             <CardHeader>
-              <CardTitle className="text-2xl text-white">Create a New Cargo Offer</CardTitle>
-              <CardDescription className="text-blue-200">Fill in the details below to publish your cargo for carriers.</CardDescription>
+              <CardTitle className="text-2xl text-white">Post a New Cargo Offer</CardTitle>
+              <CardDescription>Fill in the details below to find a suitable carrier.</CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-6">
               <form onSubmit={handlePostCargo} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input name="title" value={newCargo.title} onChange={handleInputChange} placeholder="Offer Title (e.g., Electronics to Berlin)" required className="bg-slate-700 border-slate-600"/>
-                  <Input name="companyName" value={newCargo.companyName} onChange={handleInputChange} placeholder="Your Company Name" className="bg-slate-700 border-slate-600"/>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div className="space-y-2">
+                    <label htmlFor="title" className="text-sm font-medium text-slate-300">Cargo Title</label>
+                    <Input id="title" name="title" placeholder="e.g., Electronics from Berlin to Frankfurt" required value={newCargo.title} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
+                  </div>
+                   <div className="space-y-2">
+                    <label htmlFor="companyName" className="text-sm font-medium text-slate-300">Company Name (Optional)</label>
+                    <Input id="companyName" name="companyName" placeholder="Your Company Inc." value={newCargo.companyName} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input name="fromLocation" value={newCargo.fromLocation} onChange={handleInputChange} placeholder="From (City, Country)" required className="bg-slate-700 border-slate-600"/>
-                  <Input name="toLocation" value={newCargo.toLocation} onChange={handleInputChange} placeholder="To (City, Country)" required className="bg-slate-700 border-slate-600"/>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label htmlFor="fromCountry" className="text-sm font-medium text-slate-300">From Country</label>
+                    <Select name="fromCountry" required onValueChange={(value) => handleInputChange({ target: { name: 'fromCountry', value } } as any)}>
+                        <SelectTrigger className="bg-slate-800 border-slate-600">
+                            <SelectValue placeholder="Select a country" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                            {europeanCountries.map(country => (
+                                <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="fromAddress" className="text-sm font-medium text-slate-300">From Address & City</label>
+                    <Input id="fromAddress" name="fromAddress" placeholder="e.g. Willy-Brandt-Straße 1, Berlin" required value={newCargo.fromAddress} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <Input name="weight" type="number" value={newCargo.weight} onChange={handleInputChange} placeholder="Weight (kg)" required className="bg-slate-700 border-slate-600"/>
-                  <Input name="volume" type="number" value={newCargo.volume} onChange={handleInputChange} placeholder="Volume (m³)" className="bg-slate-700 border-slate-600"/>
-                  <Input name="cargoType" value={newCargo.cargoType} onChange={handleInputChange} placeholder="Cargo Type (e.g., Pallets)" required className="bg-slate-700 border-slate-600"/>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div className="space-y-2">
+                    <label htmlFor="fromPostalCode" className="text-sm font-medium text-slate-300">From Postal Code</label>
+                    <Input id="fromPostalCode" name="fromPostalCode" placeholder="e.g., 10557" value={newCargo.fromPostalCode} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
+                  </div>
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label htmlFor="toCountry" className="text-sm font-medium text-slate-300">To Country</label>
+                     <Select name="toCountry" required onValueChange={(value) => handleInputChange({ target: { name: 'toCountry', value } } as any)}>
+                        <SelectTrigger className="bg-slate-800 border-slate-600">
+                            <SelectValue placeholder="Select a country" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                            {europeanCountries.map(country => (
+                                <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="toAddress" className="text-sm font-medium text-slate-300">To Address & City</label>
+                    <Input id="toAddress" name="toAddress" placeholder="e.g. Zeil 112-114, Frankfurt" required value={newCargo.toAddress} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label htmlFor="toPostalCode" className="text-sm font-medium text-slate-300">To Postal Code</label>
+                    <Input id="toPostalCode" name="toPostalCode" placeholder="e.g., 60311" value={newCargo.toPostalCode} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label htmlFor="weight" className="text-sm font-medium text-slate-300">Weight (kg)</label>
+                    <Input id="weight" name="weight" type="number" required value={newCargo.weight} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="volume" className="text-sm font-medium text-slate-300">Volume (m³)</label>
+                    <Input id="volume" name="volume" type="number" required value={newCargo.volume} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
+                  </div>
+                  <div className="space-y-2">
+                    <label htmlFor="cargoType" className="text-sm font-medium text-slate-300">Cargo Type</label>
+                    <Input id="cargoType" name="cargoType" required value={newCargo.cargoType} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                      <label className="text-xs text-slate-400">Loading Date</label>
