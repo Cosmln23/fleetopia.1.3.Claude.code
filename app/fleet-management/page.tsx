@@ -26,183 +26,64 @@ import { Progress } from '@/components/ui/progress';
 
 interface Vehicle {
   id: string;
-  license: string;
-  driver: string;
+  name: string;
+  type: string;
+  licensePlate: string;
   status: 'active' | 'idle' | 'maintenance' | 'offline';
-  location: {
-    lat: number;
-    lng: number;
-    address: string;
-  };
-  route: {
-    origin: string;
-    destination: string;
-    progress: number;
-    eta: string;
-  };
-  fuel: {
-    level: number;
-    efficiency: number;
-    cost: number;
-  };
-  performance: {
-    speed: number;
-    distance: number;
-    duration: string;
-  };
+  driverName: string;
+  currentRoute: string; // Assuming this is a string representation for now
+  lat: number;
+  lng: number;
 }
 
 export default function FleetManagementPage() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([
-    {
-      id: 'VH-001',
-      license: 'FL-234-AB',
-      driver: 'Johann Schmidt',
-      status: 'active',
-      location: {
-        lat: 52.5200,
-        lng: 13.4050,
-        address: 'Berlin, Alexanderplatz'
-      },
-      route: {
-        origin: 'Berlin',
-        destination: 'Munich',
-        progress: 67,
-        eta: '14:30'
-      },
-      fuel: {
-        level: 78,
-        efficiency: 12.4,
-        cost: 145.20
-      },
-      performance: {
-        speed: 85,
-        distance: 342,
-        duration: '4h 15m'
-      }
-    },
-    {
-      id: 'VH-002',
-      license: 'FL-567-CD',
-      driver: 'Maria Müller',
-      status: 'idle',
-      location: {
-        lat: 48.1351,
-        lng: 11.5820,
-        address: 'Munich, Central Station'
-      },
-      route: {
-        origin: 'Munich',
-        destination: 'Frankfurt',
-        progress: 0,
-        eta: '16:45'
-      },
-      fuel: {
-        level: 92,
-        efficiency: 11.8,
-        cost: 89.50
-      },
-      performance: {
-        speed: 0,
-        distance: 0,
-        duration: '0h 0m'
-      }
-    },
-    {
-      id: 'VH-003',
-      license: 'FL-890-EF',
-      driver: 'Klaus Weber',
-      status: 'active',
-      location: {
-        lat: 50.1109,
-        lng: 8.6821,
-        address: 'Frankfurt, Airport'
-      },
-      route: {
-        origin: 'Frankfurt',
-        destination: 'Hamburg',
-        progress: 23,
-        eta: '18:15'
-      },
-      fuel: {
-        level: 45,
-        efficiency: 13.2,
-        cost: 98.75
-      },
-      performance: {
-        speed: 75,
-        distance: 127,
-        duration: '1h 45m'
-      }
-    },
-    {
-      id: 'VH-004',
-      license: 'FL-123-GH',
-      driver: 'Anna Fischer',
-      status: 'maintenance',
-      location: {
-        lat: 53.5511,
-        lng: 9.9937,
-        address: 'Hamburg, Service Center'
-      },
-      route: {
-        origin: 'Hamburg',
-        destination: 'Service',
-        progress: 100,
-        eta: 'N/A'
-      },
-      fuel: {
-        level: 25,
-        efficiency: 0,
-        cost: 45.30
-      },
-      performance: {
-        speed: 0,
-        distance: 0,
-        duration: '0h 0m'
-      }
-    }
-  ]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [fleetStats, setFleetStats] = useState({
-    totalVehicles: 156,
-    activeVehicles: 134,
-    totalDrivers: 189,
-    availableDrivers: 45,
-    totalRoutes: 89,
-    completedToday: 67,
-    fuelEfficiency: 87.3,
-    onTimeDelivery: 94.2
+    totalVehicles: 0,
+    activeVehicles: 0,
+    idleVehicles: 0,
+    maintenanceVehicles: 0,
   });
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setVehicles(prev => prev.map(vehicle => {
-        if (vehicle.status === 'active') {
-          const newProgress = Math.min(vehicle.route.progress + Math.random() * 5, 100);
-          return {
-            ...vehicle,
-            route: {
-              ...vehicle.route,
-              progress: newProgress
-            },
-            fuel: {
-              ...vehicle.fuel,
-              level: Math.max(vehicle.fuel.level - Math.random() * 2, 0)
-            },
-            performance: {
-              ...vehicle.performance,
-              speed: 70 + Math.random() * 30,
-              distance: vehicle.performance.distance + Math.random() * 10
-            }
-          };
-        }
-        return vehicle;
-      }));
-    }, 3000);
+  const fetchVehicleData = async () => {
+    try {
+      const response = await fetch('/api/real-time/data');
+      if (!response.ok) {
+        throw new Error('Failed to fetch vehicle data');
+      }
+      const data = await response.json();
+      setVehicles(data.vehicles || []);
+      updateFleetStats(data.vehicles || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unknown error occurred');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-    return () => clearInterval(interval);
+  useEffect(() => {
+    fetchVehicleData(); // Fetch initial data
+    const interval = setInterval(fetchVehicleData, 5000); // Refresh every 5 seconds
+
+    return () => clearInterval(interval); // Cleanup interval on component unmount
   }, []);
+
+  const updateFleetStats = (vehicles: Vehicle[]) => {
+    const total = vehicles.length;
+    const active = vehicles.filter(v => v.status === 'active').length;
+    const idle = vehicles.filter(v => v.status === 'idle').length;
+    const maintenance = vehicles.filter(v => v.status === 'maintenance').length;
+    setFleetStats({
+      totalVehicles: total,
+      activeVehicles: active,
+      idleVehicles: idle,
+      maintenanceVehicles: maintenance,
+    });
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -248,10 +129,14 @@ export default function FleetManagementPage() {
                 <Activity className="w-4 h-4 mr-2" />
                 {fleetStats.activeVehicles} Active
               </Badge>
-              <Button>
-                <Eye className="w-4 h-4 mr-2" />
-                Live Map View
-              </Button>
+              <Badge variant="outline" className="text-yellow-400 border-yellow-400">
+                <Users className="w-4 h-4 mr-2" />
+                {fleetStats.idleVehicles} Idle
+              </Badge>
+               <Badge variant="outline" className="text-slate-400 border-slate-400">
+                <TrendingUp className="w-4 h-4 mr-2" />
+                {fleetStats.totalVehicles} Total
+              </Badge>
             </div>
           </div>
         </motion.div>
@@ -261,57 +146,46 @@ export default function FleetManagementPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
+          className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8"
         >
           <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Total Vehicles</p>
-                  <p className="text-2xl font-bold text-white">{fleetStats.totalVehicles}</p>
-                  <p className="text-xs text-green-400">+12 this month</p>
-                </div>
-                <Truck className="w-8 h-8 text-blue-400" />
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-400">Total Vehicles</CardTitle>
+              <Truck className="h-5 w-5 text-slate-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{fleetStats.totalVehicles}</div>
+              <p className="text-xs text-slate-500">across all fleets</p>
             </CardContent>
           </Card>
-          
           <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Active Now</p>
-                  <p className="text-2xl font-bold text-green-400">{fleetStats.activeVehicles}</p>
-                  <p className="text-xs text-blue-400">{((fleetStats.activeVehicles / fleetStats.totalVehicles) * 100).toFixed(1)}% utilization</p>
-                </div>
-                <Activity className="w-8 h-8 text-green-400" />
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-400">Active Vehicles</CardTitle>
+              <Activity className="h-5 w-5 text-slate-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{fleetStats.activeVehicles}</div>
+              <p className="text-xs text-slate-500">{((fleetStats.activeVehicles / fleetStats.totalVehicles) * 100 || 0).toFixed(1)}% of fleet</p>
             </CardContent>
           </Card>
-          
           <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Fuel Efficiency</p>
-                  <p className="text-2xl font-bold text-yellow-400">{fleetStats.fuelEfficiency}%</p>
-                  <p className="text-xs text-green-400">+2.3% this week</p>
-                </div>
-                <Fuel className="w-8 h-8 text-yellow-400" />
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-400">Idle Vehicles</CardTitle>
+              <Users className="h-5 w-5 text-slate-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{fleetStats.idleVehicles}</div>
+              <p className="text-xs text-slate-500">ready for dispatch</p>
             </CardContent>
           </Card>
-          
           <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">On-Time Delivery</p>
-                  <p className="text-2xl font-bold text-purple-400">{fleetStats.onTimeDelivery}%</p>
-                  <p className="text-xs text-green-400">+1.2% improvement</p>
-                </div>
-                <CheckCircle className="w-8 h-8 text-purple-400" />
-              </div>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-slate-400">In Maintenance</CardTitle>
+              <Settings className="h-5 w-5 text-slate-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-white">{fleetStats.maintenanceVehicles}</div>
+              <p className="text-xs text-slate-500">currently in service</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -322,137 +196,79 @@ export default function FleetManagementPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Tabs defaultValue="live-tracking" className="w-full">
+          <Tabs defaultValue="overview" className="space-y-4">
             <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="live-tracking">Live Tracking</TabsTrigger>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="routes">Route Optimization</TabsTrigger>
               <TabsTrigger value="analytics">Performance Analytics</TabsTrigger>
               <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
             </TabsList>
 
-            {/* Live Tracking Tab */}
-            <TabsContent value="live-tracking" className="space-y-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                {/* Vehicle List */}
-                <div className="lg:col-span-2">
-                  <Card className="bg-slate-800/50 border-slate-700">
-                    <CardHeader>
-                      <CardTitle className="text-slate-200">Vehicle Status</CardTitle>
-                      <CardDescription>Real-time fleet monitoring</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {vehicles.map((vehicle) => (
-                        <motion.div
-                          key={vehicle.id}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          className="p-4 bg-slate-700/50 rounded-lg"
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center space-x-3">
-                              <div className="relative">
-                                <Truck className="w-6 h-6 text-blue-400" />
-                                <div className={`absolute -top-1 -right-1 w-3 h-3 ${getStatusColor(vehicle.status)} rounded-full border-2 border-slate-700`}></div>
-                              </div>
-                              <div>
-                                <p className="font-medium text-white">{vehicle.license}</p>
-                                <p className="text-sm text-slate-400">{vehicle.driver}</p>
-                              </div>
-                            </div>
-                            <Badge variant="outline" className={`text-xs ${
-                              vehicle.status === 'active' ? 'text-green-400 border-green-400' :
-                              vehicle.status === 'idle' ? 'text-yellow-400 border-yellow-400' :
-                              vehicle.status === 'maintenance' ? 'text-red-400 border-red-400' :
-                              'text-gray-400 border-gray-400'
-                            }`}>
+            {/* Overview Tab */}
+            <TabsContent value="overview" className="space-y-6">
+              {isLoading && (
+                <div className="text-center py-12 text-slate-400">
+                  <p>Loading fleet data...</p>
+                </div>
+              )}
+              {error && (
+                <div className="text-center py-12 text-red-400">
+                  <p>Error: {error}</p>
+                </div>
+              )}
+              {!isLoading && !error && (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {vehicles.map((vehicle, index) => (
+                    <motion.div
+                      key={vehicle.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className="h-full"
+                    >
+                      <Card className="bg-slate-800/60 border-slate-700 h-full flex flex-col">
+                        <CardHeader>
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg text-white">{vehicle.name}</CardTitle>
+                            <Badge className={`px-2 py-1 text-xs ${getStatusColor(vehicle.status)}`}>
                               {getStatusText(vehicle.status)}
                             </Badge>
                           </div>
-                          
-                          <div className="grid grid-cols-3 gap-4 text-sm">
-                            <div>
-                              <p className="text-slate-400">Location</p>
-                              <p className="text-white truncate">{vehicle.location.address}</p>
+                          <CardDescription className="text-slate-400">{vehicle.licensePlate} • {vehicle.type}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-grow space-y-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-slate-400">
+                              <Users className="w-5 h-5" />
                             </div>
                             <div>
-                              <p className="text-slate-400">Fuel Level</p>
-                              <div className="flex items-center space-x-2">
-                                <Progress value={vehicle.fuel.level} className="h-2 flex-1" />
-                                <span className="text-white font-medium">{vehicle.fuel.level.toFixed(0)}%</span>
-                              </div>
-                            </div>
-                            <div>
-                              <p className="text-slate-400">Route Progress</p>
-                              <div className="flex items-center space-x-2">
-                                <Progress value={vehicle.route.progress} className="h-2 flex-1" />
-                                <span className="text-white font-medium">{vehicle.route.progress.toFixed(0)}%</span>
-                              </div>
+                              <p className="font-medium text-white">{vehicle.driverName}</p>
+                              <p className="text-sm text-slate-400">Driver</p>
                             </div>
                           </div>
-                          
-                          {vehicle.status === 'active' && (
-                            <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
-                              <span>{vehicle.route.origin} → {vehicle.route.destination}</span>
-                              <span>ETA: {vehicle.route.eta}</span>
+
+                          <div className="space-y-3 pt-2">
+                            <div>
+                              <p className="text-slate-400 text-sm">Current Route</p>
+                              <p className="text-white truncate font-medium">{vehicle.currentRoute || 'N/A'}</p>
                             </div>
-                          )}
-                        </motion.div>
-                      ))}
-                    </CardContent>
-                  </Card>
+                            <div>
+                              <p className="text-slate-400 text-sm">Last Known Location</p>
+                              <p className="text-white truncate font-medium">{`Lat: ${vehicle.lat.toFixed(4)}, Lng: ${vehicle.lng.toFixed(4)}`}</p>
+                            </div>
+                          </div>
+                        </CardContent>
+                        <div className="p-4 pt-0">
+                            <Button variant="outline" className="w-full border-blue-500/50 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300">
+                              <Eye className="w-4 h-4 mr-2" />
+                              View Details
+                            </Button>
+                        </div>
+                      </Card>
+                    </motion.div>
+                  ))}
                 </div>
-
-                {/* Quick Actions & Alerts */}
-                <div className="space-y-6">
-                  <Card className="bg-slate-800/50 border-slate-700">
-                    <CardHeader>
-                      <CardTitle className="text-slate-200">Quick Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Button className="w-full justify-start">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        Add New Route
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        <Navigation className="w-4 h-4 mr-2" />
-                        Optimize Routes
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        <Users className="w-4 h-4 mr-2" />
-                        Assign Driver
-                      </Button>
-                      <Button variant="outline" className="w-full justify-start">
-                        <Settings className="w-4 h-4 mr-2" />
-                        Fleet Settings
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-slate-800/50 border-slate-700">
-                    <CardHeader>
-                      <CardTitle className="flex items-center text-slate-200">
-                        <AlertTriangle className="w-5 h-5 mr-2 text-yellow-400" />
-                        Active Alerts
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-                        <p className="text-sm font-medium text-yellow-400">Low Fuel Warning</p>
-                        <p className="text-xs text-slate-400">VH-003 fuel level below 50%</p>
-                      </div>
-                      <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                        <p className="text-sm font-medium text-blue-400">Route Optimization</p>
-                        <p className="text-xs text-slate-400">3 routes can be optimized</p>
-                      </div>
-                      <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-lg">
-                        <p className="text-sm font-medium text-green-400">Delivery Complete</p>
-                        <p className="text-xs text-slate-400">VH-001 arrived 15 min early</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
+              )}
             </TabsContent>
 
             {/* Routes Tab */}
