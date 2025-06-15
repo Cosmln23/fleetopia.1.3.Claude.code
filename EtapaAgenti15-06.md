@@ -1,41 +1,40 @@
 # Plan de Acțiune: Activarea Dispecerului AI (15 Iunie 2024)
 
-Acest document detaliază pașii pentru a transforma pagina `/ai-agents` într-un centru de comandă funcțional, permițând unui AI (simulat inițial) să analizeze alerte de sistem și să propună acțiuni.
+Acest document detaliază pașii pentru a transforma pagina `/ai-agents` într-un centru de comandă funcțional, permițând unui AI să analizeze alerte de sistem și să propună acțiuni.
 
 ---
 
-### **Pasul 1: Construim "Ochii" AI-ului (Afișarea Alertelor)** - ⏳ **În Curs**
+### **Pasul 1: Construim "Ochii" și Logica de Bază** - ✅ **Finalizat**
 
-*   **Sub-obiectiv:** Transformăm pagina statică `/ai-agents` într-un centru de comandă dinamic care afișează alertele din sistem în timp real.
-*   **Acțiuni:**
-    1.  Modificarea paginii `app/ai-agents/page.tsx`.
-    2.  Implementarea unei funcții `useEffect` care va face un apel `fetch` la API-ul existent (`/api/dispatcher/alerts`) pentru a prelua lista de alerte.
-    3.  Afișarea alertelor sub formă de carduri, conținând informații clare (tip, rezumat).
-    4.  Adăugarea unui buton inactiv **"Analyze & Propose"** pe fiecare card de alertă.
-
----
-
-### **Pasul 2: Construim "Logica" AI-ului (Backend-ul de Analiză)** - 📋 **De Făcut**
-
-*   **Sub-obiectiv:** Creăm un endpoint API care poate lua o alertă, o poate "înțelege" și o poate trimite unui model de limbaj pentru analiză.
-*   **Acțiuni:**
-    1.  Crearea unui nou fișier API: `app/api/ai/analyze-cargo-offer/route.ts`.
-    2.  Endpoint-ul va accepta o cerere `POST` cu `cargoOfferId`.
-    3.  Logica internă:
-        a. Preluarea detaliilor ofertei de marfă din DB.
-        b. Preluarea listei de vehicule disponibile (`idle`) din DB.
-        c. Formatarea datelor într-un "prompt" text.
-    4.  **Simularea răspunsului AI:** Endpoint-ul va returna un răspuns JSON predefinit, de ex: `{"proposal": "Propunere SIMULATĂ: Alocă vehiculul X."}`.
+*   **Sub-obiectiv:** Conectarea interfeței la un API funcțional care identifică vehiculele-candidat pentru o ofertă.
+*   **Acțiuni Realizate:**
+    1.  API-ul `/api/ai/analyze-cargo-offer` a fost modificat pentru a căuta în baza de date toate vehiculele care au statusul `idle` ȘI tipul potrivit (`vehicleType`) pentru oferta de marfă analizată.
+    2.  Interfața `app/ai-agents/page.tsx` a fost pregătită pentru a apela acest API și a injecta răspunsul (`proposal`) în cardul de alertă corespunzător.
+*   **Rezultat:** Fluxul de bază este funcțional. La apăsarea butonului "Analyze", se execută o căutare reală în baza de date.
 
 ---
 
-### **Pasul 3: Conectăm "Ochii" la "Logică" (Activarea Butonului)** - 📋 **De Făcut**
+### **Pasul 2: Construim "Creierul" de Calcul (Simulare & Profitabilitate)** - ✅ **Finalizat**
 
-*   **Sub-obiectiv:** Facem butonul "Analyze & Propose" funcțional.
-*   **Acțiuni:**
-    1.  Revenirea la pagina `app/ai-agents/page.tsx`.
-    2.  Adăugarea unei stări (`useState`) pentru a memora propunerea generată de AI.
-    3.  Implementarea funcționalității butonului pentru a apela API-ul de la Pasul 2.
-    4.  Afișarea răspunsului (simulat) de la API într-un card de "Propunere AI" sub alerta corespunzătoare.
+*   **Sub-obiectiv:** Evoluarea API-ului pentru a nu doar găsi candidați, ci pentru a simula cursa pentru fiecare și a o alege pe cea mai profitabilă.
+*   **Acțiuni Realizate:**
+    1.  **Iterare și Simulare:** API-ul iterează acum prin toți candidații.
+    2.  **Integrare Google Maps:** Pentru fiecare candidat, se face un apel la Google Directions API pentru a calcula distanța și durata reală a rutei.
+    3.  **Calcul Profitabilitate:** O formulă de `preț_ofertă - (distanță * cost_per_km)` este aplicată pentru fiecare simulare.
+    4.  **Clasament și Selecție:** Candidații sunt sortați după profit, iar cel mai bun este selectat.
+*   **Rezultat:** Agentul poate acum să determine cantitativ care este cea mai bună opțiune dintr-o listă de vehicule disponibile.
+
+---
+
+### **Pasul 3: Adăugăm Inteligența Lingvistică (Integrare Claude AI)** - ✅ **Finalizat**
+
+*   **Sub-obiectiv:** Trecerea de la o propunere formatată manual la una generată de un LLM de top, pentru un rezultat profesionist și natural.
+*   **Acțiuni Realizate:**
+    1.  **Securizare Cheie:** Cheia API pentru Anthropic a fost adăugată în mod securizat în fișierul `.env.local`.
+    2.  **Instalare SDK:** A fost instalat pachetul `@anthropic-ai/sdk`.
+    3.  **Refactorizare API:** Logica finală a API-ului a fost modificată. Acum, datele calculate la Pasul 2 sunt formatate într-un "prompt" detaliat.
+    4.  **Apel la Claude:** Prompt-ul este trimis către modelul Claude AI.
+    5.  **Afișare Rezultat "Gândit":** Răspunsul JSON generat de Claude, care conține propunerea și justificarea, este trimis direct către interfață.
+*   **Rezultat Final:** Agentul Dispecer este acum complet funcțional în versiunea sa 1.0. El combină calculele precise de cost/distanță cu inteligența lingvistică avansată, oferind propuneri de asignare justificate și profesioniste. Proiectul a fost un succes.
 
 --- 
