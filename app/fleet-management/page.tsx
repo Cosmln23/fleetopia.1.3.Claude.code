@@ -23,6 +23,7 @@ import {
   Zap
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { VehicleForm } from '@/components/vehicle-form';
 
 interface Vehicle {
   id: string;
@@ -125,6 +126,7 @@ export default function FleetManagementPage() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
+              <VehicleForm onVehicleAdded={fetchVehicleData} />
               <Badge variant="outline" className="text-green-400 border-green-400">
                 <Activity className="w-4 h-4 mr-2" />
                 {fleetStats.activeVehicles} Active
