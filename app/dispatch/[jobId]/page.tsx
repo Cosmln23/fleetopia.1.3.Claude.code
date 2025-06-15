@@ -2,9 +2,11 @@ import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import { JobDetailsClient } from './job-details-client';
 
-const JobDetailsPage = async ({ params }: { params: { jobId: string } }) => {
+const JobDetailsPage = async (props: { params: { jobId: string } }) => {
+  const { jobId } = props.params;
+
   const job = await prisma.cargoOffer.findUnique({
-    where: { id: params.jobId },
+    where: { id: jobId },
     include: {
       user: true, // Assuming a relation exists for the creator
     },

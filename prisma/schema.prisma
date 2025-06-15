@@ -305,6 +305,7 @@ model Vehicle {
   currentRoute  String
   lat           Float
   lng           Float
+  fuelConsumption Float? @default(10.0)
   
   logs          GpsLog[]
   metrics       RealTimeMetric[]

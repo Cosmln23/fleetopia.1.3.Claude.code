@@ -230,7 +230,7 @@ export default function DispatcherAIPage() {
       return;
     }
 
-    const { id } = toast({
+    toast({
       title: "Analyzing Offer",
       description: "The AI is processing the cargo offer...",
     });
@@ -250,7 +250,6 @@ export default function DispatcherAIPage() {
       const data = await response.json();
 
       toast({
-        id,
         title: "Analysis Complete",
         description: "AI has generated a proposal.",
         variant: "default",
@@ -267,7 +266,6 @@ export default function DispatcherAIPage() {
 
     } catch (err: any) {
       toast({
-        id,
         title: "Analysis Failed",
         description: err.message,
         variant: "destructive",
@@ -278,65 +276,59 @@ export default function DispatcherAIPage() {
   const handleProposalAction = async (alertId: string, action: 'accepted' | 'rejected') => {
     const alert = systemAlerts.find(a => a.id === alertId);
     if (!alert) return;
-
-    // Optimistically update the UI
-    setSystemAlerts(prevAlerts => prevAlerts.map(a =>
-      a.id === alertId ? { ...a, proposalStatus: action } : a
-    ));
-
-    if (action === 'accepted') {
-      if (!alert.chosenVehicleId || !alert.relatedId) {
-        toast({
-          title: "Action Failed",
-          description: "Cannot create route due to missing vehicle or cargo offer information.",
-          variant: "destructive",
-        });
-        // Revert optimistic update
-        setSystemAlerts(prevAlerts => prevAlerts.map(a =>
-          a.id === alertId ? { ...a, proposalStatus: undefined } : a
-        ));
-        return;
-      }
-      
+  
+    if (action === 'rejected') {
+      setSystemAlerts(prevAlerts =>
+        prevAlerts.map(a => (a.id === alertId ? { ...a, proposalStatus: 'rejected' } : a))
+      );
+      toast({ title: 'Proposal Rejected', description: 'The AI proposal has been manually rejected.' });
+      return;
+    }
+  
+    // Handle acceptance
+    if (action === 'accepted' && alert.chosenVehicleId && alert.relatedId) {
+      toast({
+        title: "Assigning Job...",
+        description: "Updating database records. Please wait.",
+      });
+  
       try {
-        // UNIFIED LOGIC: Use the same transactional assignment endpoint as the manual flow
-        const response = await fetch('/api/assignments', {
+        const response = await fetch('/api/assignments/create', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            vehicleId: alert.chosenVehicleId,
             cargoOfferId: alert.relatedId,
+            vehicleId: alert.chosenVehicleId,
           }),
         });
-
+  
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to assign on the server.');
+          const err = await response.json();
+          throw new Error(err.error || 'Assignment failed');
         }
-
+  
+        setSystemAlerts(prevAlerts =>
+          prevAlerts.map(a => (a.id === alertId ? { ...a, proposalStatus: 'accepted' } : a))
+        );
+  
         toast({
-          title: "Assignment Successful",
-          description: "The AI's proposed assignment has been confirmed and executed.",
+          title: "Assignment Successful!",
+          description: "The job has been assigned to the vehicle.",
         });
-
+  
       } catch (error: any) {
-        console.error("Failed to accept proposal:", error);
         toast({
-          title: "Assignment Failed",
-          description: error.message || "An error occurred while assigning the vehicle.",
+          title: "Assignment Error",
+          description: error.message || "Could not assign the job. The vehicle might have been assigned to another job.",
           variant: "destructive",
         });
-         // Revert optimistic update
-        setSystemAlerts(prevAlerts => prevAlerts.map(a =>
-          a.id === alertId ? { ...a, proposalStatus: undefined } : a
-        ));
       }
-
-    } else { // 'rejected'
-        toast({
-          title: `Proposal Rejected`,
-          description: `The AI proposal has been marked as rejected.`,
-        });
+    } else {
+      toast({
+        title: "Assignment Information Missing",
+        description: "Cannot assign job due to missing vehicle or cargo offer ID.",
+        variant: "destructive",
+      });
     }
   };
 
