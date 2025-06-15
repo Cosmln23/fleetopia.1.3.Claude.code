@@ -1,8 +1,16 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow, Polyline } from '@react-google-maps/api';
-import { Vehicle, VehicleStatus } from '@prisma/client';
+import React, { useEffect, useState, useCallback } from 'react';
+import { GoogleMap, Marker, InfoWindow, useGoogleMap, Polyline } from '@react-google-maps/api';
+import { Vehicle, VehicleStatus } from '@/types';
+
+// Define the missing GpsData type
+interface GpsData {
+    latitude: number;
+    longitude: number;
+    speed: number;
+    timestamp: string;
+}
 
 // Define the extended vehicle type, which includes GPS coordinates
 export type VehicleWithGps = Vehicle & {
@@ -10,15 +18,19 @@ export type VehicleWithGps = Vehicle & {
   lng: number;
   driverName?: string;
   currentRoute?: string;
+  gpsData: GpsData | null;
 };
 
 // Define the props for our MapView component
 interface MapViewProps {
-  isLoaded: boolean; // Receive loading state from parent
+  isLoaded: boolean;
   vehicles: VehicleWithGps[];
   focusedVehicle: VehicleWithGps | null;
-  // Route waypoints can be complex, for now we handle LatLng objects
-  routeWaypoints?: google.maps.LatLngLiteral[]; 
+  directions: google.maps.DirectionsResult | null;
+  onMapLoad: (map: google.maps.Map | null) => void;
+  selectedRouteIndex: number;
+  routeColors: string[]; // Expect the color palette
+  coloredLegs: any[]; // Or a more specific type if you have one
 }
 
 const containerStyle = {
@@ -32,10 +44,12 @@ const defaultCenter = {
   lng: 2.3522
 };
 
-const isActiveStatus = (status: VehicleStatus): boolean => {
-    return status === VehicleStatus.in_transit || 
-           status === VehicleStatus.loading || 
-           status === VehicleStatus.unloading;
+const isActiveStatus = (status: VehicleStatus) => {
+  return [
+    VehicleStatus.IN_TRANSIT,
+    // Note: The new VehicleStatus enum doesn't include 'loading' or 'unloading'.
+    // Adjust logic here if those states need to be handled differently.
+  ].includes(status);
 };
 
 // Custom icon paths for different vehicle statuses
@@ -51,35 +65,74 @@ const getVehicleIcon = (status: VehicleStatus) => {
     };
 };
 
+// This new internal component will house all logic that needs access to the map instance.
+// It is rendered *inside* GoogleMap, so useGoogleMap() will work correctly here.
+function MapEffects({
+  directions,
+  focusedVehicle,
+  setSelectedVehicle,
+}: {
+  directions: google.maps.DirectionsResult | null;
+  focusedVehicle: VehicleWithGps | null;
+  setSelectedVehicle: React.Dispatch<React.SetStateAction<VehicleWithGps | null>>;
+}) {
+  const map = useGoogleMap();
 
-function MapView({ isLoaded, vehicles, focusedVehicle, routeWaypoints }: MapViewProps) {
-  const [map, setMap] = React.useState<google.maps.Map | null>(null);
-  const [selectedVehicle, setSelectedVehicle] = useState<VehicleWithGps | null>(null);
+  // Effect to fit the map to the calculated route's bounds
+  useEffect(() => {
+    if (map && directions && directions.routes && directions.routes.length > 0) {
+      const bounds = directions.routes[0].bounds;
+      if (bounds) {
+        map.fitBounds(bounds, 50);
+      }
+    }
+  }, [directions, map]);
 
+  // Effect to pan to a focused vehicle
   useEffect(() => {
     if (focusedVehicle && map) {
-      // Pan to the focused vehicle, zoom in, and select it
       map.panTo({ lat: focusedVehicle.lat, lng: focusedVehicle.lng });
       map.setZoom(14);
       setSelectedVehicle(focusedVehicle);
     }
-  }, [focusedVehicle, map]);
-  
-  // When a new vehicle is selected (or focused), close the previously selected one
+  }, [focusedVehicle, map, setSelectedVehicle]);
+
+  // This effect ensures that when the route data is cleared, the polylines are removed.
   useEffect(() => {
-    if (selectedVehicle) {
-       // logic to handle selection change if needed
-    }
-  }, [selectedVehicle]);
+    // This is a placeholder to ensure the component re-renders when directions change.
+    // The actual clearing logic is handled by the conditional rendering below.
+  }, [directions]);
 
+  return null;
+}
 
-  const onLoad = React.useCallback(function callback(mapInstance: google.maps.Map) {
-    setMap(mapInstance);
-  }, []);
+function MapView({ isLoaded, vehicles, focusedVehicle, directions, onMapLoad, selectedRouteIndex, routeColors, coloredLegs }: MapViewProps) {
+  const [selectedVehicle, setSelectedVehicle] = useState<VehicleWithGps | null>(null);
 
-  const onUnmount = React.useCallback(function callback(map: google.maps.Map) {
-    setMap(null);
-  }, []);
+  const onLoad = useCallback((mapInstance: google.maps.Map) => onMapLoad(mapInstance), [onMapLoad]);
+  const onUnmount = useCallback(() => onMapLoad(null), [onMapLoad]);
+
+  // Extract the currently selected route from the response
+  const selectedRoute = directions?.routes[selectedRouteIndex];
+
+  const renderPolylines = () => {
+    if (!directions) return null;
+
+    return coloredLegs.map((leg, index) => {
+      const path = leg.steps.flatMap((step: any) => step.path);
+      return (
+        <Polyline
+          key={index}
+          path={path}
+          options={{
+            strokeColor: leg.color,
+            strokeOpacity: 0.8,
+            strokeWeight: 6,
+          }}
+        />
+      );
+    });
+  };
 
   if (!isLoaded) {
     return <div className="h-[600px] w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800 flex items-center justify-center"><p>Loading Map...</p></div>;
@@ -87,32 +140,27 @@ function MapView({ isLoaded, vehicles, focusedVehicle, routeWaypoints }: MapView
 
   return (
     <GoogleMap
-      mapContainerStyle={containerStyle}
+      mapContainerStyle={{ width: '100%', height: '100%' }}
       center={defaultCenter}
       zoom={5}
       onLoad={onLoad}
       onUnmount={onUnmount}
-      options={{
+      options={{ 
         streetViewControl: false,
-        mapTypeControl: false,
         fullscreenControl: false,
-        styles: [ // Adding some modern map styling
-            {
-                "featureType": "poi",
-                "stylers": [{ "visibility": "off" }]
-            },
-            {
-                "featureType": "road",
-                "elementType": "labels.icon",
-                "stylers": [{  "visibility": "off" }]
-            },
-            {
-                 "featureType": "transit",
-                 "stylers": [{ "visibility": "off" }]
-            }
-        ]
+        mapTypeControl: true, // Re-enable the native map type control
+        mapTypeControlOptions: {
+          style: google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+          position: google.maps.ControlPosition.LEFT_TOP,
+        },
       }}
     >
+      <MapEffects
+        directions={directions}
+        focusedVehicle={focusedVehicle}
+        setSelectedVehicle={setSelectedVehicle}
+      />
+      
       {/* Render vehicle markers */}
       {vehicles.map((vehicle) => (
         <Marker
@@ -129,27 +177,32 @@ function MapView({ isLoaded, vehicles, focusedVehicle, routeWaypoints }: MapView
           position={{ lat: selectedVehicle.lat, lng: selectedVehicle.lng }}
           onCloseClick={() => setSelectedVehicle(null)}
         >
-          <div className="p-2">
-            <h3 className="font-bold text-lg">{selectedVehicle.name}</h3>
-            <p>Status: <span className={`font-semibold ${isActiveStatus(selectedVehicle.status) ? 'text-green-600' : 'text-gray-500'}`}>{selectedVehicle.status}</span></p>
-            <p>Driver: {selectedVehicle.driverName || 'N/A'}</p>
+          <div className="p-2 bg-white rounded-lg shadow-lg dark:bg-gray-800">
+            <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+              {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300">
+              License: {selectedVehicle.licensePlate}
+            </p>
+            <p className={`text-sm font-semibold ${
+              isActiveStatus(selectedVehicle.status)
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-yellow-600 dark:text-yellow-400'
+            }`}>
+              Status: {selectedVehicle.status.replace('_', ' ')}
+            </p>
+            {selectedVehicle.driverName && (
+              <p className="text-gray-600 dark:text-gray-400">
+                Driver: {selectedVehicle.driverName}
+              </p>
+            )}
           </div>
         </InfoWindow>
       )}
       
-      {/* Render the route polyline if waypoints are provided */}
-      {routeWaypoints && routeWaypoints.length > 0 && (
-          <Polyline
-              path={routeWaypoints}
-              options={{
-                  strokeColor: '#FF0000',
-                  strokeOpacity: 0.8,
-                  strokeWeight: 2,
-              }}
-          />
-      )}
+      {renderPolylines()}
     </GoogleMap>
   );
 }
 
-export default React.memo(MapView); 
+export default React.memo(MapView);

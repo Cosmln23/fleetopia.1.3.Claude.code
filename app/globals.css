@@ -5,14 +5,33 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
 
 :root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 15, 23, 42;
-  --background-end-rgb: 30, 58, 138;
+  --background: #ffffff;
+  --foreground: #0f172a;
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
+.dark {
   --background: linear-gradient(to bottom right, #0f172a, #1e3a8a, #0f172a);
   --foreground: #ffffff;
-  --muted: #cccccc;
+  --card: rgba(30, 58, 138, 0.1);
+  --card-foreground: #ffffff;
+  --popover: #0f172a;
+  --popover-foreground: #ffffff;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #1e3a8a;
+  --secondary-foreground: #ffffff;
+  --muted: #475569;
+  --muted-foreground: #cccccc;
   --accent: #3b82f6;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
   --border: #475569;
+  --input: #1e3a8a;
+  --ring: #3b82f6;
 }
 
 * {
@@ -32,16 +51,12 @@ body {
   letter-spacing: 0.5px;
   line-height: 1.6;
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-    to bottom,
-    rgb(var(--background-start-rgb)),
-    rgb(var(--background-end-rgb))
-  );
+  background: var(--background, linear-gradient(to bottom, rgb(var(--background-start-rgb)), rgb(var(--background-end-rgb))));
 }
 
 body {
-  background: linear-gradient(to bottom right, #0f172a, #1e3a8a, #0f172a);
-  color: #ffffff;
+  color: var(--foreground);
+  background: var(--background);
   min-height: 100vh;
 }
 
@@ -206,4 +221,17 @@ body {
 .leaflet-control-zoom a:hover {
   background: #334155 !important;
   color: #00ff00 !important;
+}
+
+/* 
+  Force scroll on Google Maps Places Autocomplete.
+  This is a critical usability fix.
+*/
+.pac-container {
+  z-index: 9999 !important;
+  max-height: 20rem !important;
+  overflow-y: auto !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1) !important;
+  border: 1px solid rgba(0,0,0,0.1) !important;
 }

@@ -1,7 +1,6 @@
 "use client";
 
-import { motion } from 'framer-motion';
-import { useEffect, useState, Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useJsApiLoader } from '@react-google-maps/api';
 
@@ -9,19 +8,41 @@ import { useJsApiLoader } from '@react-google-maps/api';
 import MapView, { VehicleWithGps } from '@/components/MapView';
 
 // Import other components
-import { IntegrationStatusCard } from "@/components/integration-status-card";
-import { LiveAlerts } from "@/components/live-alerts";
-import { RouteCalculator } from "@/components/route-calculator";
+import TripPlanner from "@/components/TripPlanner";
 
 // Centralize library loading
-const libraries: "places"[] = ["places"];
+const libraries: ("places")[] = ["places"];
+
+const ROUTE_COLORS = ['#FF5733', '#3375FF', '#33FF57', '#F333FF', '#FFC300'];
+
+interface CustomLeg extends google.maps.DirectionsLeg {
+  color: string;
+}
 
 function RealTimePageContent() {
   const [vehicles, setVehicles] = useState<VehicleWithGps[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [routeWaypoints, setRouteWaypoints] = useState<google.maps.LatLngLiteral[]>([]);
+  const [directionsResponse, setDirectionsResponse] = useState<google.maps.DirectionsResult | null>(null);
+  const [coloredLegs, setColoredLegs] = useState<CustomLeg[]>([]);
   const [focusedVehicle, setFocusedVehicle] = useState<VehicleWithGps | null>(null);
-
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
+  
+  const handleRouteCalculation = (
+    result: google.maps.DirectionsResult | null,
+    legs: google.maps.DirectionsLeg[]
+    ) => {
+    setDirectionsResponse(result);
+    if (result && legs) {
+      const newColoredLegs = legs.map((leg, index) => ({
+        ...leg,
+        color: ROUTE_COLORS[index % ROUTE_COLORS.length]
+      }));
+      setColoredLegs(newColoredLegs);
+    } else {
+      setColoredLegs([]);
+    }
+  };
+  
   const searchParams = useSearchParams();
   const focusVehicleId = searchParams.get('focus');
 
@@ -71,38 +92,40 @@ function RealTimePageContent() {
   const isLoading = isLoadingData || !isMapScriptLoaded;
 
   return (
-    <main className="flex-1 p-4 sm:p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Main Content: Map */}
-          <div className="lg:col-span-2">
-            {isLoading ? (
-               <div className="h-[600px] w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800 flex items-center justify-center">
-                <p className="text-gray-500">Loading Vehicle Data & Map...</p>
-               </div>
-            ) : (
-              <MapView 
-                isLoaded={isMapScriptLoaded}
-                vehicles={vehicles} 
-                routeWaypoints={routeWaypoints} 
-                focusedVehicle={focusedVehicle} 
-              />
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <aside className="space-y-6">
-            <RouteCalculator isLoaded={isMapScriptLoaded} onCalculate={setRouteWaypoints} />
-            <IntegrationStatusCard />
-            <LiveAlerts />
-          </aside>
+    <div className="flex-1 p-4 sm:p-6 md:p-8 bg-background text-foreground h-screen">
+      <div className="h-full w-full max-w-full mx-auto grid grid-cols-1 xl:grid-cols-8 gap-6 xl:gap-8">
+        
+        {/* --- Map Column --- */}
+        <div className="xl:col-span-5 h-full w-full rounded-xl overflow-hidden shadow-lg">
+          {isLoading ? (
+            <div className="h-full w-full animate-pulse bg-card flex items-center justify-center">
+              <p className="text-muted-foreground">Loading Map...</p>
+            </div>
+          ) : (
+            <MapView 
+              key={JSON.stringify(directionsResponse)}
+              isLoaded={isMapScriptLoaded}
+              vehicles={vehicles} 
+              directions={directionsResponse} 
+              focusedVehicle={focusedVehicle}
+              onMapLoad={() => {}}
+              coloredLegs={coloredLegs}
+              selectedRouteIndex={selectedRouteIndex}
+              routeColors={ROUTE_COLORS}
+            />
+          )}
         </div>
-      </motion.div>
-    </main>
+
+        {/* --- Control Panel Column --- */}
+        <aside className="xl:col-span-3 h-full">
+            <TripPlanner
+              isScriptLoaded={isMapScriptLoaded}
+              onRouteCalculated={handleRouteCalculation}
+            />
+        </aside>
+
+      </div>
+    </div>
   );
 }
 

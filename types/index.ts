@@ -20,15 +20,22 @@ export interface CargoOffer {
   createdAt: string;
 }
 
+// Define enums based on your Prisma schema
+export enum VehicleStatus {
+  IN_TRANSIT = 'IN_TRANSIT',
+  IDLE = 'IDLE',
+  MAINTENANCE = 'MAINTENANCE',
+}
+
+// Define the base Vehicle type based on your Prisma schema
 export interface Vehicle {
   id: string;
-  name: string;
-  type: string;
   licensePlate: string;
-  status: 'idle' | 'in_transit' | 'loading' | 'unloading' | 'maintenance' | 'assigned' | 'out_of_service';
-  driverName: string;
-  currentRoute: string;
-  lat: number;
-  lng: number;
-  fleetId: string;
+  make: string;
+  model: string;
+  year: number;
+  status: VehicleStatus;
+  currentDriverId?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 } 
