@@ -24,12 +24,31 @@ export async function POST(request: Request) {
     }
     
     // Find the first fleet to associate the vehicle with.
-    const fleet = await prisma.fleet.findFirst();
+    let fleet = await prisma.fleet.findFirst();
+    
     if (!fleet) {
-         return new NextResponse(
-            JSON.stringify({ error: 'No fleet found. Please create a fleet before adding vehicles.' }),
-            { status: 400, headers: { 'Content-Type': 'application/json' } }
-        );
+      // If no fleet exists, we need a user to own it.
+      let user = await prisma.user.findFirst();
+      
+      if (!user) {
+        // If no user exists, create a default system user.
+        user = await prisma.user.create({
+          data: {
+            name: 'System Admin',
+            email: `admin@${Date.now()}.system`, // Unique email
+            role: 'admin',
+          },
+        });
+      }
+
+      // Now create a default fleet owned by that user.
+      fleet = await prisma.fleet.create({
+        data: {
+          name: 'Default Fleet',
+          status: 'active',
+          userId: user.id,
+        },
+      });
     }
 
     const newVehicle = await prisma.vehicle.create({

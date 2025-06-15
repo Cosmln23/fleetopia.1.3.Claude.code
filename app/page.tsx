@@ -35,7 +35,8 @@ import {
   Globe,
   Brain,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  ClipboardList
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -376,10 +377,10 @@ export default function FleetMindHome() {
                     <span>View Analytics</span>
                   </Button>
                 </Link>
-                <Link href="/api-integrations">
+                <Link href="/dispatch">
                   <Button variant="outline" className="w-full h-20 flex-col space-y-2">
-                    <Zap className="w-6 h-6" />
-                    <span>Manage APIs</span>
+                    <ClipboardList className="w-6 h-6" />
+                    <span>Active Jobs</span>
                   </Button>
                 </Link>
               </div>

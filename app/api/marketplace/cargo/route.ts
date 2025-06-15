@@ -1,5 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
 
 // GET all cargo offers with optional filtering
 export async function GET(request: NextRequest) {
@@ -79,7 +80,7 @@ export async function POST(request: Request) {
         companyName: companyName || 'Private User',
         requirements: requirements || [],
         urgency,
-        userId: (await prisma.user.findFirstOrThrow()).id
+        userId: null
       },
     });
 

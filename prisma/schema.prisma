@@ -61,6 +61,14 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+enum CargoStatus {
+  NEW
+  TAKEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
 enum VehicleStatus {
   idle
   in_transit
@@ -253,8 +261,8 @@ model AgentAPIConnection {
 
 model CargoOffer {
   id            String    @id @default(cuid())
-  userId        String
-  user          User      @relation(fields: [userId], references: [id])
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id])
   title         String
   companyName   String?
   fromAddress   String
@@ -269,7 +277,7 @@ model CargoOffer {
   price         Float
   priceType     String
   urgency       String    @default("medium")
-  status        String    @default("new")
+  status        CargoStatus @default(NEW)
   loadingDate   DateTime
   deliveryDate  DateTime
   requirements  String[]
