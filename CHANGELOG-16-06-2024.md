@@ -19,4 +19,5 @@
 - **Rezolvare Erori de Tip**: Am corectat multiple erori de tip TypeScript, în special cele legate de tipul `CargoOffer`, pentru a asigura robustețea codului.
 - **Corecție Rută API**: Am rezolvat o eroare server-side recurentă în ruta API pentru chat (`/api/marketplace/cargo/[id]/chat/route.ts`).
 - **Instalare Dependință Lipsă**: Am instalat pachetul lipsă `@radix-ui/react-popover` care cauza oprirea aplicației.
-- **Management Procese**: A fost necesară oprirea și repornirea serverului de dezvoltare de mai multe ori pentru a regenera corect clientul Prisma și a rezolva problemele de blocare a fișierelor. 
+- **Management Procese**: A fost necesară oprirea și repornirea serverului de dezvoltare de mai multe ori pentru a regenera corect clientul Prisma și a rezolva problemele de blocare a fișierelor.
+- **Rezolvare Eroare Critică la Crearea Ofertelor**: A fost depanată și corectată o eroare de server (500) care bloca adăugarea de noi oferte de marfă. Problema a fost cauzată de o desincronizare între schema Prisma locală și structura bazei de date, necesitând actualizarea schemei (`prisma db pull`) și a componentelor frontend/backend pentru a include câmpurile obligatorii `fromCity` și `toCity`. 

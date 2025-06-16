@@ -72,17 +72,18 @@ export async function POST(request: Request) {
     }
 
     const userId = session.user.id;
+    const companyNameFromSession = session.user.name; // Get company name from session
     const body = await request.json();
     
     const {
-      title, fromAddress, fromCountry, toAddress, toCountry, weight,
+      title, fromAddress, fromCountry, fromCity, toAddress, toCountry, toCity, weight,
       loadingDate, deliveryDate, price,
       fromPostalCode, toPostalCode, volume, cargoType, priceType,
-      companyName, requirements, urgency
+      requirements, urgency
     } = body;
 
     // Basic validation
-    if (!title || !fromAddress || !fromCountry || !toAddress || !toCountry || !weight || !loadingDate || !deliveryDate || !price) {
+    if (!title || !fromAddress || !fromCountry || !fromCity || !toAddress || !toCountry || !toCity || !weight || !loadingDate || !deliveryDate || !price) {
       return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
     }
 
@@ -90,9 +91,11 @@ export async function POST(request: Request) {
       title,
       fromAddress,
       fromCountry,
+      fromCity,
       fromPostalCode: fromPostalCode || null,
       toAddress,
       toCountry,
+      toCity,
       toPostalCode: toPostalCode || null,
       weight: parseFloat(weight),
       volume: volume ? parseFloat(volume) : null,
@@ -101,8 +104,8 @@ export async function POST(request: Request) {
       deliveryDate: new Date(deliveryDate),
       price: parseFloat(price),
       priceType: priceType || 'fixed',
-      companyName: companyName || null,
-      requirements: requirements || [],
+      companyName: companyNameFromSession, // Use company name from session
+      requirements: typeof requirements === 'string' ? requirements.split(',').map(req => req.trim()).filter(Boolean) : [],
       urgency: urgency || 'medium',
       user: {
         connect: {
