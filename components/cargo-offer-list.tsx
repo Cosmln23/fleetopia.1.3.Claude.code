@@ -140,16 +140,22 @@ export function CargoOfferList({
                           >
                           <Trash2 className="h-4 w-4"/>
                         </Button>
-                        <Button 
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 bg-green-800/70 hover:bg-green-700 border-slate-600"
-                            title="Assign Offer"
-                            onClick={() => setOfferToAssign(offer)}
-                        >
-                          <Hand className="h-4 w-4" />
-                        </Button>
                       </>
+                     )}
+                     {session && session.user && session.user.id === offer.acceptedByUserId && offer.status === 'COMPLETED' && (
+                       <div className="flex items-center gap-2">
+                         <span className="text-xs text-green-400 font-semibold">Accepted</span>
+                         <Button 
+                             variant="outline"
+                             size="sm"
+                             className="h-7 text-xs bg-blue-800/70 hover:bg-blue-700 border-blue-600"
+                             title="Assign to Vehicle"
+                             onClick={() => setOfferToAssign(offer)}
+                         >
+                           <Hand className="h-3 w-3 mr-1" />
+                           Assign to Vehicle
+                         </Button>
+                       </div>
                      )}
                   </div>
                 </div>

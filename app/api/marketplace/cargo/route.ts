@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
     } else if (listType === 'accepted_offers') {
       if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       filters.acceptedByUserId = session.user.id;
-      filters.status = 'TAKEN';
+      filters.status = { in: ['TAKEN', 'COMPLETED'] };
     } else if (listType === 'conversations') {
       if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       filters.OR = [
