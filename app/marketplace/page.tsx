@@ -607,7 +607,12 @@ export default function MarketplacePage() {
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-lg font-bold text-white mb-2">Transport Request: {req.truckType}</CardTitle>
-                        <Badge className={req.status === 'available' ? 'bg-green-500' : 'bg-yellow-500'}>{req.status.toUpperCase()}</Badge>
+                        <div className="flex gap-2">
+                          <Badge className="bg-blue-500 text-white">
+                            📍 Posted to Find Transport
+                          </Badge>
+                          <Badge className={req.status === 'available' ? 'bg-green-500' : 'bg-yellow-500'}>{req.status.toUpperCase()}</Badge>
+                        </div>
                       </div>
                        <div className="flex items-center text-sm text-blue-300">
                         <MapPin className="h-4 w-4 mr-2" />
@@ -625,7 +630,7 @@ export default function MarketplacePage() {
                       <div className="mt-4">
                         <h4 className="font-semibold text-slate-200 mb-2 text-xs">Capabilities:</h4>
                         <div className="flex flex-wrap gap-2">
-                          {req.capabilities.map(cap => <Badge key={cap} variant="outline" className="text-slate-300 border-slate-600">{cap}</Badge>)}
+                          {req.capabilities.map((cap, index) => <Badge key={`${req.id}-cap-${index}`} variant="outline" className="text-slate-300 border-slate-600">{cap}</Badge>)}
                         </div>
                       </div>
                     </CardContent>
