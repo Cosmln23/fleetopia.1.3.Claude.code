@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -19,7 +22,6 @@ model User {
   accounts          Account[]
   sessions          Session[]
   cargoOffers       CargoOffer[]
-  // FleetMind relations
   aiAgents          AIAgent[]        @relation("CreatedAIAgents")
   fleets            Fleet[]          @relation("OwnedFleets")
   integrations      APIIntegration[] @relation("UserIntegrations")
@@ -79,7 +81,6 @@ enum VehicleStatus {
   out_of_service
 }
 
-// FleetMind Models
 model AIAgent {
   id            String   @id @default(cuid())
   name          String
@@ -245,100 +246,114 @@ model AgentAPIConnection {
   id              String         @id @default(cuid())
   agentId         String
   integrationId   String
-  
-  agent           AIAgent    @relation(fields: [agentId], references: [id])
+  status          String         @default("active")
+  lastUsed        DateTime?
+  metrics         Json?
+  agent           AIAgent        @relation(fields: [agentId], references: [id])
   integration     APIIntegration @relation(fields: [integrationId], references: [id])
-  user            User          @relation("UserConnections", fields: [userId], references: [id])
+  user            User           @relation("UserConnections", fields: [userId], references: [id])
   userId          String
-  
-  createdAt       DateTime  @default(now())
-  
+
   @@unique([agentId, integrationId])
-  @@index([agentId])
-  @@index([integrationId])
-  @@index([userId])
 }
 
 model CargoOffer {
-  id            String    @id @default(cuid())
-  userId        String?
-  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
-  title         String
-  companyName   String?
-  fromAddress   String
-  fromCountry   String
-  toAddress     String
-  toCountry     String
-  fromPostalCode String?
-  toPostalCode   String?
-  weight        Float
-  volume        Float?
-  cargoType     String?
-  price         Float
-  priceType     String
-  urgency       String    @default("medium")
-  status        CargoStatus @default(NEW)
-  loadingDate   DateTime
-  deliveryDate  DateTime
-  requirements  String[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String      @id @default(cuid())
+  title        String
+  fromLocation String
+  toLocation   String
+  fromAddress  String
+  toAddress    String
+  fromCountry  String
+  toCountry    String
+  distance     Float?
+  weight       Float
+  volume       Float?
+  cargoType    String
+  loadingDate  DateTime
+  deliveryDate DateTime
+  price        Float
+  priceType    String
+  companyName  String
+  companyRating Float?
+  requirements String[]
+  vehicleType  String?
+  status       CargoStatus @default(NEW)
+  urgency      String
+  userId       String
+  user         User        @relation(fields: [userId], references: [id])
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  SystemAlert  SystemAlert[]
+
+  @@index([status])
+  @@index([userId])
 }
 
 model SystemAlert {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   message     String
-  type        String
+  type        String     @default("info")
+  details     String?
+  isProcessed Boolean    @default(false)
+  read        Boolean    @default(false)
+  createdAt   DateTime   @default(now())
   relatedId   String?
-  read        Boolean  @default(false)
-  isProcessed Boolean  @default(false)
-  createdAt   DateTime @default(now())
+  cargoOffer  CargoOffer? @relation(fields: [relatedId], references: [id])
 }
 
 model Vehicle {
-  id            String    @id @default(cuid())
-  name          String
-  type          String
-  licensePlate  String    @unique
-  status        VehicleStatus @default(idle)
-  driverName    String
-  currentRoute  String
-  lat           Float
-  lng           Float
-  fuelConsumption Float? @default(10.0)
+  id                    String    @id @default(cuid())
+  name                  String
+  type                  String
+  licensePlate          String    @unique
+  status                VehicleStatus @default(idle)
+  driverName            String
+  lat                   Float?
+  lng                   Float?
+  fuelConsumption       Float?    @default(30.0)
+  fleet                 Fleet     @relation(fields: [fleetId], references: [id])
+  fleetId               String
+  routes                Route[]
+  maintenances          Maintenance[]
+  gpsLogs               GpsLog[]
+  currentRouteId        String?
   
-  logs          GpsLog[]
-  metrics       RealTimeMetric[]
-  
-  // Inverse relations
-  fleetId       String
-  fleet         Fleet     @relation(fields: [fleetId], references: [id])
-  routes        Route[]
-  maintenances  Maintenance[]
+  // -- Câmpuri pentru Localizare Hibridă --
+  locationType          VehicleLocationType @default(MANUAL_COORDS)
+  manualLocationAddress String?
+  gpsDeviceImei         String?             @unique
+
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@index([fleetId])
+  @@index([status])
 }
 
 model GpsLog {
   id        String   @id @default(cuid())
   lat       Float
   lng       Float
+  speed     Float?
   timestamp DateTime @default(now())
+  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id])
   vehicleId String
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
 
-  @@index([vehicleId])
+  @@index([vehicleId, timestamp])
 }
 
 model RealTimeMetric {
-  id             String   @id @default(cuid())
-  fuelEfficiency Float
-  averageSpeed   Float
-  alertsCount    Int
-  compliance     Float
-  timestamp      DateTime @default(now())
-  vehicleId      String
-  vehicle        Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  id         String @id @default(cuid())
+  metricType String
+  value      Json
+  timestamp  DateTime @default(now())
+  
+  @@index([metricType, timestamp])
+}
 
-  @@index([vehicleId])
+enum VehicleLocationType {
+  MANUAL_COORDS
+  MANUAL_ADDRESS
+  GPS_API
 }

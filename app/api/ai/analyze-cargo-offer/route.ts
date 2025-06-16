@@ -52,8 +52,44 @@ export async function POST(request: Request) {
       });
     }
 
-    const simulationPromises = candidateVehicles.map(async (vehicle: Vehicle): Promise<SimulationResult | null> => {
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    // --- Pasul 1: Rezolvarea locațiilor pentru vehiculele candidate ---
+    const readyVehicles: Vehicle[] = [];
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+    for (const vehicle of candidateVehicles) {
+      if (vehicle.locationType === 'MANUAL_COORDS' && vehicle.lat != null && vehicle.lng != null) {
+        readyVehicles.push(vehicle);
+      } else if (vehicle.locationType === 'MANUAL_ADDRESS' && vehicle.manualLocationAddress) {
+        // Folosim Geocoding API pentru a converti adresa in coordonate
+        try {
+          const geocodingUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(vehicle.manualLocationAddress)}&key=${apiKey}`;
+          const response = await fetch(geocodingUrl);
+          const data = await response.json();
+          if (data.status === 'OK' && data.results[0]) {
+            const location = data.results[0].geometry.location;
+            // Adaugam coordonatele la obiectul vehicul pentru a-l folosi mai tarziu
+            readyVehicles.push({ ...vehicle, lat: location.lat, lng: location.lng });
+          } else {
+            console.warn(`Geocoding failed for address '${vehicle.manualLocationAddress}': ${data.status}`);
+          }
+        } catch (error) {
+          console.error('Error during geocoding:', error);
+        }
+      }
+      // Vehiculele cu 'GPS_API' vor fi tratate aici in viitor
+    }
+
+    if (readyVehicles.length === 0) {
+      return NextResponse.json({ 
+        proposal: `Analysis complete: No suitable vehicles with a verifiable location were found.`,
+        chosenVehicleId: null 
+      });
+    }
+
+    const simulationPromises = readyVehicles.map(async (vehicle: Vehicle): Promise<SimulationResult | null> => {
+        // Verificare suplimentară de siguranță
+        if (vehicle.lat == null || vehicle.lng == null) return null;
+
         const url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
         
         const requestBody = {
@@ -96,22 +132,18 @@ export async function POST(request: Request) {
             let distanceOfCargo = 0;
 
             if (route.legs && route.legs.length >= 2) {
-                // Cazul normal: Vehicul -> Preluare -> Destinatie
                 distanceToPickup = route.legs[0].distanceMeters;
                 distanceOfCargo = route.legs[1].distanceMeters;
             } else if (route.legs && route.legs.length === 1) {
-                // Cazul exceptional: Vehiculul este deja la punctul de preluare
                 console.warn("Route has only one leg. Assuming vehicle is at pickup location.");
                 distanceToPickup = 0;
                 distanceOfCargo = route.legs[0].distanceMeters;
             } else {
-                // Cazul de rezerva: Folosim distanta totala daca 'legs' lipsesc
                 console.warn("Route legs are not defined. Using total distance for cargo leg.");
                 distanceToPickup = 0;
                 distanceOfCargo = totalDistance;
             }
 
-            // Extrage costul taxelor in mod sigur
             const estimatedPrice = route.travelAdvisory?.tollInfo?.estimatedPrice;
             const tollCost = estimatedPrice && estimatedPrice.length > 0 
                 ? parseFloat(estimatedPrice[0].units || '0') 
@@ -143,12 +175,10 @@ export async function POST(request: Request) {
 
     const chosenVehicleId = bestCandidate.vehicle.id;
 
-    // Daca niciun vehicul nu e profitabil, Claude va genera o recomandare de respingere
     const actionRecommendation = bestCandidate.profit >= 0
       ? `recomandă asignarea cursei vehiculului cu ID ${chosenVehicleId}`
       : `recomandă RESPINGEREA ofertei pentru că nu este profitabilă`;
 
-    // Construim prompt-ul pentru Claude AI
     const prompt = `
       Rol: Ești un dispecer AI pentru o companie de transport rutier.
       Sarcina: Analizează oferta de transport și datele vehiculului optim, apoi formulează o propunere scurtă, profesională și directă.
@@ -202,12 +232,6 @@ export async function POST(request: Request) {
             distanceOfCargo: bestCandidate.distanceOfCargo,
         }
     };
-    
-    // Nu mai este necesara aceasta verificare deoarece 'chosenVehicleId' este setat corect in 'finalProposal'
-    // if (responseWithBreakdown.chosenVehicleId !== chosenVehicleId) {
-    //     console.warn('Claude AI returned a different vehicle ID. Overriding with system logic.');
-    //     responseWithBreakdown.chosenVehicleId = bestCandidate.profit >= 0 ? chosenVehicleId : null;
-    // }
 
     return NextResponse.json(responseWithBreakdown);
 

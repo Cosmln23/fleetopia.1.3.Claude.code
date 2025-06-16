@@ -22,7 +22,7 @@ import { toast } from 'sonner';
 
 // Re-using the Vehicle type from the management page
 // A centralized types file would be a good refactor for later
-import { type Vehicle } from '../app/fleet-management/page';
+import type { Vehicle } from '../app/fleet-management/page';
 
 interface AddVehicleFormProps {
   onVehicleAdded: () => void;
@@ -36,9 +36,11 @@ export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormPr
     licensePlate: '',
     driverName: '',
     status: 'idle',
+    currentRoute: '',
+    locationType: 'MANUAL_COORDS',
+    manualLocationAddress: '',
     lat: 0,
     lng: 0,
-    currentRoute: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,25 +49,57 @@ export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormPr
   useEffect(() => {
     if (isEditMode && initialData) {
       setFormData({
-        name: initialData.name,
-        type: initialData.type,
-        licensePlate: initialData.licensePlate,
-        driverName: initialData.driverName,
-        status: initialData.status,
-        lat: initialData.lat,
-        lng: initialData.lng,
-        currentRoute: initialData.currentRoute,
+        ...initialData,
+        lat: initialData.lat ?? 0,
+        lng: initialData.lng ?? 0,
+        manualLocationAddress: initialData.manualLocationAddress ?? '',
+      });
+    } else {
+      // Reset to default for a new vehicle form
+      setFormData({
+        name: '',
+        type: 'Truck',
+        licensePlate: '',
+        driverName: '',
+        status: 'idle',
+        currentRoute: '',
+        locationType: 'MANUAL_COORDS',
+        manualLocationAddress: '',
+        lat: 0,
+        lng: 0,
       });
     }
   }, [initialData, isEditMode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'lat' || name === 'lng' ? parseFloat(value) : value }));
+
+    if (name === 'lat' || name === 'lng') {
+      const numericValue = parseFloat(value);
+      if (value === '' || !isNaN(numericValue)) {
+        setFormData((prev: Partial<Vehicle>) => ({ ...prev, [name]: value === '' ? '' : numericValue }));
+      }
+    } else {
+      setFormData((prev: Partial<Vehicle>) => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev: Partial<Vehicle>) => ({ ...prev, [name]: value }));
+  };
+  
+  const handleLocationTypeChange = (value: string) => {
+    setFormData(prev => {
+      const newState: Partial<Vehicle> = { ...prev, locationType: value as any };
+      // Clear out the other location type's data to avoid confusion
+      if (value === 'MANUAL_COORDS') {
+        newState.manualLocationAddress = '';
+      } else if (value === 'MANUAL_ADDRESS') {
+        newState.lat = 0;
+        newState.lng = 0;
+      }
+      return newState;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -156,14 +190,43 @@ export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormPr
                 </SelectContent>
             </Select>
           </div>
+
+          <div className="border-t border-slate-700 my-2 col-span-4"></div>
+
           <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="lat" className="text-right">Latitude</Label>
-              <Input id="lat" name="lat" type="number" value={formData.lat} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
+            <Label htmlFor="locationType" className="text-right">Location Method</Label>
+            <Select name="locationType" onValueChange={handleLocationTypeChange} defaultValue={formData.locationType}>
+                <SelectTrigger className="col-span-3 bg-slate-800 border-slate-600">
+                    <SelectValue placeholder="Select location method" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                    <SelectItem value="MANUAL_COORDS">Manual Coordinates</SelectItem>
+                    <SelectItem value="MANUAL_ADDRESS">Manual Address</SelectItem>
+                    {/* <SelectItem value="GPS_API" disabled>GPS API (Coming Soon)</SelectItem> */}
+                </SelectContent>
+            </Select>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="lng" className="text-right">Longitude</Label>
-              <Input id="lng" name="lng" type="number" value={formData.lng} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
-          </div>
+
+          {formData.locationType === 'MANUAL_COORDS' && (
+            <>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="lat" className="text-right">Latitude</Label>
+                  <Input id="lat" name="lat" type="number" value={formData.lat ?? ''} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="lng" className="text-right">Longitude</Label>
+                  <Input id="lng" name="lng" type="number" value={formData.lng ?? ''} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
+              </div>
+            </>
+          )}
+
+          {formData.locationType === 'MANUAL_ADDRESS' && (
+              <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="manualLocationAddress" className="text-right">Address</Label>
+                  <Input id="manualLocationAddress" name="manualLocationAddress" value={formData.manualLocationAddress ?? ''} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" placeholder="e.g., Bucharest, Romania"/>
+              </div>
+          )}
+
         </div>
         <DialogFooter>
           <DialogClose asChild>

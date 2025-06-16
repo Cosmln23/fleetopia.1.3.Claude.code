@@ -81,7 +81,7 @@ interface CargoOffer {
   toCountry: string;
 }
 
-interface Vehicle {
+export interface Vehicle {
   id: string;
   name: string;
   type: string;
@@ -89,8 +89,8 @@ interface Vehicle {
   status: 'active' | 'idle' | 'maintenance' | 'offline' | 'assigned';
   driverName: string;
   currentRoute: string; // Assuming this is a string representation for now
-  lat?: number;
-  lng?: number;
+  lat?: number | '';
+  lng?: number | '';
 }
 
 interface CargoDetails extends CargoOffer {
@@ -233,6 +233,7 @@ export default function FleetManagementPage() {
       },
       cancel: {
         label: 'Cancel',
+        onClick: () => {},
       },
     });
   };
@@ -352,7 +353,7 @@ export default function FleetManagementPage() {
               </div>
               <div>
                 <p className="text-slate-400 text-sm">Last Known Location</p>
-                <p className="text-white truncate font-medium">{`Lat: ${vehicle.lat?.toFixed(4) || 'N/A'}, Lng: ${vehicle.lng?.toFixed(4) || 'N/A'}`}</p>
+                <p className="text-white truncate font-medium">{typeof vehicle.lat === 'number' && typeof vehicle.lng === 'number' ? `Lat: ${vehicle.lat.toFixed(4)}, Lng: ${vehicle.lng.toFixed(4)}` : 'N/A'}</p>
               </div>
             </div>
           </CardContent>
