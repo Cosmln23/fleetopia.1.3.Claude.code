@@ -87,6 +87,8 @@ interface TransportRequest {
   };
   capabilities: string[];
   status: 'available' | 'booked' | 'en_route';
+  driverName?: string;
+  licensePlate?: string;
 }
 
 export default function MarketplacePage() {
@@ -173,47 +175,91 @@ export default function MarketplacePage() {
     }
   };
 
+  // Add fetchTransportRequests function
+  const fetchTransportRequests = async () => {
+    try {
+      const response = await fetch('/api/vehicles');
+      if (!response.ok) {
+        throw new Error('Failed to fetch vehicles');
+      }
+      const vehicles = await response.json();
+      
+      // Convert vehicles to transport requests format
+      const availableTransports: TransportRequest[] = vehicles
+        .filter((vehicle: any) => vehicle.status === 'idle' || vehicle.status === 'active')
+        .map((vehicle: any) => ({
+          id: vehicle.id,
+          from: `${vehicle.lat && vehicle.lng ? `${vehicle.lat.toFixed(2)}, ${vehicle.lng.toFixed(2)}` : 'Current Location'}`,
+          to: 'Available for any destination',
+          truckType: vehicle.type || 'Standard Truck',
+          availableFrom: new Date().toISOString().split('T')[0],
+          availableTo: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
+          priceRange: { min: 800, max: 2500 },
+          company: {
+            name: `Fleet Vehicle - ${vehicle.name}`,
+            rating: 4.5,
+            verified: true,
+            fleetSize: 1
+          },
+          capabilities: ['Standard Transport'],
+          status: 'available' as const,
+          driverName: vehicle.driverName,
+          licensePlate: vehicle.licensePlate
+        }));
+
+      // Add some mock data for demo purposes
+      const mockData: TransportRequest[] = [
+        {
+          id: 'mock-1',
+          from: 'Bucharest, Romania',
+          to: 'Germany',
+          truckType: 'Semitrailer',
+          availableFrom: '2024-03-15',
+          availableTo: '2024-03-20',
+          priceRange: { min: 1200, max: 2800 },
+          company: {
+            name: 'EuroFleet Transport',
+            rating: 4.7,
+            verified: true,
+            fleetSize: 45
+          },
+          capabilities: ['ADR', 'Refrigerated', 'Oversized'],
+          status: 'available'
+        },
+        {
+          id: 'mock-2',
+          from: 'Cluj-Napoca, Romania',
+          to: 'Netherlands',
+          truckType: 'Refrigerated',
+          availableFrom: '2024-03-16',
+          availableTo: '2024-03-25',
+          priceRange: { min: 950, max: 2200 },
+          company: {
+            name: 'ColdChain Logistics',
+            rating: 4.9,
+            verified: true,
+            fleetSize: 28
+          },
+          capabilities: ['Temperature Control', 'Food Grade'],
+          status: 'available'
+        }
+      ];
+
+      // Combine real vehicles with mock data
+      setTransportRequests([...availableTransports, ...mockData]);
+    } catch (error) {
+      console.error('Error fetching transport requests:', error);
+      toast({
+        title: "Error",
+        description: "Could not fetch transport requests.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchCargoOffers(activeList);
-    
-    // Transport requests still use mock data for now
-    const mockTransportRequests: TransportRequest[] = [
-      {
-        id: '1',
-        from: 'Bucharest, Romania',
-        to: 'Germany',
-        truckType: 'Semitrailer',
-        availableFrom: '2024-03-15',
-        availableTo: '2024-03-20',
-        priceRange: { min: 1200, max: 2800 },
-        company: {
-          name: 'EuroFleet Transport',
-          rating: 4.7,
-          verified: true,
-          fleetSize: 45
-        },
-        capabilities: ['ADR', 'Refrigerated', 'Oversized'],
-        status: 'available'
-      },
-      {
-        id: '2',
-        from: 'Cluj-Napoca, Romania',
-        to: 'France',
-        truckType: 'Refrigerated',
-        availableFrom: '2024-03-14',
-        availableTo: '2024-03-18',
-        priceRange: { min: 2000, max: 3500 },
-        company: {
-          name: 'ColdChain Logistics',
-          rating: 4.9,
-          verified: true,
-          fleetSize: 28
-        },
-        capabilities: ['Refrigeration', 'HACCP', 'Express'],
-        status: 'available'
-      }
-    ];
-    setTransportRequests(mockTransportRequests);
+    fetchTransportRequests();
   }, [activeList]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {

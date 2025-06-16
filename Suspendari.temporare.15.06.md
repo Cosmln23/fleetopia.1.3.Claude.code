@@ -28,4 +28,47 @@ Acest document înregistrează deciziile de a suspenda temporar anumite funcțio
     1. Pagină custom de error care explică utilizatorului să folosească provider-ul original
     2. Eliminarea Credentials Provider și folosirea exclusiv a OAuth providers
     3. Reset complet al bazei de date pentru a elimina conflictele de conturi
-    4. Implementarea unui sistem de linking manual și sigur a conturilor 
+    4. Implementarea unui sistem de linking manual și sigur a conturilor
+
+---
+
+## Probleme de Securitate - URGENT
+
+### 1. OAuthAccountNotLinked Error - SOLUTIE TEMPORARA NESIGURA
+**Problema**: Utilizatorii cu conturi existente în baza de date nu se pot loga cu Google OAuth din cauza măsurii de securitate NextAuth.
+
+**Soluție temporară aplicată**:
+```javascript
+allowDangerousEmailAccountLinking: true
+```
+
+**RISC**: Această setare permite preluarea conturilor prin atacuri de tip email hijacking.
+
+**DE FĂCUT URGENT în producție**:
+1. Implementarea unui sistem de linking sigur
+2. Verificarea identității înainte de linking
+3. Notificări email pentru linking-uri noi
+4. Oprirea acestei setări temporare
+
+---
+
+## Actualizări Aplicație - 16.06.2024
+
+### 2. Eliminare Auto-Refresh Marketplace
+**Modificare**: Am eliminat refresh-ul automat la fiecare 10 secunde din marketplace.
+
+**Motivul**: Utilizatorii preferă să facă refresh manual când doresc să vadă actualizările.
+
+**Comportament actual**:
+- Marketplace se actualizează doar la refresh manual
+- Marfa ștearsă dispare pentru alți utilizatori doar când fac refresh manual
+- Performanță îmbunătățită (mai puține cereri către server)
+- Control complet al utilizatorului asupra când să vadă actualizările
+
+**Commit**: `1a179c0` - "Remove auto-refresh from marketplace - users will refresh manually when needed"
+
+---
+
+## De urmărit în continuare:
+- Rezolvarea problemei de securitate OAuth
+- Testarea comportamentului fără auto-refresh în utilizare reală 

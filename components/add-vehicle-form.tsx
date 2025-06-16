@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { Truck, User, MapPin, Settings } from 'lucide-react';
 
 // Re-using the Vehicle type from the management page
 // A centralized types file would be a good refactor for later
@@ -29,8 +30,13 @@ interface AddVehicleFormProps {
   initialData?: Vehicle | null;
 }
 
+interface FormData extends Partial<Vehicle> {
+  locationType?: string;
+  manualLocationAddress?: string;
+}
+
 export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormProps) {
-  const [formData, setFormData] = useState<Partial<Vehicle>>({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     type: 'Truck',
     licensePlate: '',
@@ -52,7 +58,8 @@ export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormPr
         ...initialData,
         lat: initialData.lat ?? 0,
         lng: initialData.lng ?? 0,
-        manualLocationAddress: initialData.manualLocationAddress ?? '',
+        locationType: 'MANUAL_COORDS',
+        manualLocationAddress: '',
       });
     } else {
       // Reset to default for a new vehicle form
@@ -77,20 +84,20 @@ export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormPr
     if (name === 'lat' || name === 'lng') {
       const numericValue = parseFloat(value);
       if (value === '' || !isNaN(numericValue)) {
-        setFormData((prev: Partial<Vehicle>) => ({ ...prev, [name]: value === '' ? '' : numericValue }));
+        setFormData((prev: FormData) => ({ ...prev, [name]: value === '' ? '' : numericValue }));
       }
     } else {
-      setFormData((prev: Partial<Vehicle>) => ({ ...prev, [name]: value }));
+      setFormData((prev: FormData) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleSelectChange = (name: string, value: string) => {
-    setFormData((prev: Partial<Vehicle>) => ({ ...prev, [name]: value }));
+    setFormData((prev: FormData) => ({ ...prev, [name]: value }));
   };
   
   const handleLocationTypeChange = (value: string) => {
     setFormData(prev => {
-      const newState: Partial<Vehicle> = { ...prev, locationType: value as any };
+      const newState: FormData = { ...prev, locationType: value };
       // Clear out the other location type's data to avoid confusion
       if (value === 'MANUAL_COORDS') {
         newState.manualLocationAddress = '';
@@ -118,10 +125,21 @@ export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormPr
     const errorMessage = isEditMode ? 'Failed to update vehicle' : 'Failed to create vehicle';
 
     try {
+      // Filter out extra fields that aren't in the Vehicle schema
+      const vehicleData = {
+        name: formData.name,
+        type: formData.type,
+        licensePlate: formData.licensePlate,
+        driverName: formData.driverName,
+        status: formData.status,
+        lat: formData.lat || 0,
+        lng: formData.lng || 0,
+      };
+
       const response = await fetch(apiEndpoint, {
         method: httpMethod,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(vehicleData),
       });
 
       if (!response.ok) {
@@ -140,105 +158,190 @@ export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormPr
   };
 
   return (
-    <>
-      <DialogHeader>
-        <DialogTitle>{isEditMode ? 'Edit Vehicle' : 'Add New Vehicle'}</DialogTitle>
-        <DialogDescription>
+    <div className="max-w-md mx-auto">
+      <DialogHeader className="space-y-2 pb-4">
+        <DialogTitle className="text-2xl font-bold text-white flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center">
+            <Truck className="w-5 h-5 text-blue-400" />
+          </div>
+          {isEditMode ? 'Edit Vehicle' : 'Add New Vehicle'}
+        </DialogTitle>
+        <DialogDescription className="text-slate-400 text-base">
           {isEditMode 
-            ? 'Update the details for this vehicle.' 
+            ? 'Update the details for this vehicle in your fleet.' 
             : 'Fill in the details below to add a new vehicle to your fleet.'}
         </DialogDescription>
       </DialogHeader>
-      <form onSubmit={handleSubmit}>
-        <div className="grid gap-4 py-4">
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="name" className="text-right">Name</Label>
-            <Input id="name" name="name" value={formData.name} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Vehicle Information Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 pb-2 border-b border-slate-700">
+            <Truck className="w-4 h-4 text-blue-400" />
+            <h3 className="text-base font-semibold text-white">Vehicle Information</h3>
           </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="licensePlate" className="text-right">License Plate</Label>
-            <Input id="licensePlate" name="licensePlate" value={formData.licensePlate} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="driverName" className="text-right">Driver</Label>
-            <Input id="driverName" name="driverName" value={formData.driverName} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
-          </div>
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="type" className="text-right">Type</Label>
-            <Select name="type" onValueChange={(value) => handleSelectChange('type', value)} defaultValue={formData.type}>
-                <SelectTrigger className="col-span-3 bg-slate-800 border-slate-600">
-                    <SelectValue placeholder="Select vehicle type" />
+          
+          <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium text-slate-300">Vehicle Name *</Label>
+              <Input 
+                id="name" 
+                name="name" 
+                value={formData.name} 
+                onChange={handleChange} 
+                className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                placeholder="e.g., Fleet Truck #001"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="licensePlate" className="text-sm font-medium text-slate-300">License Plate *</Label>
+              <Input 
+                id="licensePlate" 
+                name="licensePlate" 
+                value={formData.licensePlate} 
+                onChange={handleChange} 
+                className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                placeholder="e.g., ABC-123"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="type" className="text-sm font-medium text-slate-300">Vehicle Type</Label>
+              <Select name="type" onValueChange={(value) => handleSelectChange('type', value)} defaultValue={formData.type}>
+                <SelectTrigger className="bg-slate-800/50 border-slate-600 h-11 text-white">
+                  <SelectValue placeholder="Select vehicle type" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-600 text-white">
-                    <SelectItem value="Truck">Truck</SelectItem>
-                    <SelectItem value="Van">Van</SelectItem>
-                    <SelectItem value="Car">Car</SelectItem>
+                  <SelectItem value="Truck">Truck</SelectItem>
+                  <SelectItem value="Van">Van</SelectItem>
+                  <SelectItem value="Car">Car</SelectItem>
                 </SelectContent>
-            </Select>
-          </div>
-           <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="status" className="text-right">Status</Label>
-            <Select name="status" onValueChange={(value) => handleSelectChange('status', value)} defaultValue={formData.status}>
-                <SelectTrigger className="col-span-3 bg-slate-800 border-slate-600">
-                    <SelectValue placeholder="Select status" />
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="status" className="text-sm font-medium text-slate-300">Status</Label>
+              <Select name="status" onValueChange={(value) => handleSelectChange('status', value)} defaultValue={formData.status}>
+                <SelectTrigger className="bg-slate-800/50 border-slate-600 h-11 text-white">
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-600 text-white">
-                    <SelectItem value="idle">Idle</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                    <SelectItem value="offline">Offline</SelectItem>
+                  <SelectItem value="idle">Idle</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="offline">Offline</SelectItem>
                 </SelectContent>
-            </Select>
+              </Select>
+            </div>
           </div>
-
-          <div className="border-t border-slate-700 my-2 col-span-4"></div>
-
-          <div className="grid grid-cols-4 items-center gap-4">
-            <Label htmlFor="locationType" className="text-right">Location Method</Label>
-            <Select name="locationType" onValueChange={handleLocationTypeChange} defaultValue={formData.locationType}>
-                <SelectTrigger className="col-span-3 bg-slate-800 border-slate-600">
-                    <SelectValue placeholder="Select location method" />
-                </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600 text-white">
-                    <SelectItem value="MANUAL_COORDS">Manual Coordinates</SelectItem>
-                    <SelectItem value="MANUAL_ADDRESS">Manual Address</SelectItem>
-                    {/* <SelectItem value="GPS_API" disabled>GPS API (Coming Soon)</SelectItem> */}
-                </SelectContent>
-            </Select>
-          </div>
-
-          {formData.locationType === 'MANUAL_COORDS' && (
-            <>
-              <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="lat" className="text-right">Latitude</Label>
-                  <Input id="lat" name="lat" type="number" value={formData.lat ?? ''} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="lng" className="text-right">Longitude</Label>
-                  <Input id="lng" name="lng" type="number" value={formData.lng ?? ''} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
-              </div>
-            </>
-          )}
-
-          {formData.locationType === 'MANUAL_ADDRESS' && (
-              <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="manualLocationAddress" className="text-right">Address</Label>
-                  <Input id="manualLocationAddress" name="manualLocationAddress" value={formData.manualLocationAddress ?? ''} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" placeholder="e.g., Bucharest, Romania"/>
-              </div>
-          )}
-
         </div>
-        <DialogFooter>
+
+        {/* Driver Information Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 pb-2 border-b border-slate-700">
+            <User className="w-4 h-4 text-green-400" />
+            <h3 className="text-base font-semibold text-white">Driver Information</h3>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="driverName" className="text-sm font-medium text-slate-300">Driver Name *</Label>
+            <Input 
+              id="driverName" 
+              name="driverName" 
+              value={formData.driverName} 
+              onChange={handleChange} 
+              className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+              placeholder="e.g., John Smith"
+            />
+          </div>
+        </div>
+
+        {/* Location Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 pb-2 border-b border-slate-700">
+            <MapPin className="w-4 h-4 text-purple-400" />
+            <h3 className="text-base font-semibold text-white">Location Settings</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="locationType" className="text-sm font-medium text-slate-300">Location Method</Label>
+              <Select name="locationType" onValueChange={handleLocationTypeChange} defaultValue={formData.locationType}>
+                <SelectTrigger className="bg-slate-800/50 border-slate-600 h-11 text-white">
+                  <SelectValue placeholder="Select location method" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                  <SelectItem value="MANUAL_COORDS">Manual Coordinates</SelectItem>
+                  <SelectItem value="MANUAL_ADDRESS">Manual Address</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {formData.locationType === 'MANUAL_COORDS' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="lat" className="text-sm font-medium text-slate-300">Latitude</Label>
+                  <Input 
+                    id="lat" 
+                    name="lat" 
+                    type="number" 
+                    step="any"
+                    value={formData.lat ?? ''} 
+                    onChange={handleChange} 
+                    className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                    placeholder="e.g., 44.4268"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lng" className="text-sm font-medium text-slate-300">Longitude</Label>
+                  <Input 
+                    id="lng" 
+                    name="lng" 
+                    type="number" 
+                    step="any"
+                    value={formData.lng ?? ''} 
+                    onChange={handleChange} 
+                    className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                    placeholder="e.g., 26.1025"
+                  />
+                </div>
+              </div>
+            )}
+
+            {formData.locationType === 'MANUAL_ADDRESS' && (
+              <div className="space-y-2">
+                <Label htmlFor="manualLocationAddress" className="text-sm font-medium text-slate-300">Address</Label>
+                <Input 
+                  id="manualLocationAddress" 
+                  name="manualLocationAddress" 
+                  value={formData.manualLocationAddress ?? ''} 
+                  onChange={handleChange} 
+                  className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                  placeholder="e.g., Bucharest, Romania"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter className="flex gap-3 pt-4 border-t border-slate-700">
           <DialogClose asChild>
-            <Button type="button" variant="secondary">Cancel</Button>
+            <Button type="button" variant="outline" className="px-6 border-slate-600 text-slate-300 hover:bg-slate-700">
+              Cancel
+            </Button>
           </DialogClose>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
+          >
             {isSubmitting 
               ? (isEditMode ? 'Saving...' : 'Adding...')
               : (isEditMode ? 'Save Changes' : 'Add Vehicle')}
           </Button>
         </DialogFooter>
       </form>
-    </>
+    </div>
   );
 } 

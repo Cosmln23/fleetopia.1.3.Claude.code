@@ -81,7 +81,6 @@ export async function POST(request: Request) {
         status,
         lat: lat || 0,
         lng: lng || 0,
-        currentRoute: currentRoute || 'N/A',
         fleetId: fleet.id,
       },
     });
