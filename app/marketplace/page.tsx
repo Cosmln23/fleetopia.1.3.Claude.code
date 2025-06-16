@@ -136,6 +136,13 @@ export default function MarketplacePage() {
   const { openChat } = useChat();
 
   const fetchCargoOffers = async (listType: string = 'all') => {
+    // Don't fetch protected lists if user is not authenticated
+    if ((listType === 'my_offers' || listType === 'accepted_offers') && !session?.user?.id) {
+      setCargoOffers([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
 
     const params = new URLSearchParams();
@@ -149,7 +156,8 @@ export default function MarketplacePage() {
     try {
       const response = await fetch(`/api/marketplace/cargo?${queryString}`);
       if (!response.ok) {
-        throw new Error('Failed to fetch cargo offers');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to fetch cargo offers');
       }
       const data = await response.json();
       setCargoOffers(data);
@@ -157,7 +165,7 @@ export default function MarketplacePage() {
       console.error(error);
       toast({
         title: "Error",
-        description: "Could not fetch cargo offers.",
+        description: error instanceof Error ? error.message : "Could not fetch cargo offers.",
         variant: "destructive",
       });
     } finally {
@@ -399,9 +407,45 @@ export default function MarketplacePage() {
         throw new Error(errorData.message || 'Failed to accept offer');
       }
 
+      const updatedOffer = await response.json();
+
       toast({
         title: "Success",
-        description: "You have accepted the offer.",
+        description: "You have accepted the offer. Chat is now open.",
+        className: "bg-green-500 text-white",
+      });
+
+      // Open chat immediately after accepting
+      // Will auto-refresh list, chat can be opened manually
+
+      // Refresh the list of offers
+      fetchCargoOffers(activeList);
+
+    } catch (error) {
+      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleMarkDelivered = async (offerId: string) => {
+    try {
+      const response = await fetch(`/api/marketplace/cargo/${offerId}/deliver`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to mark as delivered');
+      }
+
+      toast({
+        title: "Success",
+        description: "Cargo has been marked as delivered.",
         className: "bg-green-500 text-white",
       });
 
@@ -460,6 +504,7 @@ export default function MarketplacePage() {
                   getUrgencyColor={getUrgencyColor}
                   getPriceDisplay={getPriceDisplay}
                   handleAcceptOffer={handleAcceptOffer}
+                  handleMarkDelivered={handleMarkDelivered}
                   setChatOffer={openChat}
                   setOfferToEdit={setOfferToEdit}
                   setOfferToDelete={setOfferToDelete}
@@ -472,6 +517,7 @@ export default function MarketplacePage() {
                   getUrgencyColor={getUrgencyColor}
                   getPriceDisplay={getPriceDisplay}
                   handleAcceptOffer={handleAcceptOffer}
+                  handleMarkDelivered={handleMarkDelivered}
                   setChatOffer={openChat}
                   setOfferToEdit={setOfferToEdit}
                   setOfferToDelete={setOfferToDelete}
@@ -484,6 +530,7 @@ export default function MarketplacePage() {
                   getUrgencyColor={getUrgencyColor}
                   getPriceDisplay={getPriceDisplay}
                   handleAcceptOffer={handleAcceptOffer}
+                  handleMarkDelivered={handleMarkDelivered}
                   setChatOffer={openChat}
                   setOfferToEdit={setOfferToEdit}
                   setOfferToDelete={setOfferToDelete}

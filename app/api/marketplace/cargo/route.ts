@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       ];
       filters.status = 'TAKEN';
     } else {
-      filters.status = 'NEW';
+      filters.status = { in: ['NEW', 'TAKEN'] };
     }
 
     if (fromLocation) {

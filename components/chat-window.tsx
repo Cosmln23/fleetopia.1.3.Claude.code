@@ -28,6 +28,13 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
 
   const fetchMessages = async () => {
     try {
@@ -49,10 +56,9 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
     return () => clearInterval(interval);
   }, [offer.id]);
 
+  // Scroll to bottom when messages change
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
-    }
+    scrollToBottom();
   }, [messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -71,6 +77,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
         const sentMessage = await response.json();
         setMessages(prev => [...prev, sentMessage]);
         setNewMessage('');
+        // Force scroll to bottom after sending
+        setTimeout(scrollToBottom, 100);
       } else {
         toast({ title: 'Error', description: 'Failed to send message.', variant: 'destructive' });
       }
@@ -91,8 +99,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
           <X className="h-4 w-4" />
         </Button>
       </CardHeader>
-      <CardContent className="flex-grow p-0">
-        <ScrollArea className="h-full p-2" ref={scrollAreaRef}>
+      <CardContent className="flex-grow p-0 overflow-hidden">
+        <ScrollArea className="h-72 p-2" ref={scrollAreaRef}>
           <div className="space-y-3">
             {messages.map((msg) => (
               <div
@@ -118,6 +126,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
                 </div>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
       </CardContent>

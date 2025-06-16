@@ -15,6 +15,7 @@ interface CargoOfferListProps {
   getUrgencyColor: (urgency: string) => string;
   getPriceDisplay: (offer: CargoOffer) => string;
   handleAcceptOffer: (id: string) => void;
+  handleMarkDelivered: (id: string) => void;
   setChatOffer: (offer: CargoOffer) => void;
   setOfferToEdit: (offer: CargoOffer) => void;
   setOfferToDelete: (id: string) => void;
@@ -26,6 +27,7 @@ export function CargoOfferList({
   getUrgencyColor,
   getPriceDisplay,
   handleAcceptOffer,
+  handleMarkDelivered,
   setChatOffer,
   setOfferToEdit,
   setOfferToDelete,
@@ -86,12 +88,12 @@ export function CargoOfferList({
                        <Button
                          variant="default"
                          size="sm"
-                         className="h-8 bg-green-600 hover:bg-green-700"
-                         title="Accept Offer"
+                         className="h-8 bg-blue-600 hover:bg-blue-700"
+                         title="Accept & Open Chat to Negotiate"
                          onClick={() => handleAcceptOffer(offer.id)}
                        >
-                         <Check className="h-4 w-4 mr-2" />
-                         Accept
+                         <MessageSquare className="h-4 w-4 mr-2" />
+                         Accept & Chat
                        </Button>
                      )}
                      {session && session.user && (offer.userId === session.user.id || offer.acceptedByUserId === session.user.id) && offer.status === 'TAKEN' && (
@@ -104,6 +106,18 @@ export function CargoOfferList({
                        >
                          <MessageSquare className="h-4 w-4 mr-2" />
                          Chat
+                       </Button>
+                     )}
+                     {session && session.user && session.user.id === offer.userId && offer.status === 'TAKEN' && (
+                       <Button
+                         variant="default"
+                         size="sm"
+                         className="h-8 bg-green-600 hover:bg-green-700"
+                         title="Mark as Delivered"
+                         onClick={() => handleMarkDelivered(offer.id)}
+                       >
+                         <Check className="h-4 w-4 mr-2" />
+                         Delivered
                        </Button>
                      )}
                      {session && session.user && session.user.id === offer.userId && (

@@ -14,7 +14,8 @@ export async function GET(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const offerId = params.id;
+    const resolvedParams = await params;
+    const offerId = resolvedParams.id;
     const userId = session.user.id;
 
     const cargoOffer = await prisma.cargoOffer.findUnique({
@@ -60,7 +61,8 @@ export async function POST(
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
-    const offerId = params.id;
+    const resolvedParams = await params;
+    const offerId = resolvedParams.id;
     const userId = session.user.id;
 
     const { content } = await request.json();
