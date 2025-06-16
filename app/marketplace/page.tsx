@@ -451,10 +451,6 @@ export default function MarketplacePage() {
                     <label htmlFor="title" className="text-sm font-medium text-slate-300">Cargo Title</label>
                     <Input id="title" name="title" placeholder="e.g., Electronics from Berlin to Frankfurt" required value={newCargo.title} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
                   </div>
-                   <div className="space-y-2">
-                    <label htmlFor="companyName" className="text-sm font-medium text-slate-300">Company Name (Optional)</label>
-                    <Input id="companyName" name="companyName" placeholder="Your Company Inc." value={newCargo.companyName} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
-                  </div>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

@@ -266,6 +266,8 @@ model CargoOffer {
   toAddress    String
   fromCountry  String
   toCountry    String
+  fromPostalCode String?
+  toPostalCode   String?
   distance     Float?
   weight       Float
   volume       Float?
@@ -274,7 +276,7 @@ model CargoOffer {
   deliveryDate DateTime
   price        Float
   priceType    String
-  companyName  String
+  companyName  String?
   companyRating Float?
   requirements String[]
   vehicleType  String?

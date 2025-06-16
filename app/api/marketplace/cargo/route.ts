@@ -1,6 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { CargoOffer } from '@prisma/client';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // GET all cargo offers with optional filtering
 export async function GET(request: NextRequest) {
@@ -45,6 +47,13 @@ export async function GET(request: NextRequest) {
 // POST a new cargo offer
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || !session.user || !session.user.id) {
+      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = session.user.id;
     const body = await request.json();
     
     const {
@@ -77,6 +86,11 @@ export async function POST(request: Request) {
       companyName: companyName || null,
       requirements: requirements || [],
       urgency: urgency || 'medium',
+      user: {
+        connect: {
+          id: userId,
+        },
+      },
     };
 
     const newCargoOffer = await prisma.cargoOffer.create({
