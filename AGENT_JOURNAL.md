@@ -21,18 +21,17 @@ Agentul monitorizează în timp real noile oferte de marfă și analizează flot
     1.  Locația curentă a vehiculului.
     2.  Adresa de încărcare a mărfii.
     3.  Adresa de destinație finală.
-- **Estimare Cost Combustibil:** Agentul calculează costul estimat al combustibilului pentru întreaga cursă. Calculul se bazează pe:
-    - Distanța totală calculată.
-    - Câmpul `fuelConsumption` (L/100km) specific fiecărui vehicul din baza de date.
-    - Un preț predefinit per litru de combustibil.
-- **Calcul Profitabilitate:** Agentul determină profitul estimat pentru fiecare scenariu (vehicul-candidat) scăzând costul de combustibil din prețul total al ofertei.
+- **Estimare Cost Total (Combustibil + Taxe):** Folosind noul **Google Routes API**, agentul estimează costul total al cursei. Calculul este format din:
+    1.  **Cost Combustibil:** Bazat pe distanța totală și consumul specific al vehiculului.
+    2.  **Cost Taxe de Drum (`tollCost`):** Bazat pe estimările furnizate de Google pentru ruta specifică, incluzând taxe de autostradă, viniete, etc.
+- **Calcul Profitabilitate Reală:** Agentul determină profitul estimat scăzând **costul total (combustibil + taxe)** din prețul ofertei.
 
 #### 3. Decizie și Propunere
-- **Selecția Celui Mai Bun Candidat:** Dintre toate scenariile simulate, agentul îl alege pe cel care oferă cel mai mare profit.
+- **Selecția Celui Mai Bun Candidat:** Dintre toate scenariile simulate, agentul îl alege pe cel care oferă cel mai mare profit real.
 - **Inteligență Decizională (Profit vs. Pierdere):**
-    - **Dacă profitul este pozitiv:** Agentul instruiește modelul Claude AI să formuleze o propunere de asignare, justificând alegerea pe baza profitului maxim.
+    - **Dacă profitul este pozitiv:** Agentul instruiește modelul Claude AI să formuleze o propunere de asignare, justificând alegerea pe baza profitului maxim și a costurilor totale estimate.
     - **Dacă profitul este negativ:** Agentul instruiește modelul Claude AI să formuleze o **avertizare**, subliniind că respectiva cursă este neprofitabilă și recomandând respingerea ofertei sau renegocierea prețului. În acest caz, nu se asignează niciun vehicul.
-- **Generare Limbaj Natural:** Propunerea finală (fie de acceptare, fie de respingere) este generată de Claude AI pentru a fi clară, profesională și ușor de înțeles pentru un operator uman.
+- **Generare Limbaj Natural:** Propunerea finală (fie de acceptare, fie de respingere) este generată de Claude AI pentru a fi clară, profesională și ușor de înțeles pentru un operator uman, menționând acum explicit costurile totale.
 
 #### 4. Acțiune și Integrare Sistem
 - **Prezentare Propunere:** Propunerea generată de AI este afișată în interfața de administrare, în secțiunea "AI Agents".

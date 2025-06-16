@@ -48,30 +48,62 @@ export async function POST(request: Request) {
       });
     }
 
-    // Etapa 1: Calculele raman la fel
+    // Etapa 1: Calculele se schimba pentru a folosi noul Routes API
     const simulationPromises = candidateVehicles.map(async (vehicle: Vehicle): Promise<SimulationResult | null> => {
-        const origin = `${vehicle.lat},${vehicle.lng}`;
-        const destination = cargoOffer.toAddress;
-        const waypoint = cargoOffer.fromAddress;
         const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-        const url = `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}&waypoints=${encodeURIComponent(waypoint)}&key=${apiKey}`;
+        const url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
+        
+        const requestBody = {
+            origin: { location: { latLng: { latitude: vehicle.lat, longitude: vehicle.lng } } },
+            destination: { address: cargoOffer.toAddress },
+            intermediates: [{ address: cargoOffer.fromAddress }],
+            travelMode: 'DRIVE',
+            extraComputations: ['TOLLS'],
+            routeModifiers: {
+                vehicleInfo: {
+                    emissionType: 'DIESEL',
+                }
+            }
+        };
+
         try {
-            const response = await fetch(url);
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': apiKey!,
+                    'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration,routes.travelAdvisory.tollInfo'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
             const data = await response.json();
-            if (data.status !== 'OK' || !data.routes[0] || data.routes[0].legs.length < 2) return null;
-            const legToPickup = data.routes[0].legs[0];
-            const legToDestination = data.routes[0].legs[1];
-            const totalDistance = legToPickup.distance.value + legToDestination.distance.value;
-            const totalDuration = legToPickup.duration.value + legToDestination.duration.value;
+
+            if (!data.routes || data.routes.length === 0) {
+              console.error("Google Routes API nu a returnat nicio rută.", data);
+              return null;
+            }
+
+            const route = data.routes[0];
+            const totalDistance = route.distanceMeters;
+            const totalDuration = parseInt(route.duration.slice(0, -1)); // '3600s' -> 3600
             
-            // Calcul cost combustibil
+            // Extrage costul taxelor in mod sigur
+            const estimatedPrice = route.travelAdvisory?.tollInfo?.estimatedPrice;
+            const tollCost = estimatedPrice && estimatedPrice.length > 0 
+                ? parseFloat(estimatedPrice[0].units || '0') 
+                : 0;
+
             const distanceInKm = totalDistance / 1000;
             const fuelNeeded = (distanceInKm * (vehicle.fuelConsumption || 10)) / 100;
-            const cost = fuelNeeded * FUEL_PRICE_PER_LITER;
+            const fuelCost = fuelNeeded * FUEL_PRICE_PER_LITER;
 
-            const profit = cargoOffer.price - cost;
-            return { vehicle, distance: totalDistance, duration: totalDuration, cost, profit };
+            const totalTripCost = fuelCost + tollCost;
+            const profit = cargoOffer.price - totalTripCost;
+
+            return { vehicle, distance: totalDistance, duration: totalDuration, cost: totalTripCost, profit };
         } catch (error) {
+            console.error('Eroare la apelarea Google Routes API:', error);
             return null;
         }
     });
@@ -82,7 +114,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ proposal: "Analysis failed: Could not simulate routes for any candidate vehicles.", chosenVehicleId: null });
     }
 
-    // Alege cel mai bun candidat pe baza celui mai mare profit
     const bestCandidate = simulationResults.reduce((best, current) => {
         return (current.profit > best.profit) ? current : best;
     });
@@ -91,70 +122,61 @@ export async function POST(request: Request) {
     let chosenVehicleId = bestCandidate.vehicle.id;
 
     if (bestCandidate.profit < 0) {
-        // Cazul 1: Cursa este neprofitabila
-        chosenVehicleId = null; // Nu asignam niciun vehicul
+        chosenVehicleId = null; 
         prompt = `
-          You are an expert AI dispatcher for a logistics company. Your task is to analyze a new cargo offer that has been found to be unprofitable.
+          You are an expert AI dispatcher. A cargo offer was analyzed and found to be unprofitable.
           
-          Here is the cargo offer:
-          - From: ${cargoOffer.fromAddress}
-          - To: ${cargoOffer.toAddress}
-          - Offer Price: €${cargoOffer.price}
+          Offer Details:
+          - Price: €${cargoOffer.price}
           
-          Analysis result for the most suitable vehicle (${bestCandidate.vehicle.name}):
-          - Estimated Fuel Cost: €${bestCandidate.cost.toFixed(2)}
-          - Estimated Profit: €${bestCandidate.profit.toFixed(2)}
-          
+          Analysis for the best vehicle option (${bestCandidate.vehicle.name}):
+          - Estimated Total Cost (Fuel + Tolls): €${bestCandidate.cost.toFixed(2)}
+          - Estimated Loss: €${Math.abs(bestCandidate.profit).toFixed(2)}
+
           Your task:
-          1. Formulate a professional, concise warning.
-          2. State that the offer is unprofitable and recommend rejecting it or renegotiating.
+          1. Formulate a concise warning.
+          2. Recommend rejecting or renegotiating the offer due to the financial loss.
           3. Your final output MUST be a single, valid JSON object with keys "proposal" (your warning string) and "chosenVehicleId" (must be null).
           
-          Example response format:
+          Example:
           {
-            "proposal": "Warning: Assigning vehicle ${bestCandidate.vehicle.name} would result in a loss of €${Math.abs(bestCandidate.profit).toFixed(2)}. It is recommended to reject this offer or renegotiate the price.",
+            "proposal": "Warning: Assigning vehicle ${bestCandidate.vehicle.name} would result in a loss of €${Math.abs(bestCandidate.profit).toFixed(2)} (Total costs: €${bestCandidate.cost.toFixed(2)}). It is recommended to reject this offer or renegotiate.",
             "chosenVehicleId": null
           }
         `;
     } else {
-        // Cazul 2: Cursa este profitabila (logica existenta)
         const bestCandidateData = {
             id: bestCandidate.vehicle.id,
             name: bestCandidate.vehicle.name,
-            licensePlate: bestCandidate.vehicle.licensePlate,
             cost: bestCandidate.cost.toFixed(2),
             profit: bestCandidate.profit.toFixed(2),
             distance: (bestCandidate.distance / 1000).toFixed(0),
-            duration: `${Math.floor(bestCandidate.duration / 3600)}h ${Math.round((bestCandidate.duration % 3600) / 60)}m`
         };
 
         prompt = `
-          You are an expert AI dispatcher for a logistics company. Your task is to confirm the assignment of the most profitable vehicle for a new cargo offer.
+          You are an expert AI dispatcher. Confirm the assignment of the most profitable vehicle for a cargo offer.
           
-          Cargo Offer Details:
-          - From: ${cargoOffer.fromAddress}
-          - To: ${cargoOffer.toAddress}
-          - Offer Price: €${cargoOffer.price}
+          Offer Details:
+          - Price: €${cargoOffer.price}
           
           Most Profitable Vehicle Found:
           ${JSON.stringify(bestCandidateData, null, 2)}
           
           Your task:
-          1. Formulate a professional, concise proposal recommending this vehicle.
-          2. Justify the choice by mentioning the highest estimated profit and the fuel cost.
-          3. Your final output MUST be a single, valid JSON object with keys "proposal" (your recommendation string) and "chosenVehicleId" (the vehicle's ID string).
+          1. Formulate a concise proposal recommending this vehicle.
+          2. Justify the choice by mentioning the highest estimated profit and the total estimated costs (fuel + tolls).
+          3. Your final output MUST be a single, valid JSON object with keys "proposal" and "chosenVehicleId".
           
-          Example response format:
+          Example:
           {
-            "proposal": "Proposal: Assign Vehicle ${bestCandidateData.name} (${bestCandidateData.licensePlate}). Justification: This vehicle yields the highest estimated profit of €${bestCandidateData.profit} with an estimated fuel cost of €${bestCandidateData.cost}.",
+            "proposal": "Proposal: Assign Vehicle ${bestCandidateData.name}. Justification: This option yields the highest estimated profit of €${bestCandidateData.profit} with total estimated costs of €${bestCandidateData.cost}.",
             "chosenVehicleId": "${bestCandidateData.id}"
           }
         `;
     }
 
-    // Etapa 3: Apelam Claude
     const msg = await anthropic.messages.create({
-      model: "claude-3-haiku-20240307", // sau alt model, ex: claude-3-sonnet-20240229
+      model: "claude-3-haiku-20240307",
       max_tokens: 1024,
       messages: [{ role: "user", content: prompt }],
     });
@@ -168,9 +190,8 @@ export async function POST(request: Request) {
     const claudeResponseText = contentBlock.text;
     const claudeResponseJson = JSON.parse(claudeResponseText);
 
-    // Asiguram ca chosenVehicleId din raspunsul Claude corespunde logicii noastre
     if (claudeResponseJson.chosenVehicleId !== chosenVehicleId) {
-        console.warn('Claude AI returned a different vehicle ID than expected. Overriding with system logic.');
+        console.warn('Claude AI returned a different vehicle ID. Overriding with system logic.');
         claudeResponseJson.chosenVehicleId = chosenVehicleId;
     }
 
