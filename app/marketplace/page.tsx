@@ -178,25 +178,25 @@ export default function MarketplacePage() {
   // Add fetchTransportRequests function
   const fetchTransportRequests = async () => {
     try {
-      const response = await fetch('/api/vehicles');
+      // Fetch available vehicles from a new API endpoint
+      const response = await fetch('/api/vehicles/available');
       if (!response.ok) {
-        throw new Error('Failed to fetch vehicles');
+        throw new Error('Failed to fetch available vehicles');
       }
-      const vehicles = await response.json();
+      const availableVehicles = await response.json();
       
       // Convert vehicles to transport requests format
-      const availableTransports: TransportRequest[] = vehicles
-        .filter((vehicle: any) => vehicle.status === 'idle' || vehicle.status === 'active')
+      const availableTransports: TransportRequest[] = availableVehicles
         .map((vehicle: any) => ({
           id: vehicle.id,
-          from: `${vehicle.lat && vehicle.lng ? `${vehicle.lat.toFixed(2)}, ${vehicle.lng.toFixed(2)}` : 'Current Location'}`,
-          to: 'Available for any destination',
+          from: vehicle.currentLocation || 'Current Location',
+          to: vehicle.availableRoute || 'Available for any destination',
           truckType: vehicle.type || 'Standard Truck',
           availableFrom: new Date().toISOString().split('T')[0],
           availableTo: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
           priceRange: { min: 800, max: 2500 },
           company: {
-            name: `Fleet Vehicle - ${vehicle.name}`,
+            name: `${vehicle.ownerName || 'Fleet'} - ${vehicle.name}`,
             rating: 4.5,
             verified: true,
             fleetSize: 1
@@ -207,53 +207,11 @@ export default function MarketplacePage() {
           licensePlate: vehicle.licensePlate
         }));
 
-      // Add some mock data for demo purposes
-      const mockData: TransportRequest[] = [
-        {
-          id: 'mock-1',
-          from: 'Bucharest, Romania',
-          to: 'Germany',
-          truckType: 'Semitrailer',
-          availableFrom: '2024-03-15',
-          availableTo: '2024-03-20',
-          priceRange: { min: 1200, max: 2800 },
-          company: {
-            name: 'EuroFleet Transport',
-            rating: 4.7,
-            verified: true,
-            fleetSize: 45
-          },
-          capabilities: ['ADR', 'Refrigerated', 'Oversized'],
-          status: 'available'
-        },
-        {
-          id: 'mock-2',
-          from: 'Cluj-Napoca, Romania',
-          to: 'Netherlands',
-          truckType: 'Refrigerated',
-          availableFrom: '2024-03-16',
-          availableTo: '2024-03-25',
-          priceRange: { min: 950, max: 2200 },
-          company: {
-            name: 'ColdChain Logistics',
-            rating: 4.9,
-            verified: true,
-            fleetSize: 28
-          },
-          capabilities: ['Temperature Control', 'Food Grade'],
-          status: 'available'
-        }
-      ];
-
-      // Combine real vehicles with mock data
-      setTransportRequests([...availableTransports, ...mockData]);
+      setTransportRequests(availableTransports);
     } catch (error) {
       console.error('Error fetching transport requests:', error);
-      toast({
-        title: "Error",
-        description: "Could not fetch transport requests.",
-        variant: "destructive",
-      });
+      // If API fails, show empty list instead of error to avoid confusion
+      setTransportRequests([]);
     }
   };
 

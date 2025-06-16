@@ -1,17 +1,43 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const status = searchParams.get('status');
-
   try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status');
+
+    // Find user's fleets
+    const userFleets = await prisma.fleet.findMany({
+      where: { userId: session.user.id },
+      select: { id: true }
+    });
+
+    const fleetIds = userFleets.map(fleet => fleet.id);
+
+    // If user has no fleets, return empty array
+    if (fleetIds.length === 0) {
+      return NextResponse.json([]);
+    }
+
+    // Find vehicles belonging to user's fleets
     const vehicles = await prisma.vehicle.findMany({
-      where: status ? { status: { equals: status as any } } : {},
+      where: {
+        fleetId: { in: fleetIds },
+        ...(status ? { status: { equals: status as any } } : {})
+      },
       orderBy: {
         name: 'asc',
       },
     });
+    
     return NextResponse.json(vehicles);
   } catch (error) {
     console.error('Failed to fetch vehicles:', error);
@@ -24,6 +50,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: Request) {
   try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await request.json();
     const {
       name,
@@ -44,30 +76,18 @@ export async function POST(request: Request) {
       );
     }
     
-    // Find the first fleet to associate the vehicle with.
-    let fleet = await prisma.fleet.findFirst();
+    // Find or create a fleet for the authenticated user
+    let fleet = await prisma.fleet.findFirst({
+      where: { userId: session.user.id }
+    });
     
     if (!fleet) {
-      // If no fleet exists, we need a user to own it.
-      let user = await prisma.user.findFirst();
-      
-      if (!user) {
-        // If no user exists, create a default system user.
-        user = await prisma.user.create({
-          data: {
-            name: 'System Admin',
-            email: `admin@${Date.now()}.system`, // Unique email
-            role: 'admin',
-          },
-        });
-      }
-
-      // Now create a default fleet owned by that user.
+      // Create a fleet for this user
       fleet = await prisma.fleet.create({
         data: {
-          name: 'Default Fleet',
+          name: `${session.user.name || 'User'}'s Fleet`,
           status: 'active',
-          userId: user.id,
+          userId: session.user.id,
         },
       });
     }

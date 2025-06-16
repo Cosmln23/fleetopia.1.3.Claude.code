@@ -53,6 +53,7 @@ import { AddVehicleForm } from '@/components/add-vehicle-form';
 import Link from 'next/link';
 import { toast as sonnerToast } from 'sonner';
 import { useToast } from '@/components/ui/use-toast';
+import { useSession, signIn } from 'next-auth/react';
 
 interface CargoOffer {
   id: string;
@@ -99,6 +100,7 @@ interface CargoDetails extends CargoOffer {
 }
 
 export default function FleetManagementPage() {
+  const { data: session, status } = useSession();
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -119,14 +121,16 @@ export default function FleetManagementPage() {
   const { toast: uiToast } = useToast();
 
   const fetchVehicleData = async () => {
+    if (!session) return; // Don't fetch if not authenticated
+    
     try {
-      const response = await fetch('/api/real-time/data');
+      const response = await fetch('/api/vehicles');
       if (!response.ok) {
         throw new Error('Failed to fetch vehicle data');
       }
-      const data = await response.json();
-      setVehicles(data.vehicles || []);
-      updateFleetStats(data.vehicles || []);
+      const vehicles = await response.json();
+      setVehicles(vehicles || []);
+      updateFleetStats(vehicles || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unknown error occurred');
       console.error(err);
@@ -136,10 +140,16 @@ export default function FleetManagementPage() {
   };
 
   useEffect(() => {
-    fetchVehicleData(); // Fetch initial data
+    if (status === 'loading') return; // Wait for session to load
+    
+    if (session) {
+      fetchVehicleData(); // Fetch initial data if authenticated
+    } else {
+      setIsLoading(false); // Stop loading if not authenticated
+    }
     // Removed auto-refresh to prevent constant reloading
     // Data will refresh when user performs actions (add, edit, delete, status change)
-  }, []);
+  }, [session, status]);
 
   const updateFleetStats = (vehicles: Vehicle[]) => {
     const total = vehicles.length;
@@ -275,15 +285,39 @@ export default function FleetManagementPage() {
     setCargoDetails(null);
   };
   
-  const handlePostAsAvailable = (vehicle: Vehicle) => {
-    // For now, we'll just show a toast - later we'll implement the full modal
-    uiToast({
-      title: "Post Vehicle as Available",
-      description: `Posting ${vehicle.name} to marketplace...`,
-    });
-    
-    // TODO: Open modal to collect availability details (dates, route, price per km)
-    console.log('Post as available:', vehicle);
+  const handlePostAsAvailable = async (vehicle: Vehicle) => {
+    try {
+      const response = await fetch('/api/vehicles/available', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vehicleId: vehicle.id,
+          currentLocation: vehicle.manualLocationAddress || 'Current Location',
+          availableRoute: 'Available for any destination',
+          pricePerKm: 1.5
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to post vehicle as available');
+      }
+
+      const result = await response.json();
+      
+      uiToast({
+        title: "Success!",
+        description: `${vehicle.name} has been posted to Find Transport marketplace!`,
+      });
+      
+      console.log('Vehicle posted as available:', result);
+    } catch (error) {
+      console.error('Error posting vehicle:', error);
+      uiToast({
+        title: "Error",
+        description: "Failed to post vehicle to marketplace.",
+        variant: "destructive",
+      });
+    }
   };
 
   const VehicleCard = ({ vehicle, onStatusChange, onDelete, onEdit, onViewDetails, onPostAsAvailable, index }: { vehicle: Vehicle, onStatusChange: (id: string, status: string) => void, onDelete: (id: string) => void, onEdit: (vehicle: Vehicle) => void, onViewDetails: (vehicle: Vehicle) => void, onPostAsAvailable: (vehicle: Vehicle) => void, index: number }) => {
@@ -412,6 +446,34 @@ export default function FleetManagementPage() {
       </motion.div>
     );
   };
+
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+          <p className="text-white">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login prompt if not authenticated
+  if (!session) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <Truck className="w-16 h-16 text-blue-400 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-4">Fleet Management</h1>
+          <p className="text-slate-400 mb-6">Please sign in to access your fleet</p>
+          <Button onClick={() => signIn()} className="bg-blue-600 hover:bg-blue-700">
+            Sign In
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">

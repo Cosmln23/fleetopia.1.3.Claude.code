@@ -1,13 +1,35 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const vehicleId = params.id;
-
   try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const vehicleId = params.id;
+
+    // First, verify that the vehicle belongs to the user
+    const vehicle = await prisma.vehicle.findFirst({
+      where: {
+        id: vehicleId,
+        fleet: {
+          userId: session.user.id
+        }
+      }
+    });
+
+    if (!vehicle) {
+      return NextResponse.json({ message: 'Vehicle not found or access denied.' }, { status: 404 });
+    }
+
     // Find the most recent 'assigned' route for the vehicle
     const route = await prisma.route.findFirst({
       where: {
@@ -38,7 +60,7 @@ export async function GET(
     return NextResponse.json(cargoOffer);
 
   } catch (error) {
-    console.error(`Error fetching details for vehicle ${vehicleId}:`, error);
+    console.error(`Error fetching details for vehicle ${params.id}:`, error);
     return NextResponse.json({ error: 'Failed to fetch vehicle details' }, { status: 500 });
   }
 } 
