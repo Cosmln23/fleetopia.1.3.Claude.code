@@ -8,6 +8,8 @@ import { Navigation } from '@/components/navigation';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import AuthProvider from '@/components/AuthProvider';
+import { cn } from '@/lib/utils';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -23,19 +25,26 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Navigation />
-          <main className="min-h-screen text-white">
-            {children}
-          </main>
-          <Toaster />
-        </ThemeProvider>
+      <body
+        className={cn(
+          "min-h-screen bg-background font-sans antialiased",
+          inter.className
+        )}
+      >
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <Navigation />
+            <main className="min-h-screen text-white">
+              {children}
+            </main>
+            <Toaster />
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

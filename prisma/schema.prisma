@@ -260,8 +260,8 @@ model AgentAPIConnection {
 model CargoOffer {
   id           String      @id @default(cuid())
   title        String
-  fromLocation String
-  toLocation   String
+  fromLocation String?
+  toLocation   String?
   fromAddress  String
   toAddress    String
   fromCountry  String

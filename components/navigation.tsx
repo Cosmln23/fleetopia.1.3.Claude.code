@@ -16,6 +16,7 @@ import {
   BarChart3,
   TestTube2
 } from 'lucide-react';
+import { AuthButton } from './AuthButton';
 
 const navigation = [
   {
@@ -103,8 +104,9 @@ export function Navigation() {
             })}
           </div>
 
-          {/* Settings */}
+          {/* Settings & Auth */}
           <div className="flex items-center space-x-2">
+            <AuthButton />
             <Link
               href="/settings"
               className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
