@@ -11,10 +11,28 @@ export async function GET(request: NextRequest) {
     const fromLocation = searchParams.get('fromLocation');
     const toLocation = searchParams.get('toLocation');
     const maxWeight = searchParams.get('maxWeight');
+    const listType = searchParams.get('listType'); // e.g., 'my_offers', 'accepted_offers'
+    const session = await getServerSession(authOptions);
 
-    const filters: any = {
-      status: 'NEW'
-    };
+    const filters: any = {};
+
+    if (listType === 'my_offers') {
+      if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      filters.userId = session.user.id;
+    } else if (listType === 'accepted_offers') {
+      if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      filters.acceptedByUserId = session.user.id;
+      filters.status = 'TAKEN';
+    } else if (listType === 'conversations') {
+      if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      filters.OR = [
+        { userId: session.user.id },
+        { acceptedByUserId: session.user.id }
+      ];
+      filters.status = 'TAKEN';
+    } else {
+      filters.status = 'NEW';
+    }
 
     if (fromLocation) {
       filters.fromCountry = { contains: fromLocation, mode: 'insensitive' };

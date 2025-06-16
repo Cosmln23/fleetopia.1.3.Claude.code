@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AuthProvider from '@/components/AuthProvider';
 import { cn } from '@/lib/utils';
+import { ChatProvider } from '@/contexts/chat-provider';
+import { ChatManager } from '@/components/chat-manager';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -32,18 +34,21 @@ export default function RootLayout({
         )}
       >
         <AuthProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <Navigation />
-            <main className="min-h-screen text-white">
-              {children}
-            </main>
-            <Toaster />
-          </ThemeProvider>
+          <ChatProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <Navigation />
+              <main className="min-h-screen text-white">
+                {children}
+              </main>
+              <Toaster />
+              <ChatManager />
+            </ThemeProvider>
+          </ChatProvider>
         </AuthProvider>
       </body>
     </html>

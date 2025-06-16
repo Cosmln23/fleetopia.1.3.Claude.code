@@ -22,6 +22,8 @@ model User {
   accounts          Account[]
   sessions          Session[]
   cargoOffers       CargoOffer[]
+  acceptedOffers    CargoOffer[]     @relation("AcceptedOffers")
+  messagesSent      ChatMessage[]
   aiAgents          AIAgent[]        @relation("CreatedAIAgents")
   fleets            Fleet[]          @relation("OwnedFleets")
   integrations      APIIntegration[] @relation("UserIntegrations")
@@ -258,38 +260,55 @@ model AgentAPIConnection {
 }
 
 model CargoOffer {
-  id           String      @id @default(cuid())
-  title        String
-  fromLocation String?
-  toLocation   String?
-  fromAddress  String
-  toAddress    String
-  fromCountry  String
-  toCountry    String
-  fromPostalCode String?
-  toPostalCode   String?
-  distance     Float?
-  weight       Float
-  volume       Float?
-  cargoType    String
-  loadingDate  DateTime
-  deliveryDate DateTime
-  price        Float
-  priceType    String
-  companyName  String?
-  companyRating Float?
-  requirements String[]
-  vehicleType  String?
-  status       CargoStatus @default(NEW)
-  urgency      String
-  userId       String
-  user         User        @relation(fields: [userId], references: [id])
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  SystemAlert  SystemAlert[]
+  id               String      @id @default(cuid())
+  title            String
+  fromLocation     String?
+  toLocation       String?
+  fromAddress      String
+  toAddress        String
+  fromCountry      String
+  toCountry        String
+  fromPostalCode   String?
+  toPostalCode     String?
+  distance         Float?
+  weight           Float
+  volume           Float?
+  cargoType        String
+  loadingDate      DateTime
+  deliveryDate     DateTime
+  price            Float
+  priceType        String
+  companyName      String?
+  companyRating    Float?
+  requirements     String[]
+  vehicleType      String?
+  status           CargoStatus @default(NEW)
+  urgency          String
+  userId           String
+  user             User        @relation(fields: [userId], references: [id])
+  acceptedByUserId String?
+  acceptedBy       User?       @relation("AcceptedOffers", fields: [acceptedByUserId], references: [id])
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  SystemAlert      SystemAlert[]
+  chatMessages     ChatMessage[]
 
   @@index([status])
   @@index([userId])
+}
+
+model ChatMessage {
+  id           String     @id @default(cuid())
+  content      String
+  createdAt    DateTime   @default(now())
+  
+  cargoOfferId String
+  cargoOffer   CargoOffer @relation(fields: [cargoOfferId], references: [id], onDelete: Cascade)
+
+  senderId     String
+  sender       User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([cargoOfferId])
 }
 
 model SystemAlert {

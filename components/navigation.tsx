@@ -14,9 +14,13 @@ import {
   Activity,
   Settings,
   BarChart3,
-  TestTube2
+  TestTube2,
+  MessageSquare,
+  Bell
 } from 'lucide-react';
 import { AuthButton } from './AuthButton';
+import { Button } from './ui/button';
+import { ChatPopover } from './chat-popover';
 
 const navigation = [
   {
@@ -106,6 +110,14 @@ export function Navigation() {
 
           {/* Settings & Auth */}
           <div className="flex items-center space-x-2">
+            <Button variant="ghost" size="icon" title="Notifications">
+              <Bell className="h-5 w-5" />
+            </Button>
+            <ChatPopover>
+              <Button variant="ghost" size="icon" title="Chat">
+                <MessageSquare className="h-5 w-5" />
+              </Button>
+            </ChatPopover>
             <AuthButton />
             <Link
               href="/settings"

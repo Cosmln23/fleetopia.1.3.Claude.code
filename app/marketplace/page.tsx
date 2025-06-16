@@ -31,6 +31,8 @@ import {
   Trash2,
   FileEdit,
   Hand,
+  Check,
+  MessageSquare,
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast"
 import { Textarea } from '@/components/ui/textarea';
@@ -61,27 +63,10 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { AssignOfferDialog } from '@/components/assign-offer-dialog';
-
-interface CargoOffer {
-  id: string;
-  title: string;
-  fromAddress: string;
-  fromCountry: string;
-  toAddress: string;
-  toCountry: string;
-  weight: number;
-  volume: number | null;
-  cargoType: string | null;
-  loadingDate: string;
-  deliveryDate: string;
-  price: number;
-  priceType: string;
-  companyName: string | null;
-  requirements: string[];
-  urgency: string;
-  createdAt: string;
-  status: string;
-}
+import { useSession } from 'next-auth/react';
+import { CargoOffer } from '@prisma/client';
+import { CargoOfferList } from "@/components/cargo-offer-list";
+import { useChat } from '@/contexts/chat-provider';
 
 interface TransportRequest {
   id: string;
@@ -107,6 +92,7 @@ interface TransportRequest {
 export default function MarketplacePage() {
   const [activeTab, setActiveTab] = useState<'post-cargo' | 'find-cargo' | 'find-transport'>('find-cargo');
   const { toast } = useToast();
+  const { data: session } = useSession();
   
   const [searchFilters, setSearchFilters] = useState({
     fromLocation: '',
@@ -139,15 +125,18 @@ export default function MarketplacePage() {
   const [transportRequests, setTransportRequests] = useState<TransportRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [posting, setPosting] = useState(false);
+  const [activeList, setActiveList] = useState("all"); // 'all', 'my_offers', 'accepted_offers'
   const [offerToDelete, setOfferToDelete] = useState<string | null>(null);
   const [offerToEdit, setOfferToEdit] = useState<CargoOffer | null>(null);
   const [offerToAssign, setOfferToAssign] = useState<CargoOffer | null>(null);
   const [editing, setEditing] = useState(false);
+  const { openChat } = useChat();
 
-  const fetchCargoOffers = async () => {
+  const fetchCargoOffers = async (listType: string = 'all') => {
     setLoading(true);
 
     const params = new URLSearchParams();
+    params.append('listType', listType);
     if (searchFilters.fromLocation) params.append('fromLocation', searchFilters.fromLocation);
     if (searchFilters.toLocation) params.append('toLocation', searchFilters.toLocation);
     if (searchFilters.maxWeight) params.append('maxWeight', searchFilters.maxWeight);
@@ -174,7 +163,7 @@ export default function MarketplacePage() {
   };
 
   useEffect(() => {
-    fetchCargoOffers();
+    fetchCargoOffers(activeList);
     // Transport requests still use mock data for now
     const mockTransportRequests: TransportRequest[] = [
       {
@@ -213,7 +202,7 @@ export default function MarketplacePage() {
       }
     ];
     setTransportRequests(mockTransportRequests);
-  }, []);
+  }, [activeList]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -222,7 +211,7 @@ export default function MarketplacePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchCargoOffers();
+    fetchCargoOffers(activeList);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -263,7 +252,7 @@ export default function MarketplacePage() {
         loadingDate: '', deliveryDate: '', price: '', priceType: 'fixed',
         companyName: '', requirements: '', urgency: 'medium',
       });
-      fetchCargoOffers();
+      fetchCargoOffers(activeList);
       setActiveTab('find-cargo');
 
     } catch (error) {
@@ -295,7 +284,7 @@ export default function MarketplacePage() {
         description: "Cargo offer has been deleted.",
       });
 
-      fetchCargoOffers(); // Refresh the list
+      fetchCargoOffers(activeList); // Refresh the list
     } catch (error) {
        console.error(error);
        toast({
@@ -368,13 +357,44 @@ export default function MarketplacePage() {
       });
 
       setOfferToAssign(null); // Close the dialog
-      fetchCargoOffers(); // Refresh the list of offers
+      fetchCargoOffers(activeList); // Refresh the list of offers
 
     } catch (error) {
       console.error(error);
       toast({
         title: "Assignment Failed",
         description: error instanceof Error ? error.message : "An unknown error occurred.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAcceptOffer = async (offerId: string) => {
+    try {
+      const response = await fetch(`/api/marketplace/cargo/${offerId}/accept`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to accept offer');
+      }
+
+      toast({
+        title: "Success",
+        description: "You have accepted the offer.",
+        className: "bg-green-500 text-white",
+      });
+
+      // Refresh the list of offers
+      fetchCargoOffers(activeList);
+
+    } catch (error) {
+      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast({
+        title: "Error",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -398,343 +418,128 @@ export default function MarketplacePage() {
         <p className="mt-2 text-lg text-blue-200">The central hub for finding cargo and available transport.</p>
       </header>
       
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 bg-slate-800/60 p-1 rounded-lg">
-          <TabsTrigger value="post-cargo" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            <Plus className="mr-2 h-4 w-4"/> Post Cargo
-          </TabsTrigger>
-          <TabsTrigger value="find-cargo" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            <Search className="mr-2 h-4 w-4"/> Find Cargo
-          </TabsTrigger>
-          <TabsTrigger value="find-transport" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
-            <Truck className="mr-2 h-4 w-4"/> Find Transport
-          </TabsTrigger>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "find-cargo" | "find-transport")} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
+          <TabsTrigger value="find-cargo" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Find Cargo</TabsTrigger>
+          <TabsTrigger value="find-transport" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Find Transport</TabsTrigger>
         </TabsList>
-        <AlertDialog open={!!offerToDelete} onOpenChange={() => setOfferToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the cargo offer.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteCargo} className="bg-red-600 hover:bg-red-700">Continue</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        <AlertDialog open={!!offerToEdit} onOpenChange={() => setOfferToEdit(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the cargo offer.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={() => setOfferToEdit(null)} className="bg-red-600 hover:bg-red-700">Continue</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        <TabsContent value="post-cargo" className="mt-6">
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-2xl text-white">Post a New Cargo Offer</CardTitle>
-              <CardDescription>Fill in the details below to find a suitable carrier.</CardDescription>
-            </CardHeader>
-            <CardContent className="p-6">
-              <form onSubmit={handlePostCargo} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div className="space-y-2">
-                    <label htmlFor="title" className="text-sm font-medium text-slate-300">Cargo Title</label>
-                    <Input id="title" name="title" placeholder="e.g., Electronics from Berlin to Frankfurt" required value={newCargo.title} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="fromCountry" className="text-sm font-medium text-slate-300">From Country</label>
-                    <Select name="fromCountry" required onValueChange={(value) => handleInputChange({ target: { name: 'fromCountry', value } } as any)}>
-                        <SelectTrigger className="bg-slate-800 border-slate-600">
-                            <SelectValue placeholder="Select a country" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-600 text-white">
-                            {europeanCountries.map(country => (
-                                <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="fromAddress" className="text-sm font-medium text-slate-300">From Address & City</label>
-                    <Input id="fromAddress" name="fromAddress" placeholder="e.g. Willy-Brandt-Straße 1, Berlin" required value={newCargo.fromAddress} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                   <div className="space-y-2">
-                    <label htmlFor="fromPostalCode" className="text-sm font-medium text-slate-300">From Postal Code</label>
-                    <Input id="fromPostalCode" name="fromPostalCode" placeholder="e.g., 10557" value={newCargo.fromPostalCode} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="toCountry" className="text-sm font-medium text-slate-300">To Country</label>
-                     <Select name="toCountry" required onValueChange={(value) => handleInputChange({ target: { name: 'toCountry', value } } as any)}>
-                        <SelectTrigger className="bg-slate-800 border-slate-600">
-                            <SelectValue placeholder="Select a country" />
-                        </SelectTrigger>
-                        <SelectContent className="bg-slate-800 border-slate-600 text-white">
-                            {europeanCountries.map(country => (
-                                <SelectItem key={country.code} value={country.code}>{country.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="toAddress" className="text-sm font-medium text-slate-300">To Address & City</label>
-                    <Input id="toAddress" name="toAddress" placeholder="e.g. Zeil 112-114, Frankfurt" required value={newCargo.toAddress} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="toPostalCode" className="text-sm font-medium text-slate-300">To Postal Code</label>
-                    <Input id="toPostalCode" name="toPostalCode" placeholder="e.g., 60311" value={newCargo.toPostalCode} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="space-y-2">
-                    <label htmlFor="weight" className="text-sm font-medium text-slate-300">Weight (kg)</label>
-                    <Input id="weight" name="weight" type="number" required value={newCargo.weight} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="volume" className="text-sm font-medium text-slate-300">Volume (m³)</label>
-                    <Input id="volume" name="volume" type="number" required value={newCargo.volume} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
-                  </div>
-                  <div className="space-y-2">
-                    <label htmlFor="cargoType" className="text-sm font-medium text-slate-300">Cargo Type</label>
-                    <Input id="cargoType" name="cargoType" required value={newCargo.cargoType} onChange={handleInputChange} className="bg-slate-800 border-slate-600" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                     <label className="text-xs text-slate-400">Loading Date</label>
-                     <Input name="loadingDate" type="date" value={newCargo.loadingDate} onChange={handleInputChange} required className="bg-slate-700 border-slate-600"/>
-                  </div>
-                  <div>
-                    <label className="text-xs text-slate-400">Delivery Date</label>
-                    <Input name="deliveryDate" type="date" value={newCargo.deliveryDate} onChange={handleInputChange} required className="bg-slate-700 border-slate-600"/>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input name="price" type="number" value={newCargo.price} onChange={handleInputChange} placeholder="Price (€)" required className="bg-slate-700 border-slate-600"/>
-                  <select name="priceType" value={newCargo.priceType} onChange={handleInputChange} className="bg-slate-700 border-slate-600 rounded-md p-2 w-full">
-                    <option value="fixed">Fixed Price</option>
-                    <option value="negotiable">Negotiable</option>
-                    <option value="per_km">Per KM</option>
-                  </select>
-                </div>
-                 <div>
-                    <label className="text-xs text-slate-400">Urgency</label>
-                    <select name="urgency" value={newCargo.urgency} onChange={handleInputChange} className="bg-slate-700 border-slate-600 rounded-md p-2 w-full">
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                    </select>
-                 </div>
-                <Textarea name="requirements" value={newCargo.requirements} onChange={handleInputChange} placeholder="Requirements (comma-separated, e.g., Refrigerated, ADR)" className="bg-slate-700 border-slate-600"/>
-                <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={posting}>
-                  {posting ? 'Posting...' : 'Post Cargo Offer'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="find-cargo" className="mt-6">
-          <Card className="bg-slate-800/50 border-slate-700 mb-6">
-            <CardHeader>
-              <CardTitle className="text-2xl text-white">Find Cargo Offers</CardTitle>
-              <CardDescription className="text-blue-200">Use the filters below to find the perfect load for your truck.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                <Input name="fromLocation" value={searchFilters.fromLocation} onChange={handleFilterChange} placeholder="From (e.g., Bucharest)" className="bg-slate-700 border-slate-600 text-white" />
-                <Input name="toLocation" value={searchFilters.toLocation} onChange={handleFilterChange} placeholder="To (e.g., Berlin)" className="bg-slate-700 border-slate-600 text-white" />
-                <Input name="maxWeight" type="number" value={searchFilters.maxWeight} onChange={handleFilterChange} placeholder="Max. Weight (kg)" className="bg-slate-700 border-slate-600 text-white" />
-                <div className="bg-slate-700 border-slate-600 text-white rounded-md flex items-center px-3">
-                  <Calendar className="h-4 w-4 text-slate-400 mr-2" />
-                  <span>Any Date</span>
-                </div>
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 lg:col-span-1 xl:col-span-1 w-full">
-                  <Search className="mr-2 h-4 w-4" /> Search
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {cargoOffers.map((offer) => (
-              <motion.div
-                key={offer.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <Card className="bg-slate-800/70 border-slate-700 hover:border-blue-500 transition-all duration-300 flex flex-col h-full">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg font-bold text-white mb-2">{offer.title}</CardTitle>
-                      <Badge className={getUrgencyColor(offer.urgency) + ' text-xs'}>{offer.urgency.toUpperCase()}</Badge>
-                    </div>
-                    <div className="flex items-center text-sm text-blue-300">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      <span className="font-semibold">{offer.fromCountry}</span>
-                      <ArrowRight className="h-4 w-4 mx-2" />
-                      <span className="font-semibold">{offer.toCountry}</span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-1">Distance: {offer.distance} km</p>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                      <div className="flex items-center text-slate-300"><Weight className="h-4 w-4 mr-2 text-blue-400"/> Weight: {offer.weight.toLocaleString()} kg</div>
-                      <div className="flex items-center text-slate-300"><Package className="h-4 w-4 mr-2 text-blue-400"/> Volume: {offer.volume} m³</div>
-                      <div className="flex items-center text-slate-300"><Calendar className="h-4 w-4 mr-2 text-blue-400"/> Loading: {offer.loadingDate}</div>
-                      <div className="flex items-center text-slate-300"><Clock className="h-4 w-4 mr-2 text-blue-400"/> Delivery: {offer.deliveryDate}</div>
-                      <div className="flex items-center text-slate-300"><Truck className="h-4 w-4 mr-2 text-blue-400"/> Truck: {offer.truckType}</div>
-                      <div className="flex items-center text-slate-300 col-span-2"><FileText className="h-4 w-4 mr-2 text-blue-400"/> Type: <Badge variant="secondary" className="ml-2">{offer.cargoType}</Badge></div>
-                    </div>
-                    <div className="mt-4">
-                      <h4 className="font-semibold text-slate-200 mb-2 text-xs">Requirements:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {offer.requirements.map(req => <Badge key={req} variant="outline" className="text-slate-300 border-slate-600">{req}</Badge>)}
-                      </div>
-                    </div>
-                  </CardContent>
-                  <div className="p-4 bg-slate-900/50 rounded-b-lg mt-auto">
-                    <div className="flex justify-between items-center">
-                       <div>
-                        <p className="text-sm font-semibold text-slate-300">{offer.companyName}</p>
-                        <div className="flex items-center text-xs text-slate-400">
-                          <Star className="h-3 w-3 mr-1 text-yellow-400" /> {offer.companyRating || 'New'}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-green-400">{getPriceDisplay(offer)}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                           <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8 bg-green-800/70 hover:bg-green-700 border-slate-600"
-                              title="Assign Offer"
-                              onClick={() => setOfferToAssign(offer)}
-                           >
-                            <Hand className="h-4 w-4" />
-                           </Button>
-                           <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-8 w-8 bg-slate-800/70 hover:bg-slate-700 border-slate-600"
-                              title="Edit Offer"
-                              onClick={() => setOfferToEdit(offer)}
-                           >
-                            <FileEdit className="h-4 w-4" />
-                           </Button>
-                           <Button 
-                              variant="destructive" 
-                              size="icon" 
-                              className="h-8 w-8 bg-red-800/70 hover:bg-red-700"
-                              title="Delete Offer"
-                              onClick={() => setOfferToDelete(offer.id)}
-                            >
-                             <Trash2 className="h-4 w-4"/>
-                           </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+        <TabsContent value="find-cargo">
+          <Tabs defaultValue={activeList} onValueChange={setActiveList} className="w-full mt-4">
+            <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
+              <TabsTrigger value="all">All Offers</TabsTrigger>
+              <TabsTrigger value="my_offers">My Offers</TabsTrigger>
+              <TabsTrigger value="accepted_offers">Accepted Offers</TabsTrigger>
+            </TabsList>
+            <TabsContent value="all">
+              <CargoOfferList
+                  offers={cargoOffers}
+                  getUrgencyColor={getUrgencyColor}
+                  getPriceDisplay={getPriceDisplay}
+                  handleAcceptOffer={handleAcceptOffer}
+                  setChatOffer={openChat}
+                  setOfferToEdit={setOfferToEdit}
+                  setOfferToDelete={setOfferToDelete}
+                  setOfferToAssign={(offer) => setOfferToAssign(offer as any)}
+              />
+            </TabsContent>
+            <TabsContent value="my_offers">
+              <CargoOfferList
+                  offers={cargoOffers}
+                  getUrgencyColor={getUrgencyColor}
+                  getPriceDisplay={getPriceDisplay}
+                  handleAcceptOffer={handleAcceptOffer}
+                  setChatOffer={openChat}
+                  setOfferToEdit={setOfferToEdit}
+                  setOfferToDelete={setOfferToDelete}
+                  setOfferToAssign={(offer) => setOfferToAssign(offer as any)}
+              />
+            </TabsContent>
+            <TabsContent value="accepted_offers">
+              <CargoOfferList
+                  offers={cargoOffers}
+                  getUrgencyColor={getUrgencyColor}
+                  getPriceDisplay={getPriceDisplay}
+                  handleAcceptOffer={handleAcceptOffer}
+                  setChatOffer={openChat}
+                  setOfferToEdit={setOfferToEdit}
+                  setOfferToDelete={setOfferToDelete}
+                  setOfferToAssign={(offer) => setOfferToAssign(offer as any)}
+              />
+            </TabsContent>
+          </Tabs>
         </TabsContent>
         <TabsContent value="find-transport" className="mt-6">
            <Card className="bg-slate-800/50 border-slate-700 mb-6">
-            <CardHeader>
-              <CardTitle className="text-2xl text-white">Find Available Transport</CardTitle>
-              <CardDescription className="text-blue-200">Search for available trucks for your cargo.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                <Input placeholder="Origin (e.g., Romania)" className="bg-slate-700 border-slate-600 text-white" />
-                <Input placeholder="Destination (e.g., France)" className="bg-slate-700 border-slate-600 text-white" />
-                <Input placeholder="Truck Type" className="bg-slate-700 border-slate-600 text-white" />
-                <Input type="date" placeholder="Available from" className="bg-slate-700 border-slate-600 text-white" />
-                <Button className="bg-blue-600 hover:bg-blue-700 lg:col-span-1 xl:col-span-1 w-full">
-                  <Search className="mr-2 h-4 w-4" /> Search
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {transportRequests.map((req) => (
-              <motion.div
-                key={req.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.1 }}
-              >
-                <Card className="bg-slate-800/70 border-slate-700 hover:border-blue-500 transition-all duration-300 flex flex-col h-full">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg font-bold text-white mb-2">Transport Request: {req.truckType}</CardTitle>
-                      <Badge className={req.status === 'available' ? 'bg-green-500' : 'bg-yellow-500'}>{req.status.toUpperCase()}</Badge>
-                    </div>
-                     <div className="flex items-center text-sm text-blue-300">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      <span className="font-semibold">{req.from}</span>
-                      <ArrowRight className="h-4 w-4 mx-2" />
-                      <span className="font-semibold">{req.to}</span>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                      <div className="flex items-center text-slate-300"><Calendar className="h-4 w-4 mr-2 text-blue-400"/> Available From: {req.availableFrom}</div>
-                      <div className="flex items-center text-slate-300"><Clock className="h-4 w-4 mr-2 text-blue-400"/> Available Until: {req.availableTo}</div>
-                      <div className="flex items-center text-slate-300 col-span-2"><Truck className="h-4 w-4 mr-2 text-blue-400"/> Truck Type: <Badge variant="secondary" className="ml-2">{req.truckType}</Badge></div>
-                    </div>
-                    <div className="mt-4">
-                      <h4 className="font-semibold text-slate-200 mb-2 text-xs">Capabilities:</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {req.capabilities.map(cap => <Badge key={cap} variant="outline" className="text-slate-300 border-slate-600">{cap}</Badge>)}
+              <CardHeader>
+                <CardTitle className="text-2xl text-white">Find Available Transport</CardTitle>
+                <CardDescription className="text-blue-200">Search for available trucks for your cargo.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  <Input placeholder="Origin (e.g., Romania)" className="bg-slate-700 border-slate-600 text-white" />
+                  <Input placeholder="Destination (e.g., France)" className="bg-slate-700 border-slate-600 text-white" />
+                  <Input placeholder="Truck Type" className="bg-slate-700 border-slate-600 text-white" />
+                  <Input type="date" placeholder="Available from" className="bg-slate-700 border-slate-600 text-white" />
+                  <Button className="bg-blue-600 hover:bg-blue-700 lg:col-span-1 xl:col-span-1 w-full">
+                    <Search className="mr-2 h-4 w-4" /> Search
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {transportRequests.map((req) => (
+                <motion.div
+                  key={req.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.1 }}
+                >
+                  <Card className="bg-slate-800/70 border-slate-700 hover:border-blue-500 transition-all duration-300 flex flex-col h-full">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-lg font-bold text-white mb-2">Transport Request: {req.truckType}</CardTitle>
+                        <Badge className={req.status === 'available' ? 'bg-green-500' : 'bg-yellow-500'}>{req.status.toUpperCase()}</Badge>
                       </div>
-                    </div>
-                  </CardContent>
-                  <div className="p-4 bg-slate-900/50 rounded-b-lg mt-auto">
-                    <div className="flex justify-between items-center">
-                       <div>
-                        <p className="text-sm font-semibold text-slate-300">{req.company.name}</p>
-                        <div className="flex items-center text-xs text-slate-400">
-                          <Star className="h-3 w-3 mr-1 text-yellow-400" /> {req.company.rating}
-                          <Users className="h-3 w-3 ml-2 mr-1 text-blue-400"/> {req.company.fleetSize} trucks
-                          {req.company.verified && <Shield className="h-3 w-3 ml-2 text-green-400" />}
+                       <div className="flex items-center text-sm text-blue-300">
+                        <MapPin className="h-4 w-4 mr-2" />
+                        <span className="font-semibold">{req.from}</span>
+                        <ArrowRight className="h-4 w-4 mx-2" />
+                        <span className="font-semibold">{req.to}</span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                        <div className="flex items-center text-slate-300"><Calendar className="h-4 w-4 mr-2 text-blue-400"/> Available From: {req.availableFrom}</div>
+                        <div className="flex items-center text-slate-300"><Clock className="h-4 w-4 mr-2 text-blue-400"/> Available Until: {req.availableTo}</div>
+                        <div className="flex items-center text-slate-300 col-span-2"><Truck className="h-4 w-4 mr-2 text-blue-400"/> Truck Type: <Badge variant="secondary" className="ml-2">{req.truckType}</Badge></div>
+                      </div>
+                      <div className="mt-4">
+                        <h4 className="font-semibold text-slate-200 mb-2 text-xs">Capabilities:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {req.capabilities.map(cap => <Badge key={cap} variant="outline" className="text-slate-300 border-slate-600">{cap}</Badge>)}
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-green-400">€{req.priceRange.min} - €{req.priceRange.max}</p>
-                        <Button size="sm" className="mt-1 bg-blue-600 hover:bg-blue-700 h-8">View Details</Button>
+                    </CardContent>
+                    <div className="p-4 bg-slate-900/50 rounded-b-lg mt-auto">
+                      <div className="flex justify-between items-center">
+                         <div>
+                          <p className="text-sm font-semibold text-slate-300">{req.company.name}</p>
+                          <div className="flex items-center text-xs text-slate-400">
+                            <Star className="h-3 w-3 mr-1 text-yellow-400" /> {req.company.rating}
+                            <Users className="h-3 w-3 ml-2 mr-1 text-blue-400"/> {req.company.fleetSize} trucks
+                            {req.company.verified && <Shield className="h-3 w-3 ml-2 text-green-400" />}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-green-400">€{req.priceRange.min} - €{req.priceRange.max}</p>
+                          <Button size="sm" className="mt-1 bg-blue-600 hover:bg-blue-700 h-8">View Details</Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
         </TabsContent>
       </Tabs>
       {/* Edit Dialog */}
@@ -756,7 +561,7 @@ export default function MarketplacePage() {
                   <Input name="fromCountry" value={offerToEdit.fromCountry} onChange={handleEditInputChange} placeholder="From" required className="bg-slate-700 border-slate-600"/>
                   <Input name="toCountry" value={offerToEdit.toCountry} onChange={handleEditInputChange} placeholder="To" required className="bg-slate-700 border-slate-600"/>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-3 gap-4">
                   <Input name="weight" type="number" value={offerToEdit.weight} onChange={handleEditInputChange} placeholder="Weight (kg)" required className="bg-slate-700 border-slate-600"/>
                   <Input name="price" type="number" value={offerToEdit.price} onChange={handleEditInputChange} placeholder="Price (€)" required className="bg-slate-700 border-slate-600"/>
                   <select name="urgency" value={offerToEdit.urgency} onChange={handleEditInputChange} className="bg-slate-700 border-slate-600 rounded-md p-2 w-full">
