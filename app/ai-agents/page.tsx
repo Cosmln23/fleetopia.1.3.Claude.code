@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Bot, Play, Pause, Settings, TrendingUp, Zap, Activity, AlertCircle,
@@ -8,9 +8,10 @@ import {
   FileCheck, Calculator, Users, DollarSign, Clock, MapPin, Navigation,
   Phone, MessageSquare, Calendar, Bell, CheckCircle, ArrowRight,
   BarChart3, Route, Fuel, Eye, Headphones, Radio, Monitor,
-  AlertTriangle, RefreshCw, Send, Map, Layers, Timer, Award, Inbox
+  AlertTriangle, RefreshCw, Send, Map, Layers, Timer, Award, Inbox,
+  Loader2, XCircle
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -18,12 +19,15 @@ import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import MetricCard from '@/components/metric-card';
 import { useToast } from "@/components/ui/use-toast";
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 interface DispatcherAgent {
   id: string;
   name: string;
   type: string;
-  status: 'active' | 'inactive' | 'maintenance' | 'busy';
+  status: 'active' | 'inactive' | 'maintenance' | 'busy' | 'idle' | 'thinking' | 'analyzed';
   performance: number;
   totalDispatched: number;
   activeOperations: number;
@@ -64,20 +68,80 @@ interface SystemAlert {
   createdAt: string;
   isProcessed: boolean;
   relatedId?: string;
+  details: string;
 }
 
-type AlertWithProposal = SystemAlert & { 
-  proposal?: string;
-  proposalStatus?: 'accepted' | 'rejected';
-  chosenVehicleId?: string | null;
+interface AlertState {
+  status: 'idle' | 'thinking' | 'analyzed';
+  proposal: string | null;
+  chosenVehicleId: string | null;
+  analysisBreakdown: CalculationBreakdown | null;
+}
+
+interface CalculationBreakdown {
+  offerPrice: number;
+  fuelCost: number;
+  tollCost: number;
+  totalCost: number;
+  profit: number;
+  distance: number;
+  distanceToPickup: number;
+  distanceOfCargo: number;
+}
+
+const VIGNETTE_WARNING_TEXT = "Note: Please verify and purchase the necessary vignettes for the transited countries, as their cost might not be included in the toll estimation.";
+
+const AnalysisBreakdown = ({ breakdown }: { breakdown: CalculationBreakdown }) => (
+  <div className="mt-4 p-3 border rounded-lg bg-gray-50 dark:bg-gray-900/50 text-xs shadow-inner">
+    <h4 className="font-semibold mb-3 text-center text-gray-700 dark:text-gray-300">Trip Analysis</h4>
+    
+    <div className='mb-3'>
+      <p className='text-center font-medium mb-1 text-gray-600 dark:text-gray-400'>Distance Breakdown</p>
+      <ul className="space-y-1 text-gray-600 dark:text-gray-400">
+        <li className="flex justify-between items-center"><span>Vehicle to Pickup:</span> <span className='font-mono p-1 bg-gray-200 dark:bg-gray-800 rounded text-xxs'>{(breakdown.distanceToPickup / 1000).toFixed(0)} km</span></li>
+        <li className="flex justify-between items-center"><span>Cargo Leg:</span> <span className='font-mono p-1 bg-gray-200 dark:bg-gray-800 rounded text-xxs'>{(breakdown.distanceOfCargo / 1000).toFixed(0)} km</span></li>
+        <li className="flex justify-between items-center font-bold border-t pt-1 mt-1 border-gray-200 dark:border-gray-700"><span>Total Trip:</span> <span className='font-mono p-1 bg-gray-800 dark:bg-gray-200 rounded text-gray-50 dark:text-gray-950 text-xxs'>{(breakdown.distance / 1000).toFixed(0)} km</span></li>
+      </ul>
+    </div>
+
+    <div>
+      <p className='text-center font-medium mb-1 text-gray-600 dark:text-gray-400'>Cost & Profit Breakdown</p>
+      <ul className="space-y-1.5 text-gray-600 dark:text-gray-400">
+        <li className="flex justify-between"><span>Offer Price:</span> <span className="font-medium text-gray-900 dark:text-white">€{breakdown.offerPrice.toFixed(2)}</span></li>
+        <li className="flex justify-between border-t pt-1.5 mt-1.5 border-gray-200 dark:border-gray-700"><span>Est. Fuel Cost:</span> <span>€{breakdown.fuelCost.toFixed(2)}</span></li>
+        <li className="flex justify-between"><span>Est. Tolls Cost:</span> <span>€{breakdown.tollCost.toFixed(2)}</span></li>
+        <li className="flex justify-between font-semibold border-t pt-1.5 mt-1.5 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-100"><span>Est. Total Cost:</span> <span>- €{breakdown.totalCost.toFixed(2)}</span></li>
+        <li className={`flex justify-between font-bold text-base pt-2 mt-2 border-t-2 ${breakdown.profit >= 0 ? 'text-green-600 dark:text-green-500 border-green-500' : 'text-red-600 dark:text-red-500 border-red-500'}`}>
+          <span>Est. Profit / Loss:</span>
+          <span>€{breakdown.profit.toFixed(2)}</span>
+        </li>
+      </ul>
+    </div>
+  </div>
+);
+
+const ProposalText = ({ text }: { text: string }) => {
+  if (text.includes(VIGNETTE_WARNING_TEXT)) {
+    const parts = text.split(VIGNETTE_WARNING_TEXT);
+    return (
+      <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
+        {parts[0]}
+        <span className="text-red-500 font-semibold">{VIGNETTE_WARNING_TEXT}</span>
+        {parts[1]}
+      </p>
+    );
+  }
+  return <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">{text}</p>;
 };
 
 export default function DispatcherAIPage() {
+  const [alertStates, setAlertStates] = useState<Record<string, AlertState>>({});
+
   const [agent, setAgent] = useState<DispatcherAgent>({
     id: 'dispatch-ai-001',
     name: 'FleetMind Dispatcher AI',
     type: 'intelligent-dispatcher',
-    status: 'active',
+    status: 'idle',
     performance: 96.8,
     totalDispatched: 15847,
     activeOperations: 23,
@@ -104,7 +168,7 @@ export default function DispatcherAIPage() {
       'Processing 7 route optimizations',
       'Handling 3 emergency dispatches',
       'Coordinating driver breaks schedule'
-    ]
+    ],
   });
 
   const [activeOperations, setActiveOperations] = useState<ActiveOperation[]>([
@@ -165,8 +229,8 @@ export default function DispatcherAIPage() {
     { system: 'API Integrations', status: 'connected', lastSync: '14:30:55', dataPoints: 234, icon: Zap }
   ]);
 
-  const [systemAlerts, setSystemAlerts] = useState<AlertWithProposal[]>([]);
-  const { toast } = useToast();
+  const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>([]);
+  const { toast: legacyToast } = useToast();
 
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -209,7 +273,7 @@ export default function DispatcherAIPage() {
             const existingIds = new Set(prevAlerts.map(a => a.id));
             const uniqueNewAlerts = newAlerts.filter((a: SystemAlert) => !existingIds.has(a.id));
             if (uniqueNewAlerts.length > 0) {
-               toast({
+               legacyToast({
                 title: "New System Alert",
                 description: uniqueNewAlerts[0].message,
               });
@@ -224,112 +288,84 @@ export default function DispatcherAIPage() {
     }
   };
 
-  const handleAnalyze = async (alertId: string, cargoOfferId: string | undefined) => {
+  const handleAnalyze = async (alertId: string, cargoOfferId: string | null) => {
     if (!cargoOfferId) {
-      toast({ title: "Analysis Error", description: "No related cargo offer found for this alert.", variant: "destructive" });
+      toast.error("Alert is missing the required Cargo Offer ID.");
       return;
     }
 
-    toast({
-      title: "Analyzing Offer",
-      description: "The AI is processing the cargo offer...",
-    });
+    setAlertStates(prev => ({ ...prev, [alertId]: { status: 'thinking', proposal: null, chosenVehicleId: null, analysisBreakdown: null } }));
+    toast.info('AI Agent is analyzing the offer...');
 
     try {
       const response = await fetch('/api/ai/analyze-cargo-offer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cargoOfferId }),
+        body: JSON.stringify({ cargoOfferId: cargoOfferId }),
       });
-
+      const data = await response.json();
+      
       if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Analysis request failed.');
+        throw new Error(data.error || 'Analysis failed');
       }
 
-      const data = await response.json();
+      setAlertStates(prev => ({ 
+        ...prev, 
+        [alertId]: {
+          status: 'analyzed',
+          proposal: data.proposal,
+          chosenVehicleId: data.chosenVehicleId,
+          analysisBreakdown: data.breakdown,
+        } 
+      }));
+      toast.success('Analysis complete.');
+    } catch (error: any) {
+      console.error(error);
+      setAlertStates(prev => ({ ...prev, [alertId]: { ...prev[alertId], status: 'idle' } }));
+      toast.error('AI analysis failed', { description: error.message });
+    }
+  };
+  
+  const handleAccept = async (alertId: string) => {
+    const alertState = alertStates[alertId];
+    if (!alertState || !alertState.chosenVehicleId) return;
+    
+    toast.info('Accepting proposal and creating assignment...');
+    try {
+        const response = await fetch('/api/assignments/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                vehicleId: alertState.chosenVehicleId,
+                cargoOfferId: alertId,
+            }),
+        });
 
-      toast({
-        title: "Analysis Complete",
-        description: "AI has generated a proposal.",
-        variant: "default",
-      });
+        const data = await response.json();
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to create assignment.');
+        }
 
-      setSystemAlerts(prevAlerts => prevAlerts.map(alert =>
-        alert.id === alertId ? { 
-          ...alert, 
-          proposal: data.proposal, 
-          isProcessed: true,
-          chosenVehicleId: data.chosenVehicleId 
-        } : alert
-      ));
+        toast.success('Assignment created successfully!', {
+          description: `Vehicle ${alertState.chosenVehicleId} has been assigned.`
+        });
+        
+        setSystemAlerts(prev => prev.map(a => a.id === alertId ? { ...a, isProcessed: true } : a));
+        setAlertStates(prev => ({ ...prev, [alertId]: { status: 'idle', proposal: null, chosenVehicleId: null, analysisBreakdown: null } }));
 
-    } catch (err: any) {
-      toast({
-        title: "Analysis Failed",
-        description: err.message,
-        variant: "destructive",
-      });
+    } catch (error: any) {
+        console.error('Failed to accept proposal:', error);
+        toast.error('Failed to create assignment', {
+            description: error.message,
+        });
     }
   };
 
-  const handleProposalAction = async (alertId: string, action: 'accepted' | 'rejected') => {
-    const alert = systemAlerts.find(a => a.id === alertId);
-    if (!alert) return;
-  
-    if (action === 'rejected') {
-      setSystemAlerts(prevAlerts =>
-        prevAlerts.map(a => (a.id === alertId ? { ...a, proposalStatus: 'rejected' } : a))
-      );
-      toast({ title: 'Proposal Rejected', description: 'The AI proposal has been manually rejected.' });
-      return;
-    }
-  
-    // Handle acceptance
-    if (action === 'accepted' && alert.chosenVehicleId && alert.relatedId) {
-      toast({
-        title: "Assigning Job...",
-        description: "Updating database records. Please wait.",
-      });
-  
-      try {
-        const response = await fetch('/api/assignments/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            cargoOfferId: alert.relatedId,
-            vehicleId: alert.chosenVehicleId,
-          }),
-        });
-  
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || 'Assignment failed');
-        }
-  
-        setSystemAlerts(prevAlerts =>
-          prevAlerts.map(a => (a.id === alertId ? { ...a, proposalStatus: 'accepted' } : a))
-        );
-  
-        toast({
-          title: "Assignment Successful!",
-          description: "The job has been assigned to the vehicle.",
-        });
-  
-      } catch (error: any) {
-        toast({
-          title: "Assignment Error",
-          description: error.message || "Could not assign the job. The vehicle might have been assigned to another job.",
-          variant: "destructive",
-        });
-      }
-    } else {
-      toast({
-        title: "Assignment Information Missing",
-        description: "Cannot assign job due to missing vehicle or cargo offer ID.",
-        variant: "destructive",
-      });
-    }
+  const handleReject = (alertId: string) => {
+    toast.warning('Offer rejected.', {
+      description: "The proposal has been discarded."
+    })
+    setAlertStates(prev => ({ ...prev, [alertId]: { status: 'idle', proposal: null, chosenVehicleId: null, analysisBreakdown: null } }));
   };
 
   const toggleAgentStatus = () => {
@@ -373,11 +409,9 @@ export default function DispatcherAIPage() {
   const sendDispatcherCommand = () => {
     if (!newMessage.trim()) return;
     
-    // Simulate command processing
     console.log('Dispatcher command sent:', newMessage);
     setNewMessage('');
     
-    // Add to current tasks
     setAgent(prev => ({
       ...prev,
       currentTasks: [...prev.currentTasks.slice(-2), `Processing: ${newMessage}`]
@@ -399,7 +433,6 @@ export default function DispatcherAIPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -414,7 +447,6 @@ export default function DispatcherAIPage() {
           </p>
         </motion.div>
 
-        {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-5 bg-slate-800/50 border border-slate-700">
             <TabsTrigger value="dashboard" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">
@@ -439,9 +471,7 @@ export default function DispatcherAIPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Dashboard Tab */}
           <TabsContent value="dashboard" className="mt-6">
-            {/* Agent Status Overview */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -485,7 +515,6 @@ export default function DispatcherAIPage() {
               />
             </motion.div>
 
-            {/* Main Agent Card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -517,7 +546,6 @@ export default function DispatcherAIPage() {
 
               <p className="text-slate-300 mb-6">{agent.description}</p>
 
-              {/* Current Tasks */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
                   <Activity className="w-5 h-5 mr-2 text-blue-400" />
@@ -533,7 +561,6 @@ export default function DispatcherAIPage() {
                 </div>
               </div>
 
-              {/* Performance Metrics */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-slate-700/50 rounded-lg p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -568,7 +595,6 @@ export default function DispatcherAIPage() {
                 </div>
               </div>
 
-              {/* Dispatcher Capabilities */}
               <div>
                 <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
                   <Cpu className="w-5 h-5 mr-2 text-green-400" />
@@ -586,13 +612,12 @@ export default function DispatcherAIPage() {
             </motion.div>
           </TabsContent>
 
-          {/* Alerts & Inbox Tab */}
           <TabsContent value="inbox" className="mt-6">
             <Card className="bg-slate-800/50 border-slate-700">
               <CardHeader>
                 <CardTitle className="text-white flex items-center">
                   <Inbox className="w-5 h-5 mr-2 text-blue-400" />
-                  System Alerts Inbox
+                  System Alerts & Proposals
                 </CardTitle>
                 <CardDescription className="text-slate-400">
                   Incoming alerts and events requiring dispatcher attention.
@@ -601,7 +626,9 @@ export default function DispatcherAIPage() {
               <CardContent>
                 <div className="space-y-4">
                   {systemAlerts.length > 0 ? (
-                    systemAlerts.map((alert) => (
+                    systemAlerts.map((alert) => {
+                      const alertState = alertStates[alert.id] || { status: 'idle', proposal: null, chosenVehicleId: null, analysisBreakdown: null };
+                      return (
                       <div key={alert.id} className="p-4 bg-slate-700/30 rounded-lg flex flex-col items-start">
                         <div className="w-full flex items-center justify-between">
                           <div className="flex items-center space-x-3">
@@ -618,44 +645,44 @@ export default function DispatcherAIPage() {
                               variant="outline" 
                               size="sm" 
                               className="border-blue-500 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300"
-                              onClick={() => handleAnalyze(alert.id, alert.relatedId)}
-                              disabled={alert.type !== 'cargo'}
+                              onClick={() => handleAnalyze(alert.id, alert.relatedId || null)}
+                              disabled={alert.type !== 'cargo' || alertState.status === 'thinking'}
                             >
-                              <Zap className="w-4 h-4 mr-2" />
+                              {alertState.status === 'thinking' ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Zap className="w-4 h-4 mr-2" />}
                               Analyze & Propose
                             </Button>
                           )}
                         </div>
-                        {alert.proposal && (
-                          <div className="mt-4 p-4 bg-primary/10 rounded-lg">
-                            <p className="font-semibold text-primary">AI Proposal:</p>
-                            <p className="text-sm text-foreground">{alert.proposal}</p>
+                        {alertState.status === 'analyzed' && (
+                          <div className="mt-4 space-y-2 w-full">
+                            <div className="p-4 border rounded-lg bg-background shadow-sm">
+                              <p className="text-sm font-semibold text-primary">AI Proposal:</p>
+                              {alertState.proposal ? <ProposalText text={alertState.proposal} /> : <p className='text-sm text-muted-foreground'>The AI agent did not generate a text proposal.</p>}
+                              {alertState.analysisBreakdown && <AnalysisBreakdown breakdown={alertState.analysisBreakdown} />}
+                            </div>
                             
-                            {!alert.proposalStatus && (
-                               <div className="mt-4 flex space-x-2">
-                                <Button size="sm" onClick={() => handleProposalAction(alert.id, 'accepted')}>
-                                  <CheckCircle className="mr-2 h-4 w-4" /> Accept
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => handleProposalAction(alert.id, 'rejected')}>
-                                  <AlertCircle className="mr-2 h-4 w-4" /> Reject
-                                </Button>
-                              </div>
-                            )}
+                            <div className='flex justify-end gap-2 mt-4'>
+                              <Button variant="outline" size="sm" onClick={() => handleReject(alert.id)}>Reject</Button>
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleAccept(alert.id)} 
+                                disabled={!alertState.chosenVehicleId}
+                                className={!alertState.chosenVehicleId ? 'bg-red-500 hover:bg-red-600' : 'bg-green-600 hover:bg-green-700'}
+                              >
+                                {!alertState.chosenVehicleId ? <XCircle className="mr-2 h-4 w-4"/> : <CheckCircle className="mr-2 h-4 w-4"/>}
+                                {alertState.chosenVehicleId ? 'Accept & Assign' : 'Reject Offer'}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
 
-                            {alert.proposalStatus === 'accepted' && (
-                              <div className="mt-4 text-green-600 flex items-center">
-                                <CheckCircle className="mr-2 h-4 w-4" /> Proposal Accepted
-                              </div>
-                            )}
-                             {alert.proposalStatus === 'rejected' && (
-                              <div className="mt-4 text-red-600 flex items-center">
-                                <AlertCircle className="mr-2 h-4 w-4" /> Proposal Rejected
-                              </div>
-                            )}
+                        {alert.isProcessed && (
+                          <div className="mt-2 text-sm font-semibold text-green-600 dark:text-green-500 flex items-center gap-2">
+                            <CheckCircle className="mr-2 h-4 w-4" /> Proposal Accepted & Assigned
                           </div>
                         )}
                       </div>
-                    ))
+                    )})
                   ) : (
                     <div className="text-center py-12 text-slate-400">
                       <Bell className="w-12 h-12 mx-auto mb-4 text-slate-600" />
@@ -668,7 +695,6 @@ export default function DispatcherAIPage() {
             </Card>
           </TabsContent>
 
-          {/* Operations Tab */}
           <TabsContent value="operations" className="mt-6">
             <div className="space-y-6">
               <Card className="bg-slate-800/50 border-slate-700">
@@ -733,7 +759,6 @@ export default function DispatcherAIPage() {
             </div>
           </TabsContent>
 
-          {/* Communications Tab */}
           <TabsContent value="communications" className="mt-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card className="bg-slate-800/50 border-slate-700">
@@ -823,7 +848,6 @@ export default function DispatcherAIPage() {
             </div>
           </TabsContent>
 
-          {/* Systems Tab */}
           <TabsContent value="systems" className="mt-6">
             <Card className="bg-slate-800/50 border-slate-700">
               <CardHeader>
@@ -859,7 +883,6 @@ export default function DispatcherAIPage() {
                   ))}
                 </div>
 
-                {/* System Actions */}
                 <div className="mt-6 pt-6 border-t border-slate-700">
                   <h3 className="text-lg font-semibold text-white mb-4">System Actions</h3>
                   <div className="flex space-x-3">

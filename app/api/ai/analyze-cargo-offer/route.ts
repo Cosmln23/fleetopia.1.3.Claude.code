@@ -18,6 +18,10 @@ interface SimulationResult {
   duration: number;
   cost: number;
   profit: number;
+  fuelCost: number;
+  tollCost: number;
+  distanceToPickup: number;
+  distanceOfCargo: number;
 }
 
 export async function POST(request: Request) {
@@ -48,7 +52,6 @@ export async function POST(request: Request) {
       });
     }
 
-    // Etapa 1: Calculele se schimba pentru a folosi noul Routes API
     const simulationPromises = candidateVehicles.map(async (vehicle: Vehicle): Promise<SimulationResult | null> => {
         const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
         const url = 'https://routes.googleapis.com/directions/v2:computeRoutes';
@@ -72,7 +75,7 @@ export async function POST(request: Request) {
                 headers: {
                     'Content-Type': 'application/json',
                     'X-Goog-Api-Key': apiKey!,
-                    'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration,routes.travelAdvisory.tollInfo'
+                    'X-Goog-FieldMask': 'routes.distanceMeters,routes.duration,routes.travelAdvisory.tollInfo,routes.legs.distanceMeters'
                 },
                 body: JSON.stringify(requestBody)
             });
@@ -86,8 +89,28 @@ export async function POST(request: Request) {
 
             const route = data.routes[0];
             const totalDistance = route.distanceMeters;
-            const totalDuration = parseInt(route.duration.slice(0, -1)); // '3600s' -> 3600
-            
+            const totalDuration = parseInt(route.duration.slice(0, -1));
+
+            // --- Robust Leg Distance Extraction ---
+            let distanceToPickup = 0;
+            let distanceOfCargo = 0;
+
+            if (route.legs && route.legs.length >= 2) {
+                // Cazul normal: Vehicul -> Preluare -> Destinatie
+                distanceToPickup = route.legs[0].distanceMeters;
+                distanceOfCargo = route.legs[1].distanceMeters;
+            } else if (route.legs && route.legs.length === 1) {
+                // Cazul exceptional: Vehiculul este deja la punctul de preluare
+                console.warn("Route has only one leg. Assuming vehicle is at pickup location.");
+                distanceToPickup = 0;
+                distanceOfCargo = route.legs[0].distanceMeters;
+            } else {
+                // Cazul de rezerva: Folosim distanta totala daca 'legs' lipsesc
+                console.warn("Route legs are not defined. Using total distance for cargo leg.");
+                distanceToPickup = 0;
+                distanceOfCargo = totalDistance;
+            }
+
             // Extrage costul taxelor in mod sigur
             const estimatedPrice = route.travelAdvisory?.tollInfo?.estimatedPrice;
             const tollCost = estimatedPrice && estimatedPrice.length > 0 
@@ -101,7 +124,7 @@ export async function POST(request: Request) {
             const totalTripCost = fuelCost + tollCost;
             const profit = cargoOffer.price - totalTripCost;
 
-            return { vehicle, distance: totalDistance, duration: totalDuration, cost: totalTripCost, profit };
+            return { vehicle, distance: totalDistance, duration: totalDuration, cost: totalTripCost, profit, fuelCost, tollCost, distanceToPickup, distanceOfCargo };
         } catch (error) {
             console.error('Eroare la apelarea Google Routes API:', error);
             return null;
@@ -118,62 +141,34 @@ export async function POST(request: Request) {
         return (current.profit > best.profit) ? current : best;
     });
 
-    let prompt;
-    let chosenVehicleId = bestCandidate.vehicle.id;
+    const chosenVehicleId = bestCandidate.vehicle.id;
 
-    if (bestCandidate.profit < 0) {
-        chosenVehicleId = null; 
-        prompt = `
-          You are an expert AI dispatcher. A cargo offer was analyzed and found to be unprofitable.
-          
-          Offer Details:
-          - Price: €${cargoOffer.price}
-          
-          Analysis for the best vehicle option (${bestCandidate.vehicle.name}):
-          - Estimated Total Cost (Fuel + Tolls): €${bestCandidate.cost.toFixed(2)}
-          - Estimated Loss: €${Math.abs(bestCandidate.profit).toFixed(2)}
+    // Daca niciun vehicul nu e profitabil, Claude va genera o recomandare de respingere
+    const actionRecommendation = bestCandidate.profit >= 0
+      ? `recomandă asignarea cursei vehiculului cu ID ${chosenVehicleId}`
+      : `recomandă RESPINGEREA ofertei pentru că nu este profitabilă`;
 
-          Your task:
-          1. Formulate a concise warning.
-          2. Recommend rejecting or renegotiating the offer due to the financial loss.
-          3. Your final output MUST be a single, valid JSON object with keys "proposal" (your warning string) and "chosenVehicleId" (must be null).
-          
-          Example:
-          {
-            "proposal": "Warning: Assigning vehicle ${bestCandidate.vehicle.name} would result in a loss of €${Math.abs(bestCandidate.profit).toFixed(2)} (Total costs: €${bestCandidate.cost.toFixed(2)}). It is recommended to reject this offer or renegotiate.",
-            "chosenVehicleId": null
-          }
-        `;
-    } else {
-        const bestCandidateData = {
-            id: bestCandidate.vehicle.id,
-            name: bestCandidate.vehicle.name,
-            cost: bestCandidate.cost.toFixed(2),
-            profit: bestCandidate.profit.toFixed(2),
-            distance: (bestCandidate.distance / 1000).toFixed(0),
-        };
-
-        prompt = `
-          You are an expert AI dispatcher. Confirm the assignment of the most profitable vehicle for a cargo offer.
-          
-          Offer Details:
-          - Price: €${cargoOffer.price}
-          
-          Most Profitable Vehicle Found:
-          ${JSON.stringify(bestCandidateData, null, 2)}
-          
-          Your task:
-          1. Formulate a concise proposal recommending this vehicle.
-          2. Justify the choice by mentioning the highest estimated profit and the total estimated costs (fuel + tolls).
-          3. Your final output MUST be a single, valid JSON object with keys "proposal" and "chosenVehicleId".
-          
-          Example:
-          {
-            "proposal": "Proposal: Assign Vehicle ${bestCandidateData.name}. Justification: This option yields the highest estimated profit of €${bestCandidateData.profit} with total estimated costs of €${bestCandidateData.cost}.",
-            "chosenVehicleId": "${bestCandidateData.id}"
-          }
-        `;
-    }
+    // Construim prompt-ul pentru Claude AI
+    const prompt = `
+      Rol: Ești un dispecer AI pentru o companie de transport rutier.
+      Sarcina: Analizează oferta de transport și datele vehiculului optim, apoi formulează o propunere scurtă, profesională și directă.
+      
+      Context:
+      - Ofertă de transport de la "${cargoOffer.fromAddress}" la "${cargoOffer.toAddress}".
+      - Preț ofertă: ${cargoOffer.price} EUR.
+      - Cel mai bun vehicul identificat pentru cursă are ID-ul: ${chosenVehicleId}.
+      - Analiza financiară a arătat un profit estimat de ${bestCandidate.profit.toFixed(2)} EUR, după un cost total de ${bestCandidate.cost.toFixed(2)} EUR (combustibil + taxe).
+      
+      Acțiune Recomandată: Agentul de calcul ${actionRecommendation}.
+      
+      Instrucțiuni Specifice:
+      1. Formulează un paragraf scurt (2-4 propoziții) care să prezinte recomandarea ta.
+      2. Dacă recomanzi asignarea, folosește un ton încrezător. Exemplu: "Am analizat oferta și recomand asignarea vehiculului... Este o cursă profitabilă."
+      3. Dacă recomanzi respingerea, explică pe scurt motivul (profit negativ). Exemplu: "Deși vehiculul este disponibil, analiza arată un profit negativ. Recomand respingerea ofertei pentru a evita o pierdere financiară."
+      4. **Notă de prudență:** Adresele indică o posibilă rută prin țări ca Austria, Ungaria, Elveția, Cehia sau Slovenia. Costul calculat pentru taxe (tolls) s-ar putea să NU includă vinietele (taxe de drum pe perioadă determinată). Adaugă o scurtă avertizare despre acest aspect la finalul propunerii tale, dacă este cazul. Exemplu: "Notă: Vă rugăm să verificați și să achiziționați vinietele necesare pentru țările tranzitate, deoarece costul acestora s-ar putea să nu fie inclus în estimarea taxelor de drum."
+      
+      Răspunsul tău trebuie să fie DOAR textul propunerii, fără introduceri sau alte comentarii.
+    `;
 
     const msg = await anthropic.messages.create({
       model: "claude-3-haiku-20240307",
@@ -188,14 +183,33 @@ export async function POST(request: Request) {
     }
     
     const claudeResponseText = contentBlock.text;
-    const claudeResponseJson = JSON.parse(claudeResponseText);
+    
+    const finalProposal = {
+        proposal: claudeResponseText,
+        chosenVehicleId: bestCandidate.profit >= 0 ? chosenVehicleId : null
+    };
 
-    if (claudeResponseJson.chosenVehicleId !== chosenVehicleId) {
-        console.warn('Claude AI returned a different vehicle ID. Overriding with system logic.');
-        claudeResponseJson.chosenVehicleId = chosenVehicleId;
-    }
+    const responseWithBreakdown = {
+        ...finalProposal,
+        breakdown: {
+            offerPrice: cargoOffer.price,
+            fuelCost: bestCandidate.fuelCost,
+            tollCost: bestCandidate.tollCost,
+            totalCost: bestCandidate.cost,
+            profit: bestCandidate.profit,
+            distance: bestCandidate.distance,
+            distanceToPickup: bestCandidate.distanceToPickup,
+            distanceOfCargo: bestCandidate.distanceOfCargo,
+        }
+    };
+    
+    // Nu mai este necesara aceasta verificare deoarece 'chosenVehicleId' este setat corect in 'finalProposal'
+    // if (responseWithBreakdown.chosenVehicleId !== chosenVehicleId) {
+    //     console.warn('Claude AI returned a different vehicle ID. Overriding with system logic.');
+    //     responseWithBreakdown.chosenVehicleId = bestCandidate.profit >= 0 ? chosenVehicleId : null;
+    // }
 
-    return NextResponse.json(claudeResponseJson);
+    return NextResponse.json(responseWithBreakdown);
 
   } catch (error) {
     console.error('AI analysis failed:', error);
