@@ -84,6 +84,15 @@ export function CargoOfferList({
                 <div className="text-right">
                   <p className="text-xl font-bold text-green-400">{getPriceDisplay(offer)}</p>
                   <div className="flex items-center gap-2 mt-1">
+                     {/* Debug info - remove after testing */}
+                     {process.env.NODE_ENV === 'development' && (
+                       <div className="text-xs text-gray-400 w-full">
+                         Session: {session?.user?.id ? 'Yes' : 'No'} | 
+                         Status: {offer.status} | 
+                         Owner: {offer.userId === session?.user?.id ? 'Yes' : 'No'} |
+                         Accepted: {offer.acceptedByUserId === session?.user?.id ? 'Yes' : 'No'}
+                       </div>
+                     )}
                      {session && session.user && session.user.id !== offer.userId && offer.status === 'NEW' && (
                        <Button
                          variant="default"
@@ -96,7 +105,7 @@ export function CargoOfferList({
                          Accept & Chat
                        </Button>
                      )}
-                     {session && session.user && (offer.userId === session.user.id || offer.acceptedByUserId === session.user.id) && offer.status === 'TAKEN' && (
+                     {session && session.user && session.user.id === offer.acceptedByUserId && offer.status === 'TAKEN' && (
                       <Button
                          variant="default"
                          size="sm"

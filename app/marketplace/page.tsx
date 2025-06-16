@@ -175,6 +175,7 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     fetchCargoOffers(activeList);
+    
     // Transport requests still use mock data for now
     const mockTransportRequests: TransportRequest[] = [
       {
@@ -297,26 +298,49 @@ export default function MarketplacePage() {
   const handleDeleteCargo = async () => {
     if (!offerToDelete) return;
 
+    // Check if user is still authenticated
+    if (!session?.user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please refresh the page and log in again.",
+        variant: "destructive",
+      });
+      setOfferToDelete(null);
+      return;
+    }
+
     try {
       const response = await fetch(`/api/marketplace/cargo/${offerToDelete}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to delete cargo offer');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || errorData.message || `Failed to delete cargo offer (Status: ${response.status})`;
+        console.error('Delete API Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+          offerId: offerToDelete
+        });
+        throw new Error(errorMessage);
       }
       
       toast({
         title: "Success",
         description: "Cargo offer has been deleted.",
+        className: "bg-green-500 text-white",
       });
 
-      fetchCargoOffers(activeList); // Refresh the list
+      // Refresh all lists to ensure consistency across all users
+      await fetchCargoOffers(activeList);
+      
     } catch (error) {
-       console.error(error);
+       console.error('Delete error:', error);
+       const errorMessage = error instanceof Error ? error.message : 'Could not delete the cargo offer';
        toast({
         title: "Error",
-        description: "Could not delete the cargo offer.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -433,6 +457,16 @@ export default function MarketplacePage() {
   };
 
   const handleMarkDelivered = async (offerId: string) => {
+    // Check if user is still authenticated
+    if (!session?.user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "Please refresh the page and log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const response = await fetch(`/api/marketplace/cargo/${offerId}/deliver`, {
         method: 'POST',
@@ -656,6 +690,25 @@ export default function MarketplacePage() {
         onClose={() => setOfferToAssign(null)}
         onAssign={handleAssignOffer}
       />
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={!!offerToDelete} onOpenChange={() => setOfferToDelete(null)}>
+        <DialogContent className="sm:max-w-[425px] bg-slate-900 border-slate-700 text-white">
+          <DialogHeader>
+            <DialogTitle>Delete Cargo Offer</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this cargo offer? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="secondary" onClick={() => setOfferToDelete(null)}>
+              Cancel
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleDeleteCargo}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       {/* Add Cargo Dialog */}
       <Dialog open={isAddCargoOpen} onOpenChange={setIsAddCargoOpen}>
         <DialogContent className="sm:max-w-[625px] bg-slate-900 border-slate-700 text-white">

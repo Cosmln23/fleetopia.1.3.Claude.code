@@ -30,6 +30,53 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Generate country codes from country names
+  const getCountryCode = (country: string): string => {
+    const countryMap: { [key: string]: string } = {
+      'Romania': 'RO',
+      'Belgium': 'BE',
+      'Germany': 'DE',
+      'France': 'FR',
+      'Italy': 'IT',
+      'Spain': 'ES',
+      'Netherlands': 'NL',
+      'Poland': 'PL',
+      'Hungary': 'HU',
+      'Bulgaria': 'BG',
+      'Czech Republic': 'CZ',
+      'Slovakia': 'SK',
+      'Austria': 'AT',
+      'Denmark': 'DK',
+      'Sweden': 'SE',
+      'Finland': 'FI',
+      'Norway': 'NO',
+      'United Kingdom': 'UK',
+      'Ireland': 'IE',
+      'Portugal': 'PT',
+      'Slovenia': 'SI',
+      'Croatia': 'HR',
+      'Serbia': 'RS',
+      'Bosnia and Herzegovina': 'BA',
+      'Montenegro': 'ME',
+      'Macedonia': 'MK',
+      'Albania': 'AL',
+      'Greece': 'GR',
+      'Turkey': 'TR',
+      'Ukraine': 'UA',
+      'Moldova': 'MD',
+      'Lithuania': 'LT',
+      'Latvia': 'LV',
+      'Estonia': 'EE'
+    };
+    return countryMap[country] || country.substring(0, 2).toUpperCase();
+  };
+
+  const getChatTitle = () => {
+    const fromCode = getCountryCode(offer.fromCountry);
+    const toCode = getCountryCode(offer.toCountry);
+    return `${offer.title} ${fromCode}-${toCode}`;
+  };
+
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -94,7 +141,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
   return (
     <Card className="w-80 h-96 flex flex-col bg-slate-900 border-slate-700 text-white">
       <CardHeader className="flex flex-row items-center justify-between p-2 border-b border-slate-700">
-        <CardTitle className="text-sm font-semibold truncate">{offer.title}</CardTitle>
+        <CardTitle className="text-sm font-semibold truncate">{getChatTitle()}</CardTitle>
         <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => closeChat(offer.id)}>
           <X className="h-4 w-4" />
         </Button>
@@ -106,10 +153,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
               <div
                 key={msg.id}
                 className={`flex items-start gap-2 ${
-                  msg.senderId === session.user.id ? 'justify-end' : 'justify-start'
+                  msg.senderId === session.user?.id ? 'justify-end' : 'justify-start'
                 }`}
               >
-                {msg.senderId !== session.user.id && (
+                {msg.senderId !== session.user?.id && (
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={msg.sender.image || ''} />
                     <AvatarFallback>{msg.sender.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
@@ -117,7 +164,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
                 )}
                 <div
                   className={`max-w-[80%] p-2 rounded-lg ${
-                    msg.senderId === session.user.id
+                    msg.senderId === session.user?.id
                       ? 'bg-blue-600 text-white'
                       : 'bg-slate-700 text-slate-200'
                   }`}
