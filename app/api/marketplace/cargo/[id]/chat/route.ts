@@ -65,7 +65,8 @@ export async function POST(
     const offerId = resolvedParams.id;
     const userId = session.user.id;
 
-    const { content } = await request.json();
+    const { message } = await request.json();
+    const content = message;
     if (!content) {
       return NextResponse.json({ message: 'Message content cannot be empty' }, { status: 400 });
     }
