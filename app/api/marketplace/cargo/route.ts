@@ -12,6 +12,10 @@ export async function GET(request: NextRequest) {
     const toLocation = searchParams.get('toLocation');
     const maxWeight = searchParams.get('maxWeight');
     const listType = searchParams.get('listType'); // e.g., 'my_offers', 'accepted_offers'
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = (page - 1) * limit;
+    
     const session = await getServerSession(authOptions);
 
     const filters: any = {};
@@ -44,14 +48,49 @@ export async function GET(request: NextRequest) {
       filters.weight = { lte: parseFloat(maxWeight) };
     }
     
-    const cargoOffers = await prisma.cargoOffer.findMany({
-      where: filters,
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+    // Optimized query with pagination and field selection
+    const [cargoOffers, totalCount] = await Promise.all([
+      prisma.cargoOffer.findMany({
+        where: filters,
+        select: {
+          id: true,
+          title: true,
+          weight: true,
+          price: true,
+          companyName: true,
+          urgency: true,
+          createdAt: true,
+          fromCity: true,
+          toCity: true,
+          fromCountry: true,
+          toCountry: true,
+          status: true,
+          distance: true,
+          cargoType: true,
+          deliveryDate: true,
+          loadingDate: true,
+          priceType: true
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.cargoOffer.count({
+        where: filters
+      })
+    ]);
 
-    return NextResponse.json(cargoOffers);
+    return NextResponse.json({
+      cargoOffers,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
+    });
 
   } catch (error) {
     console.error('[API_CARGO_GET] Failed to fetch cargo offers:', error);
@@ -126,6 +165,23 @@ export async function POST(request: Request) {
         relatedId: newCargoOffer.id,
       },
     });
+
+    // Send real-time notification to all dispatchers
+    try {
+      const { dispatcherEvents } = await import('@/app/api/dispatcher/events/route');
+      await dispatcherEvents.emitToAll('new-cargo', {
+        id: newCargoOffer.id,
+        title: newCargoOffer.title,
+        fromCountry: newCargoOffer.fromCountry,
+        toCountry: newCargoOffer.toCountry,
+        urgency: newCargoOffer.urgency,
+        price: newCargoOffer.price,
+        timestamp: new Date().toISOString()
+      });
+    } catch (eventError) {
+      console.log('Real-time notification failed:', eventError);
+      // Don't fail the main request if notifications fail
+    }
 
     return NextResponse.json(newCargoOffer, { status: 201 });
   } catch (error) {

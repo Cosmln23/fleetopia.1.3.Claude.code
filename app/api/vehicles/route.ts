@@ -13,6 +13,9 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '50');
+    const offset = (page - 1) * limit;
 
     // Find user's fleets
     const userFleets = await prisma.fleet.findMany({
@@ -27,18 +30,36 @@ export async function GET(request: NextRequest) {
       return NextResponse.json([]);
     }
 
-    // Find vehicles belonging to user's fleets
-    const vehicles = await prisma.vehicle.findMany({
-      where: {
-        fleetId: { in: fleetIds },
-        ...(status ? { status: { equals: status as any } } : {})
-      },
-      orderBy: {
-        name: 'asc',
-      },
+    // Find vehicles with pagination and count
+    const [vehicles, totalCount] = await Promise.all([
+      prisma.vehicle.findMany({
+        where: {
+          fleetId: { in: fleetIds },
+          ...(status ? { status: { equals: status as any } } : {})
+        },
+        orderBy: {
+          name: 'asc',
+        },
+        take: limit,
+        skip: offset,
+      }),
+      prisma.vehicle.count({
+        where: {
+          fleetId: { in: fleetIds },
+          ...(status ? { status: { equals: status as any } } : {})
+        }
+      })
+    ]);
+
+    return NextResponse.json({
+      vehicles,
+      pagination: {
+        page,
+        limit,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limit)
+      }
     });
-    
-    return NextResponse.json(vehicles);
   } catch (error) {
     console.error('Failed to fetch vehicles:', error);
     return new NextResponse(

@@ -265,7 +265,6 @@ export class FleetTrackingService {
   async learnFromRouteResult(routeId: string, prediction: MLOptimizationResult, actualResult: any) {
     return await this.mlOptimizer.learnFromResult(routeId, prediction, actualResult);
   }
-  }
 
   // AI-powered route optimization algorithms
   private async runOptimizationAlgorithms(params: any) {

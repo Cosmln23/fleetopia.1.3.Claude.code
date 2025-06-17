@@ -354,6 +354,23 @@ model OfferRequest {
   @@index([transporterId])
 }
 
+model Assignment {
+  id           String   @id @default(cuid())
+  cargoOfferId String
+  vehicleId    String
+  userId       String
+  status       String   @default("ACTIVE")
+  assignedAt   DateTime @default(now())
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([cargoOfferId])
+  @@index([vehicleId])
+  @@index([userId])
+  @@index([status])
+}
+
 enum CargoStatus {
   NEW
   TAKEN
@@ -365,6 +382,7 @@ enum CargoStatus {
 enum VehicleStatus {
   idle
   in_transit
+  en_route
   loading
   unloading
   maintenance

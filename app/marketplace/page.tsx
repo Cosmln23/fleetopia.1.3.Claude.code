@@ -67,6 +67,7 @@ import { useSession } from 'next-auth/react';
 import { CargoOffer } from '@prisma/client';
 import { CargoOfferList } from "@/components/cargo-offer-list";
 import { useChat } from '@/contexts/chat-provider';
+import { DispatcherPanel } from '@/components/dispatcher-panel';
 
 interface TransportRequest {
   id: string;
@@ -523,6 +524,11 @@ export default function MarketplacePage() {
           <Plus className="mr-2 h-4 w-4" /> Add Cargo
         </Button>
       </header>
+      
+      {/* Dispatcher Panel */}
+      <div className="mb-6">
+        <DispatcherPanel />
+      </div>
       
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "find-cargo" | "find-transport")} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-slate-800/50">

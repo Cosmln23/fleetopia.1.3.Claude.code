@@ -1,0 +1,63 @@
+
+> fleetopia-dashboard@0.1.0 dev
+> next dev --port 3000
+
+   ▲ Next.js 15.3.3
+   - Local:        http://localhost:3000
+   - Network:      http://10.255.255.254:3000
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+ ⚠ Invalid next.config.js options detected: 
+ ⚠     Unrecognized key(s) in object: 'outputFileTracingRoot' at "experimental"
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+ ⚠ `experimental.outputFileTracingRoot` has been moved to `outputFileTracingRoot`. Please update your next.config.js file accordingly.
+ ✓ Ready in 58.1s
+ ○ Compiling /api/dispatcher/events ...
+ ✓ Compiled /api/dispatcher/events in 12.2s (587 modules)
+Dispatcher client connected: cmbzq8tct0000f74x3i3rvav2
+ ○ Compiling /api/auth/[...nextauth] ...
+ ✓ Compiled /api/auth/[...nextauth] in 1227ms (586 modules)
+ ⨯ Error: Cannot find module '../../../../webpack-runtime.js'
+Require stack:
+- /mnt/d/fleetopia.co1.3/.next/server/app/api/auth/[...nextauth]/route.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/server/require.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/server/load-components.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/build/utils.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/build/swc/options.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/build/swc/index.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/build/analysis/parse-module.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/server/lib/router-server.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/server/lib/start-server.js
+    at <unknown> (.next/server/app/api/auth/[...nextauth]/route.js:248:27)
+    at Object.<anonymous> (.next/server/app/api/auth/[...nextauth]/route.js:254:3) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/api/auth/session'
+}
+ GET /api/dispatcher/events 200 in 203685ms
+Dispatcher client disconnected: cmbzq8tct0000f74x3i3rvav2
+ GET /api/auth/session 500 in 1998ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 6.9s (918 modules)
+ ⨯ Error: Cannot find module '../webpack-runtime.js'
+Require stack:
+- /mnt/d/fleetopia.co1.3/.next/server/pages/_document.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/server/require.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/server/load-components.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/build/utils.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/build/swc/options.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/build/swc/index.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/build/analysis/parse-module.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/build/analysis/get-page-static-info.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/server/lib/router-server.js
+- /mnt/d/fleetopia.co1.3/node_modules/next/dist/server/lib/start-server.js
+    at <unknown> (.next/server/pages/_document.js:60:27)
+    at Object.<anonymous> (.next/server/pages/_document.js:66:3) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array]
+}
+ ○ Compiling /marketplace ...
