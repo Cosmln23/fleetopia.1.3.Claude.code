@@ -93,6 +93,7 @@ export interface Vehicle {
   currentRoute: string; // Assuming this is a string representation for now
   lat?: number | '';
   lng?: number | '';
+  manualLocationAddress?: string;
 }
 
 interface CargoDetails extends CargoOffer {
@@ -191,10 +192,22 @@ export default function FleetManagementPage() {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
-    }).then(response => {
+    }).then(async response => {
       if (!response.ok) {
         throw new Error('Failed to update status.');
       }
+      
+      // Remove vehicle from marketplace when status changes
+      try {
+        await fetch('/api/vehicles/available', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicleId }),
+        });
+      } catch (error) {
+        console.log('Vehicle was not in marketplace or failed to remove');
+      }
+      
       return response.json();
     });
 
@@ -309,6 +322,9 @@ export default function FleetManagementPage() {
         description: `${vehicle.name} has been posted to Find Transport marketplace!`,
       });
       
+      // Refresh the vehicle list to update the marketplace status indicators
+      fetchVehicleData();
+      
       console.log('Vehicle posted as available:', result);
     } catch (error) {
       console.error('Error posting vehicle:', error);
@@ -322,6 +338,25 @@ export default function FleetManagementPage() {
 
   const VehicleCard = ({ vehicle, onStatusChange, onDelete, onEdit, onViewDetails, onPostAsAvailable, index }: { vehicle: Vehicle, onStatusChange: (id: string, status: string) => void, onDelete: (id: string) => void, onEdit: (vehicle: Vehicle) => void, onViewDetails: (vehicle: Vehicle) => void, onPostAsAvailable: (vehicle: Vehicle) => void, index: number }) => {
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+    const [isPostedToMarketplace, setIsPostedToMarketplace] = useState(false);
+
+    // Check if this vehicle is posted to marketplace
+    useEffect(() => {
+      const checkMarketplaceStatus = async () => {
+        try {
+          const response = await fetch('/api/vehicles/available');
+          if (response.ok) {
+            const availableVehicles = await response.json();
+            const isPosted = availableVehicles.some((av: any) => av.vehicleId === vehicle.id);
+            setIsPostedToMarketplace(isPosted);
+          }
+        } catch (error) {
+          console.error('Error checking marketplace status:', error);
+        }
+      };
+      
+      checkMarketplaceStatus();
+    }, [vehicle.id, vehicle.status]); // Added vehicle.status to dependencies
 
     return (
       <motion.div
@@ -331,9 +366,19 @@ export default function FleetManagementPage() {
         transition={{ delay: index * 0.05 }}
         className="h-full"
       >
-        <Card className="bg-slate-800/70 border-slate-600 hover:border-blue-500 transition-all duration-300 min-h-[280px]">
+        <Card className="bg-slate-800/70 border-slate-600 hover:border-blue-500 transition-all duration-300 min-h-[320px] relative">
+          {/* Posted to Marketplace Indicator */}
+          {isPostedToMarketplace && (
+            <div className="absolute top-2 left-2 right-2 z-10">
+              <div className="flex items-center justify-center space-x-1 bg-blue-600/90 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className="font-medium">Posted to Find Transport</span>
+              </div>
+            </div>
+          )}
+          
           {/* Header with title and menu */}
-          <div className="p-4 pb-3">
+          <div className="p-4 pb-3 pt-8">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-600/20 flex items-center justify-center">

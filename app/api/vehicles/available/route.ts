@@ -93,4 +93,38 @@ export async function POST(request: NextRequest) {
       { status: 500, headers: { 'Content-Type': 'application/json' } }
     );
   }
-} 
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { vehicleId } = body;
+
+    if (!vehicleId) {
+      return NextResponse.json({ error: 'Vehicle ID is required' }, { status: 400 });
+    }
+
+    // Remove vehicle from available vehicles list
+    (global as any).availableVehicles = (global as any).availableVehicles || [];
+    
+    const originalLength = (global as any).availableVehicles.length;
+    (global as any).availableVehicles = (global as any).availableVehicles.filter(
+      (av: any) => av.vehicleId !== vehicleId
+    );
+    
+    const removed = originalLength > (global as any).availableVehicles.length;
+
+    return NextResponse.json({ 
+      success: true, 
+      message: removed ? 'Vehicle removed from marketplace' : 'Vehicle was not in marketplace',
+      removed 
+    });
+
+  } catch (error) {
+    console.error('Failed to remove vehicle from marketplace:', error);
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal Server Error' }),
+      { status: 500, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
+}

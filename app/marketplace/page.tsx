@@ -596,23 +596,18 @@ export default function MarketplacePage() {
               </CardContent>
             </Card>
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {transportRequests.map((req) => (
+              {transportRequests.map((req, index) => (
                 <motion.div
-                  key={req.id}
+                  key={`transport-${req.id}-${index}`}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
                 >
                   <Card className="bg-slate-800/70 border-slate-700 hover:border-blue-500 transition-all duration-300 flex flex-col h-full">
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-lg font-bold text-white mb-2">Transport Request: {req.truckType}</CardTitle>
-                        <div className="flex gap-2">
-                          <Badge className="bg-blue-500 text-white">
-                            📍 Posted to Find Transport
-                          </Badge>
-                          <Badge className={req.status === 'available' ? 'bg-green-500' : 'bg-yellow-500'}>{req.status.toUpperCase()}</Badge>
-                        </div>
+                        <Badge className={req.status === 'available' ? 'bg-green-500' : 'bg-yellow-500'}>{req.status.toUpperCase()}</Badge>
                       </div>
                        <div className="flex items-center text-sm text-blue-300">
                         <MapPin className="h-4 w-4 mr-2" />
