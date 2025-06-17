@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -50,7 +50,7 @@ interface DispatcherPanelProps {
   compact?: boolean;
 }
 
-export function DispatcherPanel({ className = '', compact = false }: DispatcherPanelProps) {
+const DispatcherPanel = React.memo(function DispatcherPanel({ className = '', compact = false }: DispatcherPanelProps) {
   const [isMounted, setIsMounted] = React.useState(false);
   const [isExpanded, setIsExpanded] = useState(!compact);
   const [showDetails, setShowDetails] = useState(false);
@@ -98,7 +98,7 @@ export function DispatcherPanel({ className = '', compact = false }: DispatcherP
     );
   }
 
-  const handleAcceptSuggestion = async (suggestionId: string) => {
+  const handleAcceptSuggestion = useCallback(async (suggestionId: string) => {
     // Find the suggestion details for better messaging
     const suggestion = topSuggestions.find(s => s.id === suggestionId);
     
@@ -118,25 +118,25 @@ export function DispatcherPanel({ className = '', compact = false }: DispatcherP
         variant: "destructive"
       });
     }
-  };
+  }, [topSuggestions, acceptSuggestion, toast]);
 
-  const getPriorityColor = (priority: 'high' | 'medium' | 'low') => {
+  const getPriorityColor = useCallback((priority: 'high' | 'medium' | 'low') => {
     switch (priority) {
       case 'high': return 'bg-red-500';
       case 'medium': return 'bg-yellow-500';
       case 'low': return 'bg-green-500';
       default: return 'bg-gray-500';
     }
-  };
+  }, []);
 
-  const getPriorityIcon = (priority: 'high' | 'medium' | 'low') => {
+  const getPriorityIcon = useCallback((priority: 'high' | 'medium' | 'low') => {
     switch (priority) {
       case 'high': return <AlertTriangle className="h-4 w-4" />;
       case 'medium': return <Clock className="h-4 w-4" />;
       case 'low': return <CheckCircle className="h-4 w-4" />;
       default: return <Package className="h-4 w-4" />;
     }
-  };
+  }, []);
 
   return (
     <div className={`${className}`}>
@@ -438,15 +438,15 @@ export function DispatcherPanel({ className = '', compact = false }: DispatcherP
       </Card>
     </div>
   );
-}
+});
 
-// Compact version for smaller spaces
-export function CompactDispatcherPanel({ className = '' }: { className?: string }) {
+// Compact version for smaller spaces - memoized
+const CompactDispatcherPanel = React.memo(function CompactDispatcherPanel({ className = '' }: { className?: string }) {
   return <DispatcherPanel className={className} compact={true} />;
-}
+});
 
-// Quick stats only version
-export function DispatcherStats({ className = '' }: { className?: string }) {
+// Quick stats only version - memoized
+const DispatcherStats = React.memo(function DispatcherStats({ className = '' }: { className?: string }) {
   const { stats, analysis, getFormattedProfit } = useDispatcher();
   
   if (!analysis) return null;
@@ -475,4 +475,6 @@ export function DispatcherStats({ className = '' }: { className?: string }) {
       </div>
     </div>
   );
-}
+});
+
+export { DispatcherPanel, CompactDispatcherPanel, DispatcherStats };

@@ -1,34 +1,32 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { CargoOffer } from '@prisma/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { createApiHandler, apiResponse } from '@/lib/api-helpers';
+import { cargoQuerySchema, createCargoOfferSchema } from '@/lib/validations';
+import { rateLimiters } from '@/lib/rate-limit';
+import { dbUtils } from '@/lib/db-utils';
 
 // GET all cargo offers with optional filtering
-export async function GET(request: NextRequest) {
+export const GET = createApiHandler({
+  rateLimiter: rateLimiters.search,
+  querySchema: cargoQuerySchema
+})(async ({ req, query, session }) => {
   try {
-    const { searchParams } = new URL(request.url);
-    const fromLocation = searchParams.get('fromLocation');
-    const toLocation = searchParams.get('toLocation');
-    const maxWeight = searchParams.get('maxWeight');
-    const listType = searchParams.get('listType'); // e.g., 'my_offers', 'accepted_offers'
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const { fromLocation, toLocation, maxWeight, listType, page, limit } = query!;
     const offset = (page - 1) * limit;
-    
-    const session = await getServerSession(authOptions);
 
     const filters: any = {};
 
+    // Handle different list types with proper authorization
     if (listType === 'my_offers') {
-      if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (!session?.user?.id) return apiResponse.unauthorized();
       filters.userId = session.user.id;
     } else if (listType === 'accepted_offers') {
-      if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (!session?.user?.id) return apiResponse.unauthorized();
       filters.acceptedByUserId = session.user.id;
       filters.status = { in: ['TAKEN', 'COMPLETED'] };
     } else if (listType === 'conversations') {
-      if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      if (!session?.user?.id) return apiResponse.unauthorized();
       filters.OR = [
         { userId: session.user.id },
         { acceptedByUserId: session.user.id }
@@ -38,95 +36,54 @@ export async function GET(request: NextRequest) {
       filters.status = { in: ['NEW', 'TAKEN'] };
     }
 
+    // Apply location filters
     if (fromLocation) {
       filters.fromCountry = { contains: fromLocation, mode: 'insensitive' };
     }
     if (toLocation) {
       filters.toCountry = { contains: toLocation, mode: 'insensitive' };
     }
-    if (maxWeight && !isNaN(parseFloat(maxWeight))) {
-      filters.weight = { lte: parseFloat(maxWeight) };
+    if (maxWeight) {
+      filters.weight = { lte: maxWeight };
     }
     
-    // Optimized query with pagination and field selection
-    const [cargoOffers, totalCount] = await Promise.all([
-      prisma.cargoOffer.findMany({
-        where: filters,
-        select: {
-          id: true,
-          title: true,
-          weight: true,
-          price: true,
-          companyName: true,
-          urgency: true,
-          createdAt: true,
-          fromCity: true,
-          toCity: true,
-          fromCountry: true,
-          toCountry: true,
-          status: true,
-          distance: true,
-          cargoType: true,
-          deliveryDate: true,
-          loadingDate: true,
-          priceType: true
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-        take: limit,
-        skip: offset,
-      }),
-      prisma.cargoOffer.count({
-        where: filters
-      })
-    ]);
+    // Use cached query for better performance
+    const result = await dbUtils.getCargoOffers(filters, page, limit);
 
-    return NextResponse.json({
-      cargoOffers,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
-      }
-    });
+    return apiResponse.success(result);
 
   } catch (error) {
     console.error('[API_CARGO_GET] Failed to fetch cargo offers:', error);
-    return NextResponse.json(
-      { error: 'Server error while fetching cargo offers.' },
-      { status: 500 }
-    );
+    throw error;
   }
-}
+});
 
 // POST a new cargo offer
-export async function POST(request: Request) {
+export const POST = createApiHandler({
+  requireAuth: true,
+  rateLimiter: rateLimiters.create,
+  bodySchema: createCargoOfferSchema
+})(async ({ session, body }) => {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session || !session.user || !session.user.id) {
-      return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
-    }
-
-    const userId = session.user.id;
-    const companyNameFromSession = session.user.name; // Get company name from session
-    const body = await request.json();
-    
     const {
       title, fromAddress, fromCountry, fromCity, toAddress, toCountry, toCity, weight,
       loadingDate, deliveryDate, price,
       fromPostalCode, toPostalCode, volume, cargoType, priceType,
       requirements, urgency
-    } = body;
+    } = body!;
 
-    // Basic validation
-    if (!title || !fromAddress || !fromCountry || !fromCity || !toAddress || !toCountry || !toCity || !weight || !loadingDate || !deliveryDate || !price) {
-      return NextResponse.json({ message: 'Missing required fields' }, { status: 400 });
+    const userId = session.user.id;
+    const companyNameFromSession = session.user.name;
+
+    // Validate delivery date is after loading date
+    const loadingDateTime = new Date(loadingDate);
+    const deliveryDateTime = new Date(deliveryDate);
+    
+    if (deliveryDateTime <= loadingDateTime) {
+      return apiResponse.error('Delivery date must be after loading date');
     }
 
-    const dataToCreate: any = {
+    const dataToCreate = {
       title,
       fromAddress,
       fromCountry,
@@ -136,16 +93,16 @@ export async function POST(request: Request) {
       toCountry,
       toCity,
       toPostalCode: toPostalCode || null,
-      weight: parseFloat(weight),
-      volume: volume ? parseFloat(volume) : null,
-      cargoType: cargoType || 'General',
-      loadingDate: new Date(loadingDate),
-      deliveryDate: new Date(deliveryDate),
-      price: parseFloat(price),
-      priceType: priceType || 'fixed',
-      companyName: companyNameFromSession, // Use company name from session
-      requirements: typeof requirements === 'string' ? requirements.split(',').map(req => req.trim()).filter(Boolean) : [],
-      urgency: urgency || 'medium',
+      weight,
+      volume: volume || null,
+      cargoType,
+      loadingDate: loadingDateTime,
+      deliveryDate: deliveryDateTime,
+      price,
+      priceType,
+      companyName: companyNameFromSession,
+      requirements,
+      urgency,
       user: {
         connect: {
           id: userId,
@@ -153,9 +110,7 @@ export async function POST(request: Request) {
       },
     };
 
-    const newCargoOffer = await prisma.cargoOffer.create({
-      data: dataToCreate,
-    });
+    const newCargoOffer = await dbUtils.createCargoOffer(dataToCreate, userId);
 
     // Create a system alert
     await prisma.systemAlert.create({
@@ -183,10 +138,9 @@ export async function POST(request: Request) {
       // Don't fail the main request if notifications fail
     }
 
-    return NextResponse.json(newCargoOffer, { status: 201 });
+    return apiResponse.success(newCargoOffer, 201);
   } catch (error) {
     console.error('[API_CARGO_POST] Error creating cargo offer:', error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-    return NextResponse.json({ message: 'Error creating cargo offer', error: errorMessage }, { status: 500 });
+    throw error;
   }
-} 
+}); 

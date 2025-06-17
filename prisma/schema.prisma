@@ -259,6 +259,7 @@ model CargoOffer {
   vehicleType      String?
   fromCity         String
   toCity           String
+  acceptedAt       DateTime?
   acceptedBy       User?          @relation("AcceptedOffers", fields: [acceptedByUserId], references: [id])
   user             User           @relation(fields: [userId], references: [id])
   chatMessages     ChatMessage[]
@@ -267,6 +268,16 @@ model CargoOffer {
 
   @@index([status])
   @@index([userId])
+  @@index([status, createdAt])
+  @@index([acceptedByUserId])
+  @@index([createdAt])
+  @@index([urgency])
+  @@index([fromCountry])
+  @@index([toCountry])
+  @@index([weight])
+  @@index([deliveryDate])
+  @@index([status, userId])
+  @@index([status, acceptedByUserId])
 }
 
 model ChatMessage {
@@ -279,6 +290,9 @@ model ChatMessage {
   sender       User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([cargoOfferId])
+  @@index([senderId])
+  @@index([cargoOfferId, createdAt])
+  @@index([createdAt])
 }
 
 model SystemAlert {
@@ -291,6 +305,12 @@ model SystemAlert {
   read        Boolean     @default(false)
   details     String?
   cargoOffer  CargoOffer? @relation(fields: [relatedId], references: [id])
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([isProcessed])
+  @@index([read])
+  @@index([type, createdAt])
 }
 
 model Vehicle {
@@ -306,6 +326,7 @@ model Vehicle {
   fuelConsumption       Float?              @default(30.0)
   createdAt             DateTime            @default(now())
   currentRouteId        String?
+  currentRoute          String?
   gpsDeviceImei         String?             @unique
   locationType          VehicleLocationType @default(MANUAL_COORDS)
   manualLocationAddress String?
@@ -317,6 +338,10 @@ model Vehicle {
 
   @@index([fleetId])
   @@index([status])
+  @@index([fleetId, status])
+  @@index([type])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model GpsLog {

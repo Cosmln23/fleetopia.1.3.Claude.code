@@ -1,41 +1,55 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { createApiHandler, apiResponse } from '@/lib/api-helpers';
+import { vehicleQuerySchema, createVehicleSchema } from '@/lib/validations';
+import { rateLimiters } from '@/lib/rate-limit';
+import { dbUtils } from '@/lib/db-utils';
 
-export async function GET(request: NextRequest) {
+export const GET = createApiHandler({
+  requireAuth: true,
+  rateLimiter: rateLimiters.search,
+  querySchema: vehicleQuerySchema
+})(async ({ session, query }) => {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '50');
+    const { status, page, limit } = query!;
     const offset = (page - 1) * limit;
 
-    // Find user's fleets
-    const userFleets = await prisma.fleet.findMany({
-      where: { userId: session.user.id },
-      select: { id: true }
-    });
-
+    // Get user's fleets with caching
+    const userFleets = await dbUtils.getUserFleets(session.user.id);
     const fleetIds = userFleets.map(fleet => fleet.id);
 
     // If user has no fleets, return empty array
     if (fleetIds.length === 0) {
-      return NextResponse.json([]);
+      return apiResponse.success({
+        vehicles: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 0
+        }
+      });
     }
 
-    // Find vehicles with pagination and count
+    // Find vehicles with pagination and count (optimized query)
     const [vehicles, totalCount] = await Promise.all([
       prisma.vehicle.findMany({
         where: {
           fleetId: { in: fleetIds },
           ...(status ? { status: { equals: status as any } } : {})
+        },
+        select: {
+          id: true,
+          name: true,
+          licensePlate: true,
+          type: true,
+          status: true,
+          driverName: true,
+          fuelConsumption: true,
+          createdAt: true,
+          currentRoute: true,
+          lat: true,
+          lng: true
         },
         orderBy: {
           name: 'asc',
@@ -51,7 +65,7 @@ export async function GET(request: NextRequest) {
       })
     ]);
 
-    return NextResponse.json({
+    return apiResponse.success({
       vehicles,
       pagination: {
         page,
@@ -62,22 +76,16 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Failed to fetch vehicles:', error);
-    return new NextResponse(
-      JSON.stringify({ error: 'Internal Server Error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    throw error;
   }
-}
+});
 
-export async function POST(request: Request) {
+export const POST = createApiHandler({
+  requireAuth: true,
+  rateLimiter: rateLimiters.create,
+  bodySchema: createVehicleSchema
+})(async ({ session, body }) => {
   try {
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await request.json();
     const {
       name,
       type,
@@ -87,14 +95,21 @@ export async function POST(request: Request) {
       lat,
       lng,
       currentRoute,
-    } = body;
+      fuelConsumption
+    } = body!;
 
-    // Basic validation
-    if (!name || !licensePlate || !driverName) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Missing required fields: name, licensePlate, driverName' }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
-      );
+    // Check for duplicate license plate
+    const existingVehicle = await prisma.vehicle.findFirst({
+      where: { 
+        licensePlate,
+        fleet: {
+          userId: session.user.id
+        }
+      }
+    });
+
+    if (existingVehicle) {
+      return apiResponse.conflict('A vehicle with this license plate already exists in your fleet');
     }
     
     // Find or create a fleet for the authenticated user
@@ -113,26 +128,23 @@ export async function POST(request: Request) {
       });
     }
 
-    const newVehicle = await prisma.vehicle.create({
-      data: {
-        name,
-        type,
-        licensePlate,
-        driverName,
-        status,
-        lat: lat || 0,
-        lng: lng || 0,
-        fleetId: fleet.id,
-      },
-    });
+    const newVehicle = await dbUtils.createVehicle({
+      name,
+      type,
+      licensePlate,
+      driverName,
+      status,
+      lat,
+      lng,
+      currentRoute,
+      fuelConsumption,
+      fleetId: fleet.id,
+    }, session.user.id);
 
-    return NextResponse.json(newVehicle, { status: 201 });
+    return apiResponse.success(newVehicle, 201);
 
   } catch (error) {
     console.error('Failed to create vehicle:', error);
-    return new NextResponse(
-      JSON.stringify({ error: 'Internal Server Error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    throw error;
   }
-} 
+}); 

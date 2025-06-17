@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +13,7 @@ interface VehicleListProps {
   onVehicleClick: (vehicle: Vehicle) => void;
 }
 
+// Memoized status class function to prevent re-creation on every render
 const getStatusClass = (status: string) => {
   switch (status) {
     case 'active':
@@ -25,10 +27,20 @@ const getStatusClass = (status: string) => {
   }
 };
 
-export function VehicleList({ vehicles, onVehicleClick }: VehicleListProps) {
+const VehicleList = React.memo(function VehicleList({ vehicles, onVehicleClick }: VehicleListProps) {
+  // Memoize the click handler to prevent re-renders
+  const handleVehicleClick = useCallback((vehicle: Vehicle) => {
+    onVehicleClick(vehicle);
+  }, [onVehicleClick]);
+
+  // Memoize the vehicles count for the header
+  const vehicleCount = useMemo(() => vehicles.length, [vehicles.length]);
+
   return (
     <div className="bg-slate-900/50 rounded-lg p-4 border border-slate-800 h-full overflow-y-auto">
-      <h2 className="text-xl font-semibold mb-4 text-slate-200">Vehicle Fleet</h2>
+      <h2 className="text-xl font-semibold mb-4 text-slate-200">
+        Vehicle Fleet ({vehicleCount})
+      </h2>
       <div className="grid grid-cols-1 gap-4">
         {vehicles.map((vehicle, index) => (
           <motion.div
@@ -63,7 +75,7 @@ export function VehicleList({ vehicles, onVehicleClick }: VehicleListProps) {
                 <Button 
                   className="w-full mt-4" 
                   variant="outline"
-                  onClick={() => onVehicleClick(vehicle)}
+                  onClick={() => handleVehicleClick(vehicle)}
                 >
                   <Eye className="w-4 h-4 mr-2" />
                   View Details
@@ -75,4 +87,6 @@ export function VehicleList({ vehicles, onVehicleClick }: VehicleListProps) {
       </div>
     </div>
   );
-} 
+});
+
+export { VehicleList }; 
