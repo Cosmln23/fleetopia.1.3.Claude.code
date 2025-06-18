@@ -28,12 +28,6 @@ const navigation = [
     icon: Home,
     description: 'Transport Paradise Overview'
   },
-  {
-    name: 'AI Agents',
-    href: '/ai-agents',
-    icon: Bot,
-    description: 'Self-Evolving AI Agents'
-  },
 
   {
     name: 'Marketplace',

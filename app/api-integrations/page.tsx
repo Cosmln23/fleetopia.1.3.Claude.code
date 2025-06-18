@@ -23,111 +23,54 @@ import {
   Activity,
   Database,
   Cloud,
-  Smartphone
+  Smartphone,
+  Navigation,
+  Truck,
+  Mail,
+  Gauge,
+  MapPin,
+  Package
 } from 'lucide-react';
 import { APIIntegrationForm } from '@/components/api-integration-form';
 import { AgentAPIConnector } from '@/components/agent-api-connector';
+import { API_PROVIDERS } from '@/lib/universal-api-bridge';
 
-interface APIIntegration {
-  id: string;
+interface APIProvider {
+  category: 'gps' | 'freight' | 'communication' | 'weather' | 'fuel';
+  provider: string;
   name: string;
   description: string;
-  provider: string;
-  type: 'REST' | 'GraphQL' | 'WebSocket' | 'SOAP';
-  status: 'connected' | 'disconnected' | 'error' | 'testing';
-  health: number;
-  endpoint: string;
-  lastTested: string;
-  requestsToday: number;
-  responseTime: number;
-  connectedAgents: number;
-  category: string;
-  requiresAuth: boolean;
+  tier: 'free' | 'freemium' | 'paid' | 'enterprise';
+  status: 'built-in' | 'configured' | 'available' | 'client-configurable';
+  credentialsRequired: string[];
+  rateLimit?: {
+    requests: number;
+    period: 'minute' | 'hour' | 'day' | 'month';
+  };
+  costEstimate?: {
+    free?: string;
+    paid?: string;
+  };
+  setupComplexity: 'easy' | 'medium' | 'hard';
+  documentation?: string;
+  health?: number;
+  lastTested?: string;
+  requestsToday?: number;
+  responseTime?: number;
 }
 
 export default function APIIntegrationsPage() {
-  const [integrations, setIntegrations] = useState<APIIntegration[]>([
-    {
-      id: '1',
-      name: 'Google Maps API',
-      description: 'Real-time mapping and routing services',
-      provider: 'Google',
-      type: 'REST',
-      status: 'error',
-      health: 50,
-      endpoint: 'https://maps.googleapis.com/maps/api/',
-      lastTested: 'Just now',
-      requestsToday: 1547,
-      responseTime: 120,
-      connectedAgents: 3,
-      category: 'Navigation',
-      requiresAuth: true
-    },
-    {
-      id: '2',
-      name: 'Weather Service API',
-      description: 'Weather data and forecasting',
-      provider: 'OpenWeather',
-      type: 'REST',
-      status: 'error',
-      health: 50,
-      endpoint: 'https://api.openweathermap.org/data/',
-      lastTested: 'Just now',
-      requestsToday: 234,
-      responseTime: 89,
-      connectedAgents: 2,
-      category: 'Weather',
-      requiresAuth: true
-    },
-    {
-      id: '3',
-      name: 'Fuel Price API',
-      description: 'Real-time fuel pricing data',
-      provider: 'FuelPrices.io',
-      type: 'REST',
-      status: 'error',
-      health: 50,
-      endpoint: 'https://api.fuelprices.io/v1/',
-      lastTested: 'Just now',
-      requestsToday: 89,
-      responseTime: 156,
-      connectedAgents: 1,
-      category: 'Pricing',
-      requiresAuth: true
-    },
-    {
-      id: '4',
-      name: 'Payment Gateway',
-      description: 'Secure payment processing',
-      provider: 'Stripe',
-      type: 'REST',
-      status: 'error',
-      health: 45,
-      endpoint: 'https://api.stripe.com/v1/',
-      lastTested: '3 hours ago',
-      requestsToday: 12,
-      responseTime: 2340,
-      connectedAgents: 0,
-      category: 'Payment',
-      requiresAuth: true
-    },
-    {
-      id: '5',
-      name: 'SMS Gateway',
-      description: 'Customer notification service',
-      provider: 'Twilio',
-      type: 'REST',
-      status: 'disconnected',
-      health: 0,
-      endpoint: 'https://api.twilio.com/2010-04-01/',
-      lastTested: 'Never',
-      requestsToday: 0,
-      responseTime: 0,
-      connectedAgents: 0,
-      category: 'Communication',
-      requiresAuth: true
-    }
-  ]);
+  // Enrich API_PROVIDERS with current status and metrics
+  const [providers, setProviders] = useState<APIProvider[]>(
+    API_PROVIDERS.map(provider => ({
+      ...provider,
+      status: provider.tier === 'free' || provider.tier === 'freemium' ? 'built-in' : 'client-configurable',
+      health: provider.tier === 'free' || provider.tier === 'freemium' ? 85 : undefined,
+      lastTested: provider.tier === 'free' || provider.tier === 'freemium' ? 'Just now' : undefined,
+      requestsToday: provider.tier === 'free' || provider.tier === 'freemium' ? Math.floor(Math.random() * 1000) : undefined,
+      responseTime: provider.tier === 'free' || provider.tier === 'freemium' ? Math.floor(Math.random() * 200) + 50 : undefined
+    }))
+  );
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [showConnector, setShowConnector] = useState(false);
@@ -213,38 +156,39 @@ export default function APIIntegrationsPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'connected': return 'text-green-400 border-green-400';
-      case 'disconnected': return 'text-gray-400 border-gray-400';
-      case 'error': return 'text-red-400 border-red-400';
-      case 'testing': return 'text-yellow-400 border-yellow-400';
+      case 'built-in': return 'text-green-400 border-green-400';
+      case 'configured': return 'text-blue-400 border-blue-400';
+      case 'available': return 'text-yellow-400 border-yellow-400';
+      case 'client-configurable': return 'text-purple-400 border-purple-400';
       default: return 'text-gray-400 border-gray-400';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'connected': return <CheckCircle className="w-4 h-4" />;
-      case 'error': return <AlertTriangle className="w-4 h-4" />;
-      case 'testing': return <TestTube className="w-4 h-4" />;
+      case 'built-in': return <CheckCircle className="w-4 h-4" />;
+      case 'configured': return <CheckCircle className="w-4 h-4" />;
+      case 'available': return <Clock className="w-4 h-4" />;
+      case 'client-configurable': return <Settings className="w-4 h-4" />;
       default: return <AlertTriangle className="w-4 h-4" />;
     }
   };
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
-      case 'Navigation': return <Globe className="w-5 h-5" />;
-      case 'Weather': return <Cloud className="w-5 h-5" />;
-      case 'Pricing': return <Database className="w-5 h-5" />;
-      case 'Payment': return <Shield className="w-5 h-5" />;
-      case 'Communication': return <Smartphone className="w-5 h-5" />;
+      case 'gps': return <MapPin className="w-5 h-5" />;
+      case 'freight': return <Package className="w-5 h-5" />;
+      case 'communication': return <Mail className="w-5 h-5" />;
+      case 'weather': return <Cloud className="w-5 h-5" />;
+      case 'fuel': return <Gauge className="w-5 h-5" />;
       default: return <Zap className="w-5 h-5" />;
     }
   };
 
-  const totalIntegrations = integrations.length;
-  const connectedIntegrations = integrations.filter(i => i.status === 'connected').length;
-  const totalRequests = integrations.reduce((sum, i) => sum + i.requestsToday, 0);
-  const avgHealth = integrations.reduce((sum, i) => sum + i.health, 0) / integrations.length;
+  const totalProviders = providers.length;
+  const builtInProviders = providers.filter(p => p.status === 'built-in').length;
+  const totalRequests = providers.reduce((sum, p) => sum + (p.requestsToday || 0), 0);
+  const avgHealth = providers.filter(p => p.health).reduce((sum, p) => sum + (p.health || 0), 0) / providers.filter(p => p.health).length || 0;
 
   // 🧪 API TESTING FUNCTIONS
   const runIndividualTest = async (integrationId: string) => {
@@ -364,17 +308,17 @@ export default function APIIntegrationsPage() {
                 API Integrations
               </h1>
               <p className="text-slate-400 text-lg">
-                Connect your APIs and let clients bring their own services
+                Universal API Bridge - Built-in free APIs + client-configurable services
               </p>
             </div>
             <div className="flex items-center space-x-4">
               <Badge variant="outline" className="text-green-400 border-green-400">
                 <LinkIcon className="w-4 h-4 mr-2" />
-                {connectedIntegrations}/{totalIntegrations} Connected
+                {builtInProviders}/{totalProviders} Ready
               </Badge>
               <Button onClick={() => setShowAddForm(true)}>
                 <Plus className="w-4 h-4 mr-2" />
-                Add Integration
+                Configure API
               </Button>
             </div>
           </div>
@@ -391,8 +335,8 @@ export default function APIIntegrationsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Total APIs</p>
-                  <p className="text-2xl font-bold text-white">{totalIntegrations}</p>
+                  <p className="text-sm text-slate-400">Total Providers</p>
+                  <p className="text-2xl font-bold text-white">{totalProviders}</p>
                   <p className="text-xs text-blue-400">5 categories</p>
                 </div>
                 <Zap className="w-8 h-8 text-blue-400" />
@@ -404,9 +348,9 @@ export default function APIIntegrationsPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Connected</p>
-                  <p className="text-2xl font-bold text-green-400">{connectedIntegrations}</p>
-                  <p className="text-xs text-green-400">{((connectedIntegrations / totalIntegrations) * 100).toFixed(0)}% uptime</p>
+                  <p className="text-sm text-slate-400">Built-in Ready</p>
+                  <p className="text-2xl font-bold text-green-400">{builtInProviders}</p>
+                  <p className="text-xs text-green-400">Free APIs available</p>
                 </div>
                 <CheckCircle className="w-8 h-8 text-green-400" />
               </div>
@@ -447,8 +391,9 @@ export default function APIIntegrationsPage() {
           transition={{ delay: 0.2 }}
         >
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">API Overview</TabsTrigger>
+              <TabsTrigger value="categories">Categories</TabsTrigger>
               <TabsTrigger value="connections">Agent Connections</TabsTrigger>
               <TabsTrigger value="testing">API Testing</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -462,13 +407,13 @@ export default function APIIntegrationsPage() {
                 <div className="lg:col-span-2">
                   <Card className="bg-slate-800/50 border-slate-700">
                     <CardHeader>
-                      <CardTitle className="text-slate-200">Connected APIs</CardTitle>
-                      <CardDescription>Manage your external API integrations</CardDescription>
+                      <CardTitle className="text-slate-200">Universal API Providers</CardTitle>
+                      <CardDescription>Built-in free APIs and client-configurable services</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {integrations.map((api) => (
+                      {providers.slice(0, 6).map((provider) => (
                         <motion.div
-                          key={api.id}
+                          key={`${provider.category}_${provider.provider}`}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           className="p-4 bg-slate-700/50 rounded-lg"
@@ -476,56 +421,85 @@ export default function APIIntegrationsPage() {
                           <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center space-x-3">
                               <div className="flex items-center justify-center w-10 h-10 bg-slate-600 rounded-lg">
-                                {getCategoryIcon(api.category)}
+                                {getCategoryIcon(provider.category)}
                               </div>
                               <div>
-                                <p className="font-medium text-white">{api.name}</p>
-                                <p className="text-sm text-slate-400">{api.description}</p>
+                                <p className="font-medium text-white">{provider.name}</p>
+                                <p className="text-sm text-slate-400">{provider.description}</p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
                               <Badge 
                                 variant="outline" 
-                                className={`text-xs ${getStatusColor(api.status)} ${api.status === 'error' ? 'cursor-pointer hover:bg-red-900/20' : ''}`}
-                                onClick={() => api.status === 'error' && handleErrorClick(api.id)}
+                                className={`text-xs ${getStatusColor(provider.status)}`}
                               >
-                                {getStatusIcon(api.status)}
-                                <span className="ml-1 capitalize">{api.status}</span>
+                                {getStatusIcon(provider.status)}
+                                <span className="ml-1 capitalize">{provider.status}</span>
                               </Badge>
-                              <Button variant="outline" size="sm" onClick={() => handleSettingsClick(api.id)}>
-                                <Settings className="w-4 h-4" />
-                              </Button>
+                              <Badge 
+                                variant="outline" 
+                                className={`text-xs ${
+                                  provider.tier === 'free' ? 'text-green-400 border-green-400' :
+                                  provider.tier === 'freemium' ? 'text-blue-400 border-blue-400' :
+                                  provider.tier === 'paid' ? 'text-yellow-400 border-yellow-400' :
+                                  'text-purple-400 border-purple-400'
+                                }`}
+                              >
+                                {provider.tier.toUpperCase()}
+                              </Badge>
+                              {provider.status === 'client-configurable' && (
+                                <Button variant="outline" size="sm" onClick={() => handleSettingsClick(`${provider.category}_${provider.provider}`)}>
+                                  <Settings className="w-4 h-4" />
+                                </Button>
+                              )}
                             </div>
                           </div>
                           
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
-                              <p className="text-slate-400">Health</p>
+                              <p className="text-slate-400">Complexity</p>
                               <div className="flex items-center space-x-2">
-                                <Progress value={api.health} className="h-2 flex-1" />
-                                <span className="text-white font-medium">{api.health}%</span>
+                                <div className={`w-2 h-2 rounded-full ${
+                                  provider.setupComplexity === 'easy' ? 'bg-green-400' :
+                                  provider.setupComplexity === 'medium' ? 'bg-yellow-400' :
+                                  'bg-red-400'
+                                }`}></div>
+                                <span className="text-white font-medium capitalize">{provider.setupComplexity}</span>
                               </div>
                             </div>
                             <div>
-                              <p className="text-slate-400">Requests Today</p>
-                              <p className="text-white font-medium">{api.requestsToday.toLocaleString()}</p>
+                              <p className="text-slate-400">Cost</p>
+                              <p className="text-white font-medium">
+                                {provider.costEstimate?.free || provider.costEstimate?.paid || 'Contact'}
+                              </p>
                             </div>
                             <div>
-                              <p className="text-slate-400">Response Time</p>
-                              <p className="text-white font-medium">{api.responseTime}ms</p>
+                              <p className="text-slate-400">Rate Limit</p>
+                              <p className="text-white font-medium">
+                                {provider.rateLimit ? `${provider.rateLimit.requests}/${provider.rateLimit.period}` : 'Variable'}
+                              </p>
                             </div>
                             <div>
-                              <p className="text-slate-400">Connected Agents</p>
-                              <p className="text-white font-medium">{api.connectedAgents}</p>
+                              <p className="text-slate-400">Health</p>
+                              <p className="text-white font-medium">
+                                {provider.health ? `${provider.health}%` : 'N/A'}
+                              </p>
                             </div>
                           </div>
                           
                           <div className="mt-3 flex items-center justify-between text-xs text-slate-400">
-                            <span>{api.provider} • {api.type}</span>
-                            <span>Last tested: {api.lastTested}</span>
+                            <span>{provider.category.toUpperCase()} • {provider.credentialsRequired.join(', ')}</span>
+                            <span>{provider.lastTested ? `Last tested: ${provider.lastTested}` : 'Client configurable'}</span>
                           </div>
                         </motion.div>
                       ))}
+                      
+                      <div className="text-center py-4">
+                        <Button variant="outline" onClick={() => setSelectedTab('categories')}>
+                          <Eye className="w-4 h-4 mr-2" />
+                          View All Categories
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -542,7 +516,7 @@ export default function APIIntegrationsPage() {
                         onClick={() => setShowAddForm(true)}
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Add New API
+                        Configure Client API
                       </Button>
                       <Button 
                         variant="outline" 
@@ -603,6 +577,110 @@ export default function APIIntegrationsPage() {
                     </CardContent>
                   </Card>
                 </div>
+              </div>
+            </TabsContent>
+
+            {/* Categories Tab */}
+            <TabsContent value="categories" className="space-y-6">
+              <div className="grid grid-cols-1 gap-6">
+                {['gps', 'freight', 'communication', 'weather', 'fuel'].map((category) => {
+                  const categoryProviders = providers.filter(p => p.category === category);
+                  const builtInCount = categoryProviders.filter(p => p.status === 'built-in').length;
+                  const totalCount = categoryProviders.length;
+                  
+                  return (
+                    <Card key={category} className="bg-slate-800/50 border-slate-700">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-3">
+                            <div className="flex items-center justify-center w-12 h-12 bg-slate-600 rounded-lg">
+                              {getCategoryIcon(category)}
+                            </div>
+                            <div>
+                              <CardTitle className="text-slate-200 capitalize">{category} APIs</CardTitle>
+                              <CardDescription>
+                                {builtInCount} built-in • {totalCount - builtInCount} client-configurable
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <Badge variant="outline" className="text-green-400 border-green-400">
+                            {builtInCount}/{totalCount} Ready
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {categoryProviders.map((provider) => (
+                            <div
+                              key={provider.provider}
+                              className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/50 hover:border-slate-500/50 transition-colors"
+                            >
+                              <div className="flex items-start justify-between mb-3">
+                                <div>
+                                  <p className="font-medium text-white text-sm">{provider.name}</p>
+                                  <p className="text-xs text-slate-400 mt-1">{provider.description}</p>
+                                </div>
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs ${
+                                    provider.tier === 'free' ? 'text-green-400 border-green-400' :
+                                    provider.tier === 'freemium' ? 'text-blue-400 border-blue-400' :
+                                    provider.tier === 'paid' ? 'text-yellow-400 border-yellow-400' :
+                                    'text-purple-400 border-purple-400'
+                                  }`}
+                                >
+                                  {provider.tier.toUpperCase()}
+                                </Badge>
+                              </div>
+                              
+                              <div className="space-y-2 text-xs">
+                                <div className="flex justify-between">
+                                  <span className="text-slate-400">Setup:</span>
+                                  <span className={`font-medium ${
+                                    provider.setupComplexity === 'easy' ? 'text-green-400' :
+                                    provider.setupComplexity === 'medium' ? 'text-yellow-400' :
+                                    'text-red-400'
+                                  }`}>
+                                    {provider.setupComplexity}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-slate-400">Cost:</span>
+                                  <span className="text-white font-medium">
+                                    {provider.costEstimate?.free || provider.costEstimate?.paid || 'Custom'}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-slate-400">Status:</span>
+                                  <Badge 
+                                    variant="outline" 
+                                    className={`text-xs ${getStatusColor(provider.status)}`}
+                                  >
+                                    {provider.status === 'built-in' ? 'Ready' : 'Configure'}
+                                  </Badge>
+                                </div>
+                              </div>
+                              
+                              {provider.status === 'client-configurable' && (
+                                <div className="mt-3 pt-3 border-t border-slate-600">
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="w-full text-xs"
+                                    onClick={() => handleSettingsClick(`${provider.category}_${provider.provider}`)}
+                                  >
+                                    <Settings className="w-3 h-3 mr-2" />
+                                    Configure
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             </TabsContent>
 
