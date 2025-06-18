@@ -77,27 +77,7 @@ const DispatcherPanel = React.memo(function DispatcherPanel({ className = '', co
   const { toast } = useToast();
   const { state: dispatcherState, markOpportunitiesSeen, toggleLiveNotifications } = useDispatcherContext();
 
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Don't render until mounted to prevent hydration issues
-  if (!isMounted) {
-    return (
-      <Card className="border-2 border-blue-200 shadow-lg">
-        <CardHeader className="pb-3">
-          <div className="flex items-center space-x-2">
-            <Bot className="h-6 w-6 text-gray-400" />
-            <div>
-              <CardTitle className="text-lg">Fleet Dispatcher AI</CardTitle>
-              <CardDescription>Loading...</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-    );
-  }
-
+  // Always define all hooks at the top level - before any early returns
   const handleAcceptSuggestion = useCallback(async (suggestionId: string) => {
     // Find the suggestion details for better messaging
     const suggestion = topSuggestions.find(s => s.id === suggestionId);
@@ -137,6 +117,27 @@ const DispatcherPanel = React.memo(function DispatcherPanel({ className = '', co
       default: return <Package className="h-4 w-4" />;
     }
   }, []);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Don't render until mounted to prevent hydration issues
+  if (!isMounted) {
+    return (
+      <Card className="border-2 border-blue-200 shadow-lg">
+        <CardHeader className="pb-3">
+          <div className="flex items-center space-x-2">
+            <Bot className="h-6 w-6 text-gray-400" />
+            <div>
+              <CardTitle className="text-lg">Fleet Dispatcher AI</CardTitle>
+              <CardDescription>Loading...</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+    );
+  }
 
   return (
     <div className={`${className}`}>

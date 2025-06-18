@@ -45,7 +45,7 @@ export function useSSE(url: string, eventHandlers: SSEEventHandler) {
         // Only attempt reconnection if component is still mounted
         if (!isUnmountedRef.current && 
             typeof window !== 'undefined' && 
-            eventSourceRef.current?.readyState === EventSource.CLOSED && 
+            eventSourceRef.current?.readyState === (EventSource ? EventSource.CLOSED : 2) && 
             retryCountRef.current < maxRetries) {
           
           // Exponential backoff: 1s, 2s, 4s, 8s, 16s
@@ -124,7 +124,7 @@ export function useSSE(url: string, eventHandlers: SSEEventHandler) {
   }, [connect, disconnect, session?.user?.id]);
 
   return {
-    isConnected: typeof window !== 'undefined' && eventSourceRef.current?.readyState === EventSource.OPEN,
+    isConnected: typeof window !== 'undefined' && eventSourceRef.current?.readyState === 1,
     reconnect: connect,
     disconnect
   };

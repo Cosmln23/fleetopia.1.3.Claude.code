@@ -14,7 +14,6 @@ import {
   Activity,
   Settings,
   BarChart3,
-  TestTube2,
   MessageSquare,
   Bell
 } from 'lucide-react';
@@ -60,12 +59,6 @@ const navigation = [
     icon: Activity,
     description: 'Live Monitoring, Data & Performance Insights'
   },
-  {
-    name: 'Simulator',
-    href: '/admin/simulator',
-    icon: TestTube2,
-    description: 'Live test vehicle data and system reactions'
-  }
 ];
 
 export function Navigation() {
