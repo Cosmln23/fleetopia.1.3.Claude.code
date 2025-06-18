@@ -6,14 +6,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // Get fleet metrics
-    const metrics = await prisma.fleetMetrics.findFirst({
-      orderBy: { timestamp: 'desc' }
-    });
-
-    // Get vehicle count
+    // Get vehicle count (only available vehicles)
     const activeVehicles = await prisma.vehicle.count({
-      where: { status: 'active' }
+      where: { 
+        OR: [
+          { status: 'assigned' },
+          { status: 'idle' },
+          { status: 'in_transit' }
+        ]
+      }
     });
 
     // Get AI agents count
@@ -21,35 +22,36 @@ export async function GET() {
       where: { status: 'active' }
     });
 
-    // Calculate today's revenue from transactions
+    // Calculate today's revenue from completed cargo offers
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     
-    const todayRevenue = await prisma.transaction.aggregate({
+    const completedOffersToday = await prisma.cargoOffer.findMany({
       where: {
-        createdAt: { gte: today },
-        type: 'revenue'
+        status: 'COMPLETED',
+        updatedAt: { gte: today }
       },
-      _sum: { amount: true }
+      select: { price: true }
     });
 
-    // Get completed trips today
-    const tripsToday = await prisma.trip.count({
-      where: {
-        status: 'completed',
-        endTime: { gte: today }
-      }
-    });
+    const revenueToday = completedOffersToday.reduce((sum, offer) => sum + offer.price, 0);
+
+    // Get total trips/cargo completed today
+    const totalTrips = completedOffersToday.length;
+
+    // Calculate basic fleet efficiency from vehicle status
+    const totalVehicles = await prisma.vehicle.count();
+    const fuelEfficiency = totalVehicles > 0 ? ((activeVehicles / totalVehicles) * 100) : 0;
 
     const dashboardData = {
       activeVehicles,
       aiAgentsOnline,
-      revenueToday: todayRevenue._sum.amount || 24567,
-      fuelEfficiency: metrics?.fuelEfficiency || 94.7,
-      totalTrips: tripsToday,
+      revenueToday: revenueToday || 0,
+      fuelEfficiency: Number(fuelEfficiency.toFixed(1)),
+      totalTrips,
       averageDeliveryTime: 42, // This would be calculated from trip data
-      costSavings: 18420, // This would be calculated from optimization data
-      aiProcessingRate: metrics?.aiProcessingRate || 847
+      costSavings: Math.floor(revenueToday * 0.15), // 15% savings estimate
+      aiProcessingRate: aiAgentsOnline * 60 // Estimate processing rate
     };
 
     return NextResponse.json(dashboardData);
