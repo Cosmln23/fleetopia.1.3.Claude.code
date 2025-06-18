@@ -10,8 +10,8 @@ interface DigitalScreenProps {
 
 export default function DigitalScreen({ className = '' }: DigitalScreenProps) {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
-  const [fleetEfficiency, setFleetEfficiency] = useState(94.7);
-  const [aiProcessingRate, setAiProcessingRate] = useState(847);
+  const [fleetEfficiency, setFleetEfficiency] = useState(0);
+  const [aiProcessingRate, setAiProcessingRate] = useState(0);
   const [systemStatus, setSystemStatus] = useState<'online' | 'maintenance' | 'offline'>('online');
   const [isClient, setIsClient] = useState(false);
 
@@ -20,20 +20,25 @@ export default function DigitalScreen({ className = '' }: DigitalScreenProps) {
     setIsClient(true);
     setCurrentTime(new Date());
 
+    // Fetch real system metrics
+    const fetchSystemMetrics = async () => {
+      try {
+        const response = await fetch('/api/dashboard');
+        const data = await response.json();
+        setFleetEfficiency(data.fuelEfficiency || 0);
+        setAiProcessingRate(data.aiProcessingRate || 0);
+      } catch (error) {
+        console.error('Failed to fetch system metrics:', error);
+      }
+    };
+
+    fetchSystemMetrics();
+
     const timer = setInterval(() => {
       setCurrentTime(new Date());
-      
-      // Simulate real-time data fluctuations
-      setFleetEfficiency(prev => {
-        const change = (Math.random() - 0.5) * 0.2;
-        return Math.max(90, Math.min(100, prev + change));
-      });
-      
-      setAiProcessingRate(prev => {
-        const change = Math.floor((Math.random() - 0.5) * 20);
-        return Math.max(800, Math.min(900, prev + change));
-      });
-    }, 1000);
+      // Refresh metrics every 10 seconds
+      fetchSystemMetrics();
+    }, 10000);
 
     return () => clearInterval(timer);
   }, []);

@@ -5,51 +5,27 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 export const dynamic = 'force-dynamic';
 
-// Fallback demo data for when database is unavailable or user has no vehicles
+// Minimal fallback data for better user experience when no vehicles found
 const getFallbackVehicles = () => [
   {
-    id: 'demo-1',
-    name: 'Demo Truck 1',
-    licensePlate: 'DEMO-001',
-    make: 'Volvo',
-    model: 'FH16',
-    year: 2020,
-    type: 'Heavy Truck',
+    id: 'placeholder-1',
+    name: 'No vehicles found',
+    licensePlate: 'Add vehicles in Fleet Management',
+    make: 'FleetOpia',
+    model: 'Guide',
+    year: 2024,
+    type: 'Information',
     status: 'idle',
-    driverName: 'Demo Driver 1',
+    driverName: 'System Message',
     lat: 44.4268,
     lng: 26.1025,
-    fleetId: 'demo-fleet',
-    fuelConsumption: 35.0,
-    currentRoute: 'Bucharest - Demo Route',
+    fleetId: 'system',
+    fuelConsumption: 0,
+    currentRoute: 'Please add your vehicles to see real-time data',
     gpsData: {
       latitude: 44.4268,
       longitude: 26.1025,
       speed: 0,
-      timestamp: new Date().toISOString()
-    },
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: 'demo-2',
-    name: 'Demo Van 1',
-    licensePlate: 'DEMO-002',
-    make: 'Mercedes',
-    model: 'Sprinter',
-    year: 2019,
-    type: 'Delivery Van',
-    status: 'in_transit',
-    driverName: 'Demo Driver 2',
-    lat: 44.4378,
-    lng: 26.0968,
-    fleetId: 'demo-fleet',
-    fuelConsumption: 25.0,
-    currentRoute: 'Bucharest - Demo Delivery',
-    gpsData: {
-      latitude: 44.4378,
-      longitude: 26.0968,
-      speed: 65,
       timestamp: new Date().toISOString()
     },
     createdAt: new Date(),

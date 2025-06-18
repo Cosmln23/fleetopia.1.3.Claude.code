@@ -19,35 +19,50 @@ interface DashboardData {
 
 export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<DashboardData>({
-    activeVehicles: 247,
-    aiAgentsOnline: 12,
-    revenueToday: 24567,
-    fuelEfficiency: 94.7,
-    totalTrips: 1834,
-    averageDeliveryTime: 42,
-    costSavings: 18420
+    activeVehicles: 0,
+    aiAgentsOnline: 0,
+    revenueToday: 0,
+    fuelEfficiency: 0,
+    totalTrips: 0,
+    averageDeliveryTime: 0,
+    costSavings: 0
   });
 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate data loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
+    // Fetch real dashboard data
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/dashboard');
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+        // Fallback to default values if API fails
+        setDashboardData({
+          activeVehicles: 0,
+          aiAgentsOnline: 0,
+          revenueToday: 0,
+          fuelEfficiency: 0,
+          totalTrips: 0,
+          averageDeliveryTime: 0,
+          costSavings: 0
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    // Simulate real-time updates
+    fetchDashboardData();
+
+    // Refresh data every 30 seconds for real-time updates
     const updateTimer = setInterval(() => {
-      setDashboardData(prev => ({
-        ...prev,
-        revenueToday: prev.revenueToday + Math.floor(Math.random() * 100),
-        fuelEfficiency: Math.max(90, Math.min(100, prev.fuelEfficiency + (Math.random() - 0.5) * 0.5)),
-        totalTrips: prev.totalTrips + Math.floor(Math.random() * 3)
-      }));
-    }, 5000);
+      fetchDashboardData();
+    }, 30000);
 
     return () => {
-      clearTimeout(timer);
       clearInterval(updateTimer);
     };
   }, []);
