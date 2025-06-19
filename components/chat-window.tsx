@@ -136,7 +136,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
     }
   };
 
-  if (!session?.user) return null;
+  if (!isSignedIn || !user) return null;
 
   return (
     <Card className="w-80 h-96 flex flex-col bg-slate-900 border-slate-700 text-white">
@@ -153,10 +153,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
               <div
                 key={msg.id}
                 className={`flex items-start gap-2 ${
-                  msg.senderId === session.user?.id ? 'justify-end' : 'justify-start'
+                  msg.senderId === user?.id ? 'justify-end' : 'justify-start'
                 }`}
               >
-                {msg.senderId !== session.user?.id && (
+                {msg.senderId !== user?.id && (
                   <Avatar className="h-6 w-6">
                     <AvatarImage src={msg.sender.image || ''} />
                     <AvatarFallback>{msg.sender.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
@@ -164,7 +164,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
                 )}
                 <div
                   className={`max-w-[80%] p-2 rounded-lg ${
-                    msg.senderId === session.user?.id
+                    msg.senderId === user?.id
                       ? 'bg-blue-600 text-white'
                       : 'bg-slate-700 text-slate-200'
                   }`}

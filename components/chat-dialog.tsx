@@ -87,7 +87,7 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({ offer, isOpen, onClose }
     }
   };
 
-  if (!session || !session.user) return null;
+  if (!isSignedIn || !user) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

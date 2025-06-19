@@ -18,7 +18,7 @@ export function ChatPopover({ children }: { children: React.ReactNode }) {
     const { openChat } = useChat();
 
     useEffect(() => {
-        if (isOpen && session?.user?.id) {
+        if (isOpen && isSignedIn && user?.id) {
             fetch('/api/marketplace/cargo?listType=conversations')
                 .then(res => res.json())
                 .then(data => {
@@ -27,7 +27,7 @@ export function ChatPopover({ children }: { children: React.ReactNode }) {
                     }
                 }).catch(err => console.error("Failed to fetch conversations", err));
         }
-    }, [isOpen, session]);
+          }, [isOpen, isSignedIn, user?.id]);
 
     const handleOpenConversation = (conv: CargoOffer) => {
         openChat(conv);

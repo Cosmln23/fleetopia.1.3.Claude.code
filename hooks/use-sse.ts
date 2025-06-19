@@ -17,7 +17,7 @@ export function useSSE(url: string, eventHandlers: SSEEventHandler) {
 
   const connect = useCallback(() => {
     // Don't connect if component is unmounted or conditions not met
-    if (!session?.user?.id || typeof window === 'undefined' || isUnmountedRef.current) {
+    if (!isSignedIn || !user?.id || typeof window === 'undefined' || isUnmountedRef.current) {
       return;
     }
 
@@ -81,7 +81,7 @@ export function useSSE(url: string, eventHandlers: SSEEventHandler) {
     } catch (error) {
       console.error('Error creating SSE connection:', error);
     }
-  }, [url, eventHandlers, session?.user?.id]);
+  }, [url, eventHandlers, isSignedIn, user?.id]);
 
   const disconnect = useCallback(() => {
     // Mark as unmounted to prevent reconnection attempts
@@ -113,7 +113,7 @@ export function useSSE(url: string, eventHandlers: SSEEventHandler) {
     // Reset unmounted flag when effect runs
     isUnmountedRef.current = false;
     
-    if (session?.user?.id && typeof window !== 'undefined') {
+    if (isSignedIn && user?.id && typeof window !== 'undefined') {
       connect();
     }
 
@@ -121,7 +121,7 @@ export function useSSE(url: string, eventHandlers: SSEEventHandler) {
     return () => {
       disconnect();
     };
-  }, [connect, disconnect, session?.user?.id]);
+  }, [connect, disconnect, isSignedIn, user?.id]);
 
   return {
     isConnected: typeof window !== 'undefined' && eventSourceRef.current?.readyState === 1,
