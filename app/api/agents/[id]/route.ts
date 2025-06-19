@@ -1,15 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-interface RouteContext {
-  params: {
-    id: string;
-  };
-}
-
-export async function PATCH(request: Request, { params }: RouteContext) {
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const { id } = params;
     const body = await request.json();
@@ -20,13 +17,16 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       data: {
         ...(status && { status }),
         ...(performance !== undefined && { performance }),
-        updatedAt: new Date()
-      }
+        updatedAt: new Date(),
+      },
     });
 
     return NextResponse.json(agent);
   } catch (error) {
     console.error('Update agent error:', error);
-    return NextResponse.json({ error: 'Failed to update agent' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to update agent' },
+      { status: 500 }
+    );
   }
 }
