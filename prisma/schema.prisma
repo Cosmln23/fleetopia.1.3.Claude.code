@@ -64,28 +64,40 @@ model VerificationToken {
 }
 
 model AIAgent {
-  id             String               @id @default(cuid())
-  name           String
-  description    String
-  version        String
-  category       String
-  capabilities   Json
-  configuration  Json
-  performance    Json
-  marketplace    Boolean              @default(false)
-  price          Float?
-  rating         Float                @default(0)
-  downloads      Int                  @default(0)
-  status         String               @default("active")
-  isTemplate     Boolean              @default(false)
-  requiresAPI    Json
-  userId         String
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  apiConnections AgentAPIConnection[]
-  metrics        AgentMetric[]
-  reviews        Review[]
-  createdBy      User                 @relation("CreatedAIAgents", fields: [userId], references: [id])
+  id                   String    @id @default(cuid())
+  name                 String
+  description          String
+  version              String
+  category             String
+  capabilities         Json
+  configuration        Json
+  performance          Json
+  marketplace          Boolean              @default(false)
+  price                Float?
+  rating               Float                @default(0)
+  downloads            Int                  @default(0)
+  status               String               @default("active")
+  isTemplate           Boolean              @default(false)
+  requiresAPI          Json
+  userId               String
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  layer                String?
+  depth                Int?
+  weight               Float?
+  evolutionCycle       Int?
+  evolutionStatus      String?
+  lastEvolution        DateTime?
+  modificationsCount   Int?
+  successRate          Float?
+  protocolCompliance   String?
+  confidenceScore      Float?
+  validationScore      Int?
+  mcpCompatible        Boolean?
+  apiConnections       AgentAPIConnection[]
+  metrics              AgentMetric[]
+  reviews              Review[]
+  createdBy            User                 @relation("CreatedAIAgents", fields: [userId], references: [id])
 
   @@index([marketplace])
   @@index([category])

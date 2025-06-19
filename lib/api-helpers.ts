@@ -37,7 +37,7 @@ export function createApiHandler(options: ApiHandlerOptions = {}) {
   return function withApiHandler(handler: ApiHandler) {
     return async function apiRouteHandler(
       request: NextRequest,
-      context: { params?: Record<string, string | string[]> }
+      context: { params: Record<string, string | string[]> }
     ): Promise<NextResponse> {
       try {
         // Apply rate limiting
@@ -112,7 +112,7 @@ export function createApiHandler(options: ApiHandlerOptions = {}) {
 
         // Parse and validate route parameters
         let params = null;
-        if (paramsSchema && context?.params) {
+        if (paramsSchema && context.params) {
           try {
             params = paramsSchema.parse(context.params);
           } catch (error) {
@@ -136,7 +136,7 @@ export function createApiHandler(options: ApiHandlerOptions = {}) {
           session,
           body,
           query,
-          params: params || context?.params
+          params: params || context.params
         });
 
         // Add rate limit headers to successful responses
