@@ -568,7 +568,7 @@ export class IntelligentDeliveryCapacityOptimizer {
   // Driver management methods
   calculateDriverScore(driver: Driver): number {
     // Comprehensive driver scoring pentru optimal assignment
-    const factors = {
+    const factors: Record<string, number> = {
       performance: driver.performanceRating || 0.8,
       availability: driver.availableHours / 8, // Assuming 8-hour shift
       experience: Math.min(driver.experienceYears / 5, 1), // Cap at 5 years
@@ -577,7 +577,7 @@ export class IntelligentDeliveryCapacityOptimizer {
       efficiency: driver.deliveryEfficiencyScore || 0.8
     };
     
-    const weights = {
+    const weights: Record<string, number> = {
       performance: 0.25,
       availability: 0.2,
       experience: 0.15,
@@ -588,7 +588,7 @@ export class IntelligentDeliveryCapacityOptimizer {
     
     let score = 0;
     Object.keys(factors).forEach(factor => {
-      score += factors[factor] * weights[factor];
+      score += factors[factor] * (weights[factor] ?? 0);
     });
     
     return Math.max(0, Math.min(1, score)); // Ensure 0-1 range

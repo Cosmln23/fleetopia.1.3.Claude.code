@@ -102,17 +102,10 @@ export class FleetTrackingService {
       await prisma.vehicle.update({
         where: { id: location.vehicleId },
         data: {
-          location: {
-            latitude: location.latitude,
-            longitude: location.longitude,
-            speed: location.speed,
-            heading: location.heading,
-            timestamp: location.timestamp,
-            accuracy: location.accuracy,
-            status: location.status
-          },
-          updatedAt: new Date()
-        }
+          lat: location.latitude,
+          lng: location.longitude,
+          updatedAt: new Date(),
+        },
       });
 
       // Get vehicle's fleet
@@ -123,7 +116,7 @@ export class FleetTrackingService {
 
       if (vehicle) {
         // Broadcast to fleet room
-        this.io?.to(`fleet-${vehicle.fleetId}`).emit('vehicle-updated', {
+        (this.io as SocketIOServer | null)?.to(`fleet-${vehicle.fleetId}`).emit('vehicle-updated', {
           vehicleId: location.vehicleId,
           location: location,
           fleetId: vehicle.fleetId
@@ -151,9 +144,9 @@ export class FleetTrackingService {
         return location && this.isRecentLocation(location);
       });
 
-      const totalDistance = vehicles.reduce((sum, v) => sum + (v.mileage || 0), 0);
+      const totalDistance = vehicles.reduce((sum, v) => sum + (((v as any).mileage) || 0), 0);
       const averageSpeed = this.calculateAverageSpeed(activeVehicles.map(v => v.id));
-      const fuelConsumption = vehicles.reduce((sum, v) => sum + (100 - (v.fuelLevel || 100)), 0);
+      const fuelConsumption = vehicles.reduce((sum, v) => sum + (100 - (((v as any).fuelLevel) || 100)), 0);
       
       return {
         totalVehicles: vehicles.length,
@@ -225,35 +218,35 @@ export class FleetTrackingService {
 
   // Original fallback algorithm
   async optimizeRouteFallback(routeId: string): Promise<RouteOptimization> {
-    const originalDistance = 150; // Mock data
-    const optimized = await this.runOptimizationAlgorithms({
-      start: { lat: 50.8503, lng: 4.3517 }, // Brussels
-      end: { lat: 51.2194, lng: 4.4025 },   // Antwerp
-      waypoints: [],
-      vehicleType: 'diesel',
-      trafficData: await this.getTrafficData(),
-      weatherData: await this.getWeatherData(),
-      fuelPrices: await this.getFuelPrices()
-    });
+    try {
+      const originalDistance = 150; // Mock data
+      const optimized = await this.runOptimizationAlgorithms({
+        start: { lat: 50.8503, lng: 4.3517 }, // Brussels
+        end: { lat: 51.2194, lng: 4.4025 },   // Antwerp
+        waypoints: [],
+        vehicleType: 'diesel',
+        trafficData: await this.getTrafficData(),
+        weatherData: await this.getWeatherData(),
+        fuelPrices: await this.getFuelPrices(),
+      });
 
-    const timeSaved = (originalDistance - optimized.distance) / 50;
-    const fuelSaved = (originalDistance - optimized.distance) * 0.08;
-    const costSaved = fuelSaved * 1.5;
+      const timeSaved = (originalDistance - optimized.distance) / 50;
+      const fuelSaved = (originalDistance - optimized.distance) * 0.08;
+      const costSaved = fuelSaved * 1.5;
 
-    return {
-      routeId,
-      originalDistance,
-      optimizedDistance: optimized.distance,
-      timeSaved,
-      fuelSaved,
-      costSaved,
-      efficiency: ((originalDistance - optimized.distance) / originalDistance) * 100
-    };
-
-  } catch (error) {
-    console.error('❌ Fallback optimization failed:', error);
-    throw error;
-  }
+      return {
+        routeId,
+        originalDistance,
+        optimizedDistance: optimized.distance,
+        timeSaved,
+        fuelSaved,
+        costSaved,
+        efficiency: ((originalDistance - optimized.distance) / originalDistance) * 100,
+      };
+    } catch (error) {
+      console.error('❌ Fallback optimization failed:', error);
+      throw error;
+    }
   }
 
   // Get ML Optimizer stats
@@ -346,8 +339,8 @@ export class FleetTrackingService {
 
   private calculateFleetEfficiency(vehicles: any[]): number {
     // Simplified efficiency calculation
-    const totalFuel = vehicles.reduce((sum, v) => sum + (100 - (v.fuelLevel || 100)), 0);
-    const totalDistance = vehicles.reduce((sum, v) => sum + (v.mileage || 0), 0);
+    const totalFuel = vehicles.reduce((sum, v) => sum + (100 - (((v as any).fuelLevel) || 100)), 0);
+    const totalDistance = vehicles.reduce((sum, v) => sum + (((v as any).mileage) || 0), 0);
     return totalDistance > 0 ? (totalDistance / totalFuel) * 100 : 0;
   }
 
@@ -409,7 +402,7 @@ export class FleetTrackingService {
   private sendFleetData(fleetId: string, socketId: string) {
     // Send initial fleet data to connected client
     this.getFleetMetrics(fleetId).then(metrics => {
-      this.io?.to(socketId).emit('fleet-metrics', metrics);
+      (this.io as SocketIOServer | null)?.to(socketId).emit('fleet-metrics', metrics);
     });
   }
 
@@ -418,13 +411,13 @@ export class FleetTrackingService {
     this.updateInterval = setInterval(async () => {
       // Broadcast updated metrics to all connected clients
       if (this.io) {
-        const rooms = Array.from(this.io.sockets.adapter.rooms.keys())
+        const rooms = Array.from((this.io as SocketIOServer).sockets.adapter.rooms.keys())
           .filter(room => room.startsWith('fleet-'));
         
         for (const room of rooms) {
           const fleetId = room.replace('fleet-', '');
           const metrics = await this.getFleetMetrics(fleetId);
-          this.io.to(room).emit('fleet-metrics', metrics);
+          (this.io as SocketIOServer).to(room).emit('fleet-metrics', metrics);
         }
       }
     }, 30000);

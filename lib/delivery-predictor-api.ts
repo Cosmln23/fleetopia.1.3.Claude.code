@@ -750,7 +750,7 @@ export class DeliveryPredictorAPI {
       console.error('❌ Delivery batching failed:', error);
       return {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         fallback: { efficiencyGain: 0, costSavings: 0 }
       };
     }
@@ -775,7 +775,7 @@ export class DeliveryPredictorAPI {
       console.error('❌ Emergency scaling failed:', error);
       return {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         fallback: []
       };
     }
@@ -801,7 +801,7 @@ export class DeliveryPredictorAPI {
       console.error('❌ Driver workload optimization failed:', error);
       return {
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         fallback: { workloadEfficiency: 0.8 }
       };
     }
@@ -833,7 +833,7 @@ export class DeliveryPredictorAPI {
       console.error('❌ Performance tracking failed:', error);
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

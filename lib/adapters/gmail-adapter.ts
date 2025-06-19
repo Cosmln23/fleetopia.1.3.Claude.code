@@ -1,5 +1,12 @@
 // Gmail API Adapter - FREE Implementation
-import { UniversalCommunicationAPI, APIResponse, EmailParams, EmailMessage, EmailFilters, APICredentials } from '../universal-api-bridge';
+import type {
+  UniversalCommunicationAPI,
+  APIResponse,
+  EmailParams,
+  EmailMessage,
+  EmailFilters,
+  APICredentials,
+} from '../universal-api-bridge';
 
 export class GmailAdapter implements UniversalCommunicationAPI {
   private credentials: APICredentials;
@@ -138,9 +145,9 @@ export class GmailAdapter implements UniversalCommunicationAPI {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({
-        client_id: this.credentials.clientId!,
-        client_secret: this.credentials.clientSecret!,
-        refresh_token: this.credentials.refreshToken!,
+        client_id: this.credentials.clientId ?? '',
+        client_secret: this.credentials.clientSecret ?? '',
+        refresh_token: this.credentials.refreshToken ?? '',
         grant_type: 'refresh_token',
       }),
     });
@@ -157,7 +164,11 @@ export class GmailAdapter implements UniversalCommunicationAPI {
       this.accessToken = undefined;
     }, (data.expires_in - 60) * 1000); // Refresh 1 minute before expiry
 
-    return this.accessToken!;
+    if (!this.accessToken) {
+      throw new Error('Failed to obtain access token');
+    }
+    
+    return this.accessToken;
   }
 
   private formatEmailForGmail(params: EmailParams): string {
@@ -227,7 +238,7 @@ export class GmailAdapter implements UniversalCommunicationAPI {
         body: this.extractEmailBody(message.payload),
         isHTML: false, // Gmail API payload processing would determine this more accurately
         attachments: message.payload.parts?.filter((part: any) => part.filename).map((part: any) => ({
-          filename: part.filename,
+          filename: (part.filename ?? '') as string,
           contentType: part.mimeType || 'application/octet-stream',
           size: part.body?.size || 0
         })) || [],

@@ -1,5 +1,15 @@
 // Google Weather API Adapter - FREE Implementation
-import { UniversalWeatherAPI, APIResponse, WeatherData, WeatherForecast, RouteWeatherData, WeatherAlert, LocationQuery, APICredentials, RouteWeatherQuery } from '../universal-api-bridge';
+import type {
+  UniversalWeatherAPI,
+  APIResponse,
+  WeatherData,
+  WeatherForecast,
+  RouteWeatherData,
+  WeatherAlert,
+  LocationQuery,
+  APICredentials,
+  RouteWeatherQuery,
+} from '../universal-api-bridge';
 
 export class GoogleWeatherAdapter implements UniversalWeatherAPI {
   private apiKey: string;
@@ -290,7 +300,7 @@ export class GoogleWeatherAdapter implements UniversalWeatherAPI {
       if (weather.visibility < 2) hazards.push('Poor visibility');
     }
     
-    return [...new Set(hazards)]; // Remove duplicates
+    return Array.from(new Set(hazards)); // Remove duplicates
   }
 
   private generateRouteRecommendations(weatherData: WeatherData[]): string[] {

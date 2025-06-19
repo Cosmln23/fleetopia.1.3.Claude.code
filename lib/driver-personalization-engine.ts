@@ -406,8 +406,11 @@ export class DriverPersonalizationEngine {
       // If satisfied, slightly increase weight of dominant factor
       const dominant = this.getDominantWeight(profile.personalizationConfig.optimizationWeights);
       if (dominant) {
-        profile.personalizationConfig.optimizationWeights[dominant] = Math.min(0.8,
-          profile.personalizationConfig.optimizationWeights[dominant] * 1.02);
+        const key = dominant as keyof typeof profile.personalizationConfig.optimizationWeights;
+        profile.personalizationConfig.optimizationWeights[key] = Math.min(
+          0.8,
+          profile.personalizationConfig.optimizationWeights[key] * 1.02,
+        );
       }
     }
     
@@ -421,17 +424,17 @@ export class DriverPersonalizationEngine {
     return profile;
   }
 
-  getDominantWeight(weights: any): string | null {
+  getDominantWeight<T extends Record<string, number>>(weights: T): keyof T | null {
     let maxWeight = 0;
-    let dominantKey = null;
-    
-    Object.entries(weights).forEach(([key, value]) => {
-      if (value as number > maxWeight) {
-        maxWeight = value as number;
+    let dominantKey: keyof T | null = null;
+
+    (Object.entries(weights) as [keyof T, number][]).forEach(([key, value]) => {
+      if (value > maxWeight) {
+        maxWeight = value;
         dominantKey = key;
       }
     });
-    
+
     return dominantKey;
   }
 

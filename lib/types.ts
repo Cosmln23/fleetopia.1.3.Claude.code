@@ -1216,3 +1216,47 @@ export interface ExtensionApiResponse<T> extends ApiResponse<T> {
   cacheHit?: boolean;
   processingTime?: number;
 }
+
+// AI Marketplace types
+export interface BaseAIAgent {
+  id: string;
+  name: string;
+  type: string;
+  version: string;
+  status: string;
+  performance: number;
+  revenue: number;
+  requests: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AgentTemplate {
+  name: string;
+  type: string;
+  description: string;
+  capabilities: string[];
+  pricing: {
+    basePrice: number;
+    commission: number;
+  };
+  requirements: {
+    minData: number;
+    updateFrequency: string;
+  };
+}
+
+export interface MarketplaceAgent extends BaseAIAgent {
+  template: AgentTemplate;
+  owner: string;
+  downloads: number;
+  rating: number;
+  reviews: any[];
+}
+
+export interface RevenueDistribution {
+  core: number;      // 40% to Core Platform
+  agents: number;    // 35% to AI Agents
+  innovation: number; // 15% to Innovation Fund
+  users: number;     // 10% to Users/Rewards
+}

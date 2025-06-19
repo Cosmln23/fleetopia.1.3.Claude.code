@@ -95,12 +95,15 @@ export class FleetDispatcher {
           id: `suggestion_${offer.id}_${bestVehicle.id}`,
           cargoOfferId: offer.id,
           vehicleId: bestVehicle.id,
+          vehicleName: bestVehicle.name || 'Vehicle',
+          vehicleLicensePlate: (bestVehicle as any).licensePlate || (bestVehicle as any).plateNumber || '',
+          title: `${offer.title} ➜ ${bestVehicle.name}`,
           estimatedProfit: analysis.profit,
           estimatedDistance: analysis.distance,
           estimatedDuration: analysis.duration,
           confidence: analysis.confidence,
           reasoning: analysis.reasoning,
-          priority: analysis.priority
+          priority: analysis.priority,
         });
       }
     }

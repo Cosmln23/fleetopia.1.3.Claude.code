@@ -83,7 +83,7 @@ class MemoryCache {
     let expired = 0;
     let valid = 0;
 
-    for (const entry of this.cache.values()) {
+    for (const entry of Array.from(this.cache.values())) {
       if (now > entry.expires) {
         expired++;
       } else {
@@ -106,7 +106,7 @@ class MemoryCache {
     const now = Date.now();
     let cleaned = 0;
 
-    for (const [key, entry] of this.cache.entries()) {
+    for (const [key, entry] of Array.from(this.cache.entries())) {
       if (now > entry.expires) {
         this.cache.delete(key);
         cleaned++;
@@ -226,7 +226,7 @@ export const cacheInvalidation = {
   // Invalidate cargo-related caches
   invalidateCargo: (cargoOfferId?: string) => {
     // Clear all cargo offer caches (simple approach)
-    const allKeys = Array.from((cache as any).cache.keys());
+    const allKeys = Array.from((cache as any).cache.keys()) as string[];
     const cargoKeys = allKeys.filter(key => key.startsWith('cargo:') || key.startsWith('user:') && key.includes(':cargo:'));
     cargoKeys.forEach(key => cache.delete(key));
     
@@ -237,7 +237,7 @@ export const cacheInvalidation = {
 
   // Invalidate system alerts
   invalidateAlerts: () => {
-    const allKeys = Array.from((cache as any).cache.keys());
+    const allKeys = Array.from((cache as any).cache.keys()) as string[];
     const alertKeys = allKeys.filter(key => key.startsWith('alerts:'));
     alertKeys.forEach(key => cache.delete(key));
   }

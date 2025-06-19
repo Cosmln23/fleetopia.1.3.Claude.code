@@ -266,7 +266,7 @@ export class DeliveryPredictorIntegration {
             totalDecisions: insights.pricing.totalPricingDecisions,
             acceptanceRate: insights.pricing.averageAcceptanceRate,
             revenueImpact: insights.pricing.revenueImpact,
-            averagePrice: insights.pricing.insights?.revenue?.averagePrice || 9.85
+            averagePrice: (insights.pricing as any).insights?.revenue?.averagePrice || 9.85
           },
           delivery: {
             averageTime: insights.delivery.averageDeliveryTime,

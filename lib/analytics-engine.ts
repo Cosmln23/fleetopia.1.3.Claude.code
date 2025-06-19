@@ -293,7 +293,7 @@ export class AnalyticsEngine {
     };
   }
 
-  private async calculateTrends(fleetId: string, period: string) {
+  private async calculateTrends(fleetId: string, period: 'daily' | 'weekly' | 'monthly') {
     // Get previous period data for comparison
     const previousPeriod = this.getPreviousPeriod(period);
     const currentAnalytics = await this.generateFleetAnalytics(fleetId, period);

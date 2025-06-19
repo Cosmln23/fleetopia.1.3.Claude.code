@@ -5,7 +5,7 @@ import { acceptSuggestionSchema } from '@/lib/validations';
 import { prisma } from '@/lib/prisma';
 import { dbUtils } from '@/lib/db-utils';
 
-export async function POST(request: NextRequest) {
+export async function POST(request: NextRequest, context: { params?: Record<string, string | string[]> }) {
   try {
     // Get session for authentication
     const session = await getServerSession(authOptions);

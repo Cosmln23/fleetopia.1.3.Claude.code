@@ -144,4 +144,25 @@ export class MLRouteOptimizer {
       model: this.model ? 'loaded' : 'not loaded'
     };
   }
+
+  // Placeholder: integrate feedback loop to improve model based on actual vs. predicted results
+  async learnFromResult(
+    routeId: string,
+    prediction: MLOptimizationResult,
+    actualResult: any,
+  ): Promise<void> {
+    try {
+      // Here we would normally push the pair (prediction, actual) into a training dataset
+      // and optionally trigger an incremental training step. For now we just log.
+      console.log('📈 MLRouteOptimizer learning from result', {
+        routeId,
+        prediction,
+        actualResult,
+      });
+
+      // Future implementation: adjust model weights based on error between prediction and actual.
+    } catch (error) {
+      console.error('❌ Error in learnFromResult:', error);
+    }
+  }
 } 

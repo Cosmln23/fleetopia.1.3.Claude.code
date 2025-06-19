@@ -188,9 +188,8 @@ export const dbUtils = {
 
         return {
           availableVehicles,
-          newOffers: newOffers.length,
-          userFleets,
-          newOffers: newOffers
+          newOffers,
+          userFleets
         };
       },
       1 * 60 * 1000 // 1 minute cache for dispatcher analysis
