@@ -1,15 +1,14 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
 // POST to express interest in a cargo offer (for non-authenticated users)
 export async function POST(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context;
   try {
-    const resolvedParams = await params;
-    const offerId = resolvedParams.id;
+    const params = await context.params;
+    const offerId = params.id;
 
     const body = await request.json();
     const { driverName, driverPhone, message } = body;
@@ -44,15 +43,9 @@ export async function POST(
     // Create a contact request record
     const contactRequest = await prisma.chatMessage.create({
       data: {
-        content: `${message}\n\n--- Contact Info ---\nDriver: ${driverName}\nPhone: ${driverPhone}`,
+        content: `${message}\n\n--- Contact Info ---\nDriver: ${driverName}\nPhone: ${driverPhone}\n\nType: contact_request\nTimestamp: ${new Date().toISOString()}`,
         cargoOfferId: offerId,
-        senderId: 'anonymous', // We'll use this for non-authenticated users
-        metadata: JSON.stringify({
-          type: 'contact_request',
-          driverName,
-          driverPhone,
-          timestamp: new Date().toISOString()
-        })
+        senderId: 'anonymous' // We'll use this for non-authenticated users
       }
     });
 

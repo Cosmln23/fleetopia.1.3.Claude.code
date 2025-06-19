@@ -1,20 +1,20 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 export async function GET(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context;
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const params = await context.params;
     const vehicleId = params.id;
 
     // First, verify that the vehicle belongs to the user
@@ -61,7 +61,7 @@ export async function GET(
     return NextResponse.json(cargoOffer);
 
   } catch (error) {
-    console.error(`Error fetching details for vehicle ${params.id}:`, error);
+    console.error(`Error fetching vehicle details:`, error);
     return NextResponse.json({ error: 'Failed to fetch vehicle details' }, { status: 500 });
   }
 } 

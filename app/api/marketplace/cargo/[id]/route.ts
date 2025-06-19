@@ -1,13 +1,12 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 export async function DELETE(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context;
   try {
     console.log('DELETE API: Starting delete process');
     
@@ -19,8 +18,8 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
+    const params = await context.params;
+    const { id } = params;
     console.log('DELETE API: Cargo ID:', id);
 
     // Check if the cargo offer exists and belongs to the user
@@ -85,13 +84,12 @@ export async function DELETE(
 }
 
 export async function PUT(
-  request: Request,
-  context: { params: { id: string } }
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const { params } = context;
   try {
-    const resolvedParams = await params;
-    const id = resolvedParams.id;
+    const params = await context.params;
+    const id = params.id;
     
     const body = await request.json();
     
