@@ -1,5 +1,5 @@
 // Google Weather API Adapter - FREE Implementation
-import { UniversalWeatherAPI, APIResponse, WeatherData, WeatherForecast, RouteWeatherData, WeatherAlert, LocationQuery, APICredentials } from '../universal-api-bridge';
+import { UniversalWeatherAPI, APIResponse, WeatherData, WeatherForecast, RouteWeatherData, WeatherAlert, LocationQuery, APICredentials, RouteWeatherQuery } from '../universal-api-bridge';
 
 export class GoogleWeatherAdapter implements UniversalWeatherAPI {
   private apiKey: string;
@@ -79,24 +79,24 @@ export class GoogleWeatherAdapter implements UniversalWeatherAPI {
     
     try {
       const routePoints = await this.getRoutePoints(route);
-      const weatherAlongRoute: WeatherData[] = [];
+      const weatherPoints: { location: { lat: number; lng: number }; weather: WeatherData; estimatedTime: Date; }[] = [];
 
       // Get weather for key points along the route
-      for (const point of routePoints) {
-        const weather = await this.fetchWeatherData(point);
-        weatherAlongRoute.push(weather);
+      for (let i = 0; i < routePoints.length; i++) {
+        const weather = await this.fetchWeatherData(routePoints[i]);
+        const estimatedTime = new Date(route.departureTime.getTime() + i * 60 * 60 * 1000); // 1 hour intervals
+        
+        weatherPoints.push({
+          location: routePoints[i],
+          weather,
+          estimatedTime
+        });
       }
 
       const routeWeather: RouteWeatherData = {
-        route: {
-          origin: route.origin,
-          destination: route.destination,
-          waypoints: route.waypoints || []
-        },
-        weatherPoints: weatherAlongRoute,
-        averageConditions: this.calculateAverageConditions(weatherAlongRoute),
-        hazards: this.identifyWeatherHazards(weatherAlongRoute),
-        recommendations: this.generateRouteRecommendations(weatherAlongRoute)
+        route: route.route,
+        weatherPoints,
+        alerts: [] // Could add alerts based on weather conditions
       };
 
       return {
@@ -127,13 +127,14 @@ export class GoogleWeatherAdapter implements UniversalWeatherAPI {
         {
           id: 'alert_1',
           type: 'storm',
-          severity: 'moderate',
+          severity: 'medium',
           title: 'Thunderstorm Warning',
           description: 'Thunderstorms expected in the area with heavy rain and strong winds.',
-          area: location.city || 'Current Location',
-          startTime: new Date(),
-          endTime: new Date(Date.now() + 4 * 60 * 60 * 1000), // 4 hours
-          coordinates: coordinates
+          affectedArea: {
+            coordinates: [coordinates]
+          },
+          validFrom: new Date(),
+          validTo: new Date(Date.now() + 4 * 60 * 60 * 1000) // 4 hours
         }
       ];
 
@@ -208,26 +209,54 @@ export class GoogleWeatherAdapter implements UniversalWeatherAPI {
 
   private async getRoutePoints(route: RouteWeatherQuery): Promise<{ lat: number; lng: number }[]> {
     // Simulate route points - you'd use Google Directions API for real implementation
-    const points = [route.origin];
+    const points = [route.route.origin];
     
-    if (route.waypoints) {
-      points.push(...route.waypoints);
+    if (route.route.waypoints) {
+      points.push(...route.route.waypoints);
     }
     
-    points.push(route.destination);
+    points.push(route.route.destination);
     return points;
   }
 
-  private async generateForecastData(coordinates: { lat: number; lng: number }, days: number): Promise<WeatherData[]> {
-    const forecast: WeatherData[] = [];
+  private async generateForecastData(coordinates: { lat: number; lng: number }, days: number): Promise<{
+    date: Date;
+    temperature: { min: number; max: number };
+    humidity: number;
+    windSpeed: number;
+    windDirection: number;
+    precipitation: number;
+    conditions: string;
+    icon: string;
+  }[]> {
+    const forecast: {
+      date: Date;
+      temperature: { min: number; max: number };
+      humidity: number;
+      windSpeed: number;
+      windDirection: number;
+      precipitation: number;
+      conditions: string;
+      icon: string;
+    }[] = [];
     
     for (let i = 0; i < days; i++) {
       const date = new Date();
       date.setDate(date.getDate() + i);
       
-      const weather = await this.fetchWeatherData(coordinates);
-      weather.timestamp = date;
-      forecast.push(weather);
+      forecast.push({
+        date,
+        temperature: {
+          min: Math.round(Math.random() * 15 + 5), // 5-20°C
+          max: Math.round(Math.random() * 15 + 20) // 20-35°C
+        },
+        humidity: Math.round(Math.random() * 40 + 40), // 40-80%
+        windSpeed: Math.round(Math.random() * 20 + 5), // 5-25 km/h
+        windDirection: Math.round(Math.random() * 360), // 0-360°
+        precipitation: Math.round(Math.random() * 5), // 0-5 mm
+        conditions: ['clear', 'cloudy', 'rainy', 'stormy'][Math.floor(Math.random() * 4)],
+        icon: '01d'
+      });
     }
     
     return forecast;
@@ -277,46 +306,4 @@ export class GoogleWeatherAdapter implements UniversalWeatherAPI {
     
     return recommendations;
   }
-}
-
-// Support interfaces
-interface WeatherForecast {
-  location: {
-    address: string;
-    city: string;
-    country: string;
-    latitude: number;
-    longitude: number;
-  };
-  forecast: WeatherData[];
-}
-
-interface RouteWeatherQuery {
-  origin: { lat: number; lng: number };
-  destination: { lat: number; lng: number };
-  waypoints?: { lat: number; lng: number }[];
-}
-
-interface RouteWeatherData {
-  route: {
-    origin: { lat: number; lng: number };
-    destination: { lat: number; lng: number };
-    waypoints: { lat: number; lng: number }[];
-  };
-  weatherPoints: WeatherData[];
-  averageConditions: WeatherData;
-  hazards: string[];
-  recommendations: string[];
-}
-
-interface WeatherAlert {
-  id: string;
-  type: string;
-  severity: 'low' | 'moderate' | 'high' | 'extreme';
-  title: string;
-  description: string;
-  area: string;
-  startTime: Date;
-  endTime: Date;
-  coordinates: { lat: number; lng: number };
 }

@@ -157,7 +157,7 @@ export class GmailAdapter implements UniversalCommunicationAPI {
       this.accessToken = undefined;
     }, (data.expires_in - 60) * 1000); // Refresh 1 minute before expiry
 
-    return this.accessToken;
+    return this.accessToken!;
   }
 
   private formatEmailForGmail(params: EmailParams): string {
@@ -190,16 +190,14 @@ export class GmailAdapter implements UniversalCommunicationAPI {
     if (filters.from) queryParts.push(`from:${filters.from}`);
     if (filters.to) queryParts.push(`to:${filters.to}`);
     if (filters.subject) queryParts.push(`subject:"${filters.subject}"`);
-    if (filters.hasAttachment) queryParts.push('has:attachment');
-    if (filters.isUnread) queryParts.push('is:unread');
+    if (filters.hasAttachments) queryParts.push('has:attachment');
+    if (filters.isRead === false) queryParts.push('is:unread');
     
-    if (filters.dateRange) {
-      if (filters.dateRange.from) {
-        queryParts.push(`after:${filters.dateRange.from.toISOString().split('T')[0]}`);
-      }
-      if (filters.dateRange.to) {
-        queryParts.push(`before:${filters.dateRange.to.toISOString().split('T')[0]}`);
-      }
+    if (filters.dateFrom) {
+      queryParts.push(`after:${filters.dateFrom.toISOString().split('T')[0]}`);
+    }
+    if (filters.dateTo) {
+      queryParts.push(`before:${filters.dateTo.toISOString().split('T')[0]}`);
     }
 
     return queryParts.join(' ');
@@ -225,12 +223,16 @@ export class GmailAdapter implements UniversalCommunicationAPI {
         threadId: message.threadId,
         subject: this.getHeader(message.payload.headers, 'Subject') || '',
         from: this.getHeader(message.payload.headers, 'From') || '',
-        to: this.getHeader(message.payload.headers, 'To') || '',
-        date: new Date(parseInt(message.internalDate)),
+        to: [this.getHeader(message.payload.headers, 'To') || ''],
         body: this.extractEmailBody(message.payload),
-        isRead: !message.labelIds?.includes('UNREAD'),
-        hasAttachment: message.payload.parts?.some((part: any) => part.filename) || false,
-        labels: message.labelIds || []
+        isHTML: false, // Gmail API payload processing would determine this more accurately
+        attachments: message.payload.parts?.filter((part: any) => part.filename).map((part: any) => ({
+          filename: part.filename,
+          contentType: part.mimeType || 'application/octet-stream',
+          size: part.body?.size || 0
+        })) || [],
+        date: new Date(parseInt(message.internalDate)),
+        isRead: !message.labelIds?.includes('UNREAD')
       };
 
     } catch (error) {
