@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { useEffect, useRef } from 'react';
-import { Vehicle } from '@/types';
+import { Vehicle } from '@/app/fleet-management/page';
 
 // Fix for default icon issue with Webpack
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -24,13 +24,11 @@ interface FleetMapProps {
 const MapFocusController = ({ vehicle }: { vehicle: Vehicle | null }) => {
   const map = useMap();
   useEffect(() => {
-    if (vehicle) {
+    if (vehicle && vehicle.lat && vehicle.lng && typeof vehicle.lat === 'number' && typeof vehicle.lng === 'number') {
       map.flyTo([vehicle.lat, vehicle.lng], 15, {
         animate: true,
         duration: 1,
       });
-      // This part is a bit tricky as we need a reference to the marker to open the popup.
-      // A simpler approach is to just center the map. The user can then click the marker.
     }
   }, [vehicle, map]);
 
@@ -40,6 +38,13 @@ const MapFocusController = ({ vehicle }: { vehicle: Vehicle | null }) => {
 export function FleetMap({ vehicles, onVehicleClick, focusedVehicle }: FleetMapProps) {
   const defaultPosition: [number, number] = [46.770439, 23.591423]; // Default to Cluj-Napoca
 
+  // Filter vehicles that have valid coordinates
+  const vehiclesWithCoordinates = vehicles.filter(vehicle => 
+    vehicle.lat && vehicle.lng && 
+    typeof vehicle.lat === 'number' && 
+    typeof vehicle.lng === 'number'
+  );
+
   return (
     <MapContainer center={defaultPosition} zoom={7} style={{ height: '100%', width: '100%' }}>
       <TileLayer
@@ -47,10 +52,10 @@ export function FleetMap({ vehicles, onVehicleClick, focusedVehicle }: FleetMapP
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
       <MapFocusController vehicle={focusedVehicle} />
-      {vehicles.map(vehicle => (
+      {vehiclesWithCoordinates.map(vehicle => (
         <Marker 
           key={vehicle.id} 
-          position={[vehicle.lat, vehicle.lng]}
+          position={[vehicle.lat as number, vehicle.lng as number]}
           eventHandlers={{
             click: () => {
               onVehicleClick(vehicle);
