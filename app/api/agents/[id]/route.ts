@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 
@@ -6,14 +5,15 @@ export const dynamic = 'force-dynamic';
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
+    const { id } = context.params;
     const body = await request.json();
     const { status, performance } = body;
 
     const agent = await prisma.aIAgent.update({
-      where: { id: params.id },
+      where: { id: id },
       data: {
         ...(status && { status }),
         ...(performance !== undefined && { performance }),
