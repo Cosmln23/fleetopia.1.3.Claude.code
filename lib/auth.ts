@@ -16,23 +16,46 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   );
 }
 
-// Adaugă demo credentials provider pentru testing
+// Adaugă credentials provider cu utilizatori predefiniti
 providers.push(
   CredentialsProvider({
-    name: 'Demo Login',
+    name: 'Fleetopia Login',
     credentials: {
-      email: { label: 'Email', type: 'email', placeholder: 'demo@fleetopia.com' },
-      password: { label: 'Password', type: 'password', placeholder: 'demo123' },
+      email: { label: 'Email', type: 'email', placeholder: 'owner@fleetopia.com' },
+      password: { label: 'Password', type: 'password', placeholder: 'owner123' },
     },
     async authorize(credentials) {
-      // Demo login pentru testing - în producție va fi conectat la baza de date
-      if (credentials?.email === 'demo@fleetopia.com' && credentials?.password === 'demo123') {
+      // Utilizatori predefiniti - în viitor vor fi din baza de date
+      const users = [
+        {
+          id: 'owner-001',
+          email: 'owner@fleetopia.com',
+          password: 'owner123',
+          name: 'Fleet Owner',
+          role: 'OWNER'
+        },
+        {
+          id: 'editor-001', 
+          email: 'editor@fleetopia.com',
+          password: 'editor123',
+          name: 'Fleet Editor',
+          role: 'EDITOR'
+        }
+      ];
+
+      const user = users.find(u => 
+        u.email === credentials?.email && u.password === credentials?.password
+      );
+
+      if (user) {
         return {
-          id: 'demo-user-id',
-          email: 'demo@fleetopia.com',
-          name: 'Demo User',
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
         };
       }
+      
       return null;
     },
   })
@@ -45,9 +68,16 @@ export const authOptions: NextAuthOptions = {
     strategy: 'jwt',
   },
   callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = (user as any).role;
+      }
+      return token;
+    },
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub as string;
+        (session.user as any).role = token.role;
       }
       return session;
     },
