@@ -63,6 +63,54 @@ export interface RouteProgress {
   trafficDelay: number;
 }
 
+// GPS-related missing types
+export interface GeofenceParams {
+  name: string;
+  coordinates: { lat: number; lng: number }[];
+  radius?: number;
+  type: 'circle' | 'polygon';
+}
+
+export interface Geofence {
+  id: string;
+  name: string;
+  coordinates: { lat: number; lng: number }[];
+  radius?: number;
+  type: 'circle' | 'polygon';
+  isActive: boolean;
+}
+
+export interface GPSAlert {
+  id: string;
+  vehicleId: string;
+  type: 'speed' | 'geofence' | 'maintenance' | 'fuel';
+  message: string;
+  severity: 'low' | 'medium' | 'high';
+  timestamp: Date;
+  acknowledged: boolean;
+}
+
+export interface FuelData {
+  vehicleId: string;
+  totalConsumption: number;
+  averageConsumption: number;
+  consumptionHistory: {
+    date: Date;
+    consumption: number;
+    distance: number;
+  }[];
+}
+
+export interface DriverMetrics {
+  driverId: string;
+  totalDistance: number;
+  avgSpeed: number;
+  fuelEfficiency: number;
+  safetyScore: number;
+  incidents: number;
+  period: TimeRange;
+}
+
 // ===== UNIVERSAL FREIGHT EXCHANGE INTERFACE =====
 export interface UniversalFreightAPI {
   // Cargo search & management
@@ -104,6 +152,97 @@ export interface CargoOffer {
   company: CompanyDetails;
   requirements: string[];
   status: CargoStatus;
+}
+
+// Freight-related missing types
+export interface CargoOfferPost {
+  title: string;
+  origin: LocationDetails;
+  destination: LocationDetails;
+  weight: number;
+  volume?: number;
+  cargoType: string;
+  loadingDate: Date;
+  deliveryDate: Date;
+  price: number;
+  currency: string;
+  requirements: string[];
+}
+
+export interface CargoOfferResponse {
+  id: string;
+  status: 'posted' | 'failed';
+  message?: string;
+}
+
+export interface CargoBid {
+  id: string;
+  cargoId: string;
+  bidderId: string;
+  price: number;
+  proposedDeliveryDate: Date;
+  message?: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  createdAt: Date;
+}
+
+export interface TransportSearchFilters {
+  origin?: string;
+  destination?: string;
+  vehicleType?: string[];
+  capacity?: { min?: number; max?: number };
+  availableFrom?: Date;
+  availableTo?: Date;
+  maxPrice?: number;
+}
+
+export interface TransportOffer {
+  id: string;
+  vehicleType: string;
+  capacity: number;
+  origin: LocationDetails;
+  destination: LocationDetails;
+  availableFrom: Date;
+  availableTo: Date;
+  pricePerKm: number;
+  company: CompanyDetails;
+  equipment: string[];
+}
+
+export interface TransportOfferPost {
+  vehicleType: string;
+  capacity: number;
+  origin: LocationDetails;
+  destination: LocationDetails;
+  availableFrom: Date;
+  availableTo: Date;
+  pricePerKm: number;
+  equipment: string[];
+}
+
+export interface TransportOfferResponse {
+  id: string;
+  status: 'posted' | 'failed';
+  message?: string;
+}
+
+export interface FreightMessageParams {
+  cargoId: string;
+  recipientId: string;
+  message: string;
+  type: 'inquiry' | 'bid' | 'negotiation' | 'confirmation';
+}
+
+export interface ContractDetails {
+  id: string;
+  cargoId: string;
+  transporterId: string;
+  shipperId: string;
+  agreedPrice: number;
+  pickupDate: Date;
+  deliveryDate: Date;
+  terms: string;
+  status: 'signed' | 'in_progress' | 'completed' | 'cancelled';
 }
 
 // ===== UNIVERSAL COMMUNICATION INTERFACE =====
@@ -226,6 +365,53 @@ export interface WeatherData {
   conditions: string;
   icon: string;
   timestamp: Date;
+}
+
+// Weather-related missing types
+export interface WeatherForecast {
+  location: LocationDetails;
+  forecast: {
+    date: Date;
+    temperature: { min: number; max: number };
+    humidity: number;
+    windSpeed: number;
+    windDirection: number;
+    precipitation: number;
+    conditions: string;
+    icon: string;
+  }[];
+}
+
+export interface RouteWeatherQuery {
+  route: {
+    origin: { lat: number; lng: number };
+    destination: { lat: number; lng: number };
+    waypoints?: { lat: number; lng: number }[];
+  };
+  departureTime: Date;
+}
+
+export interface RouteWeatherData {
+  route: RouteWeatherQuery['route'];
+  weatherPoints: {
+    location: { lat: number; lng: number };
+    weather: WeatherData;
+    estimatedTime: Date;
+  }[];
+  alerts: WeatherAlert[];
+}
+
+export interface WeatherAlert {
+  id: string;
+  type: 'storm' | 'fog' | 'ice' | 'snow' | 'wind' | 'rain';
+  severity: 'low' | 'medium' | 'high' | 'extreme';
+  title: string;
+  description: string;
+  affectedArea: {
+    coordinates: { lat: number; lng: number }[];
+  };
+  validFrom: Date;
+  validTo: Date;
 }
 
 // ===== UNIVERSAL FUEL INTERFACE =====

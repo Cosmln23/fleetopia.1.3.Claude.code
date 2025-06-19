@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     console.error('Traffic API error:', error);
     return NextResponse.json(
       { 
-        success: false, 
+      success: false,
         error: 'Failed to fetch traffic data'
       },
       { status: 500 }
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
     console.error('Traffic POST error:', error);
     return NextResponse.json(
       { 
-        success: false, 
+      success: false,
         error: 'Failed to update traffic data'
       },
       { status: 500 }

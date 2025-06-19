@@ -261,29 +261,4 @@ export class GmailAdapter implements UniversalCommunicationAPI {
   }
 }
 
-// Support interfaces
-interface EmailMessage {
-  id: string;
-  threadId: string;
-  subject: string;
-  from: string;
-  to: string;
-  date: Date;
-  body: string;
-  isRead: boolean;
-  hasAttachment: boolean;
-  labels: string[];
-}
-
-interface EmailFilters {
-  from?: string;
-  to?: string;
-  subject?: string;
-  hasAttachment?: boolean;
-  isUnread?: boolean;
-  dateRange?: {
-    from?: Date;
-    to?: Date;
-  };
-  limit?: number;
-}
+// Local interfaces removed - now imported from '../universal-api-bridge'

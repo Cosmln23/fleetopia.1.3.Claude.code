@@ -1,5 +1,5 @@
 // Basic Fuel API Adapter - CHEAP Implementation
-import { UniversalFuelAPI, APIResponse, FuelStation, FuelPriceHistory, FuelRecommendation, FuelOptimization, LocationQuery, APICredentials, FuelType } from '../universal-api-bridge';
+import { UniversalFuelAPI, APIResponse, FuelStation, FuelPriceHistory, FuelRecommendation, FuelOptimization, FuelOptimizationParams, RouteQuery, FuelPrices, LocationQuery, APICredentials, FuelType } from '../universal-api-bridge';
 
 export class BasicFuelAdapter implements UniversalFuelAPI {
   private apiKey: string;
