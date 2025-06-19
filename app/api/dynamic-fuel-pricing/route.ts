@@ -2,7 +2,7 @@
 // API endpoints pentru optimizarea dinamică a prețurilor de combustibil
 
 import { NextRequest, NextResponse } from 'next/server';
-import { DynamicFuelPricingOptimizer } from '../../../lib/dynamic-fuel-pricing.ts.backup';
+import { DynamicFuelPricingOptimizer } from '../../../lib/dynamic-fuel-pricing';
 
 // Initialize Dynamic Pricing Optimizer instance
 let dynamicPricingOptimizer: DynamicFuelPricingOptimizer | null = null;

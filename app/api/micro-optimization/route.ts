@@ -2,7 +2,7 @@
 // API endpoints pentru micro-optimizarea eficienței combustibilului
 
 import { NextRequest, NextResponse } from 'next/server';
-import { MicroOptimizationFuelEngine } from '../../../lib/micro-optimization-fuel-engine.ts.backup';
+import { MicroOptimizationFuelEngine } from '../../../lib/micro-optimization-fuel-engine';
 
 // Initialize Micro-Optimization Engine instance
 let microOptimizationEngine: MicroOptimizationFuelEngine | null = null;

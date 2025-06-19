@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { createApiHandler, apiResponse } from '@/lib/api-helpers';
 import { rateLimiters } from '@/lib/rate-limit';
 import { dbHealthCheck, getPerformanceMetrics } from '@/lib/db-utils';
-import { cache } from '@/lib/cache.ts.backup';
+import { cache } from '@/lib/cache';
 
 // GET system health status
 export const GET = createApiHandler({
