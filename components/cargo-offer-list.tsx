@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CargoOffer as PrismaCargoOffer } from '@prisma/client';
 import { Star, MapPin, ArrowRight, Weight, Package, Calendar, Clock, FileText, Check, MessageSquare, FileEdit, Trash2, Hand } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 
 type CargoOffer = PrismaCargoOffer & {
   acceptedByUserId?: string | null;
@@ -34,7 +34,7 @@ const CargoOfferList = React.memo(function CargoOfferList({
   setOfferToDelete,
   setOfferToAssign
 }: CargoOfferListProps) {
-  const { data: session } = useSession();
+  const { user, isSignedIn } = useUser();
 
   // Memoize user ID to prevent unnecessary re-renders
   const userId = useMemo(() => session?.user?.id, [session?.user?.id]);

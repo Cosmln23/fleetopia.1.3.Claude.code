@@ -8,7 +8,7 @@ import { Navigation } from '@/components/navigation';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import AuthProvider from '@/components/AuthProvider';
+import { ClerkProvider } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { ChatProvider } from '@/contexts/chat-provider';
 import { ChatManager } from '@/components/chat-manager';
@@ -34,7 +34,7 @@ export default function RootLayout({
           inter.className
         )}
       >
-        <AuthProvider>
+        <ClerkProvider>
           <DispatcherProvider>
             <ChatProvider>
               <ThemeProvider
@@ -52,7 +52,7 @@ export default function RootLayout({
               </ThemeProvider>
             </ChatProvider>
           </DispatcherProvider>
-        </AuthProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

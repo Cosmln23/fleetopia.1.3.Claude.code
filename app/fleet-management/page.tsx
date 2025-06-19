@@ -54,7 +54,7 @@ import { AddVehicleForm } from '@/components/add-vehicle-form';
 import Link from 'next/link';
 import { toast as sonnerToast } from 'sonner';
 import { useToast } from '@/components/ui/use-toast';
-import { useSession, signIn } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { useDispatcherContext } from '@/contexts/dispatcher-context';
 
 interface CargoOffer {
@@ -103,7 +103,7 @@ interface CargoDetails extends CargoOffer {
 }
 
 export default function FleetManagementPage() {
-  const { data: session, status } = useSession();
+  const { user, isSignedIn, isLoaded } = useUser();
   const { refreshAnalysis } = useDispatcherContext();
   
   // Start with ZERO vehicles and no loading/error state
@@ -128,7 +128,7 @@ export default function FleetManagementPage() {
 
   // The ONLY function that fetches data
   const fetchVehicleData = useCallback(async () => {
-    if (!session) {
+    if (!isSignedIn || !user?.id) {
         toast({ title: "Authentication Error", description: "You must be logged in.", variant: "destructive" });
         return;
     }
@@ -149,7 +149,7 @@ export default function FleetManagementPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [session, toast]);
+  }, [isSignedIn, user?.id, toast]);
 
   // This useEffect ONLY reacts to changes in the vehicles list to update stats.
   // It does NOT fetch data.
@@ -476,15 +476,14 @@ export default function FleetManagementPage() {
     );
   };
 
-  if (status === 'loading') {
-    return <div className="p-8">Loading session...</div>;
+  if (!isLoaded) {
+    return <div className="p-8">Loading...</div>;
   }
 
-  if (!session) {
+  if (!isSignedIn) {
     return (
         <div className="flex flex-col items-center justify-center h-full">
             <p className="mb-4">Please sign in to manage your fleet.</p>
-            <Button onClick={() => signIn()}>Sign In</Button>
         </div>
     );
   }

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -23,7 +23,7 @@ interface ChatDialogProps {
 }
 
 export const ChatDialog: React.FC<ChatDialogProps> = ({ offer, isOpen, onClose }) => {
-  const { data: session } = useSession();
+  const { user, isSignedIn } = useUser();
   const { toast } = useToast();
   const [messages, setMessages] = useState<MessageWithSender[]>([]);
   const [newMessage, setNewMessage] = useState('');

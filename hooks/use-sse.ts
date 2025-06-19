@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 
 interface SSEEventHandler {
   [event: string]: (data: any) => void;
 }
 
 export function useSSE(url: string, eventHandlers: SSEEventHandler) {
-  const { data: session } = useSession();
+  const { user, isSignedIn } = useUser();
   const eventSourceRef = useRef<EventSource | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountedRef = useRef(false);

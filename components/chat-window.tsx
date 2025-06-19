@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
@@ -21,7 +21,7 @@ interface ChatWindowProps {
 }
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
-  const { data: session } = useSession();
+  const { user, isSignedIn } = useUser();
   const { toast } = useToast();
   const { closeChat } = useChat();
   const [messages, setMessages] = useState<MessageWithSender[]>([]);

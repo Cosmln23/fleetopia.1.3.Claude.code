@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { DispatcherAnalysis, DispatcherSuggestion } from '@/lib/dispatcher-types';
 import { useSSE } from '@/hooks/use-sse';
 import { useToast } from '@/components/ui/use-toast';
@@ -148,7 +148,7 @@ interface DispatcherProviderProps {
 
 export function DispatcherProvider({ children }: DispatcherProviderProps) {
   const [state, dispatch] = useReducer(dispatcherReducer, initialState);
-  const { data: session } = useSession();
+  const { user, isSignedIn } = useUser();
   const { toast } = useToast();
 
   // Real-time notifications via SSE
@@ -178,7 +178,7 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
   useSSE('/api/dispatcher/events', sseEventHandlers);
 
   const refreshAnalysis = useCallback(async () => {
-    if (!session?.user?.id || !state.isDispatcherActive) return;
+    if (!isSignedIn || !user?.id || !state.isDispatcherActive) return;
 
     dispatch({ type: 'SET_LOADING', payload: true });
 
@@ -232,10 +232,10 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
       }});
       dispatch({ type: 'SET_MESSAGE', payload: 'Dispatcher temporarily offline.' });
     }
-  }, [session?.user?.id, state.isDispatcherActive]);
+  }, [user?.id, state.isDispatcherActive]);
 
   const acceptSuggestion = useCallback(async (suggestionId: string): Promise<boolean> => {
-    if (!session?.user?.id) return false;
+    if (!isSignedIn || !user?.id) return false;
 
     try {
       const response = await fetch('/api/dispatcher/accept', {
@@ -251,29 +251,77 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
         return false;
       }
       
-      if (result.success) {
-        dispatch({ type: 'ACCEPT_SUGGESTION', payload: { suggestionId } });
-        // Refresh data after accepting suggestion to show updated vehicle/cargo states
-        setTimeout(refreshAnalysis, 1000);
-        return true;
-      }
-      return false;
+      // Remove the accepted suggestion from local state
+      dispatch({ type: 'ACCEPT_SUGGESTION', payload: { suggestionId } });
+      
+      toast({
+        title: "✅ Suggestion Accepted",
+        description: result.message || "Task has been queued for execution",
+        className: "bg-green-500 text-white",
+      });
+      
+      return true;
     } catch (error) {
       console.error('Error accepting suggestion:', error);
       return false;
     }
-  }, [session?.user?.id, refreshAnalysis]);
+  }, [user?.id, toast]);
+
+  // Auto-refresh analysis periodically
+  useEffect(() => {
+    if (!isSignedIn || !user?.id) return;
+
+    refreshAnalysis();
+    
+    const interval = setInterval(() => {
+      if (state.isDispatcherActive) {
+        refreshAnalysis();
+      }
+    }, 30000); // Refresh every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user?.id, refreshAnalysis]);
+
+  // Load alerts on mount
+  useEffect(() => {
+    const loadAlerts = async () => {
+      if (!isSignedIn || !user?.id) return;
+      
+      // Load system alerts logic here if needed
+    };
+    
+    loadAlerts();
+  }, [user?.id]);
+
+  // Initialize dispatcher on mount
+  useEffect(() => {
+    if (isSignedIn && user?.id && state.isDispatcherActive) {
+      refreshAnalysis();
+    }
+  }, [isSignedIn, user?.id, state.isDispatcherActive, refreshAnalysis]);
+
+  // Handle user changes
+  useEffect(() => {
+    if (!isSignedIn || !user?.id) {
+      dispatch({ type: 'SET_ANALYSIS', payload: null });
+      dispatch({ type: 'SET_MESSAGE', payload: 'Please sign in to access dispatcher.' });
+      dispatch({ type: 'SET_ALERTS', payload: [] });
+    }
+  }, [isSignedIn, user?.id]);
 
   const toggleDispatcher = useCallback((active: boolean) => {
     dispatch({ type: 'TOGGLE_DISPATCHER', payload: active });
-    if (active) {
+    if (active && isSignedIn && user?.id) {
       refreshAnalysis();
     }
-  }, [refreshAnalysis]);
+  }, [isSignedIn, user?.id, refreshAnalysis]);
 
   const getTopSuggestions = (count: number = 3): DispatcherSuggestion[] => {
-    if (!state.analysis) return [];
-    return state.analysis.suggestions.slice(0, count);
+    if (!state.analysis?.suggestions) return [];
+    
+    return state.analysis.suggestions
+      .sort((a, b) => b.priority - a.priority)
+      .slice(0, count);
   };
 
   const markOpportunitiesSeen = useCallback(() => {
@@ -282,52 +330,21 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
 
   const toggleLiveNotifications = useCallback((enabled: boolean) => {
     dispatch({ type: 'TOGGLE_LIVE_NOTIFICATIONS', payload: enabled });
-  }, []);
-
-  const fetchAlerts = useCallback(async () => {
-    if (!session?.user?.id) return;
-
-    try {
-      const response = await fetch('/api/dispatcher/alerts');
-      if (!response.ok) {
-        throw new Error('Failed to fetch alerts');
-      }
-      
-      const alerts = await response.json();
-      dispatch({ type: 'SET_ALERTS', payload: alerts });
-    } catch (error) {
-      console.error("Failed to fetch alerts:", error);
+    
+    if (enabled) {
+      toast({
+        title: "🔔 Live Notifications Enabled",
+        description: "You'll receive real-time updates about new opportunities",
+      });
+    } else {
+      toast({
+        title: "🔕 Live Notifications Disabled",
+        description: "You won't receive real-time notifications",
+      });
     }
-  }, [session]);
+  }, [toast]);
 
-  // Auto-refresh dispatcher data
-  useEffect(() => {
-    if (session?.user?.id && state.isDispatcherActive) {
-      refreshAnalysis();
-    }
-  }, [session?.user?.id, state.isDispatcherActive, refreshAnalysis]);
-
-  // Handle session changes
-  useEffect(() => {
-    if (!session?.user?.id) {
-      dispatch({ type: 'SET_ANALYSIS', payload: {
-        availableVehicles: 0,
-        newOffers: 0,
-        todayProfit: 0,
-        suggestions: [],
-        alerts: ['Please log in to access dispatcher features']
-      }});
-      dispatch({ type: 'SET_MESSAGE', payload: 'Please log in to activate AI dispatcher' });
-    }
-  }, [session]);
-
-  // Prevent hydration issues - only run on client
-  const [isClient, setIsClient] = React.useState(false);
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  const contextValue: DispatcherContextType = {
+  const value: DispatcherContextType = {
     state,
     dispatch,
     refreshAnalysis,
@@ -338,26 +355,8 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
     toggleLiveNotifications
   };
 
-  // Don't render until client-side hydration is complete
-  if (!isClient) {
-    return (
-      <DispatcherContext.Provider value={{
-        state: initialState,
-        dispatch: () => {},
-        refreshAnalysis: async () => {},
-        acceptSuggestion: async () => false,
-        toggleDispatcher: () => {},
-        getTopSuggestions: () => [],
-        markOpportunitiesSeen: () => {},
-        toggleLiveNotifications: () => {}
-      }}>
-        {children}
-      </DispatcherContext.Provider>
-    );
-  }
-
   return (
-    <DispatcherContext.Provider value={contextValue}>
+    <DispatcherContext.Provider value={value}>
       {children}
     </DispatcherContext.Provider>
   );

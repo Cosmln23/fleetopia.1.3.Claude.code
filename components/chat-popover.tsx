@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CargoOffer as PrismaCargoOffer } from '@prisma/client';
 import { useChat } from '@/contexts/chat-provider';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from './ui/scroll-area';
 import { MessageSquare } from 'lucide-react';
 
@@ -12,7 +12,7 @@ type CargoOffer = PrismaCargoOffer & {
 }
 
 export function ChatPopover({ children }: { children: React.ReactNode }) {
-    const { data: session } = useSession();
+    const { user, isSignedIn } = useUser();
     const [conversations, setConversations] = useState<CargoOffer[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const { openChat } = useChat();

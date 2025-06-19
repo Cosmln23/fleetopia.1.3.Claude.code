@@ -63,7 +63,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { AssignOfferDialog } from '@/components/assign-offer-dialog';
-import { useSession } from 'next-auth/react';
+import { useUser } from '@clerk/nextjs';
 import { CargoOffer } from '@prisma/client';
 import { CargoOfferList } from "@/components/cargo-offer-list";
 import { useChat } from '@/contexts/chat-provider';
@@ -95,7 +95,7 @@ interface TransportRequest {
 export default function MarketplacePage() {
   const [activeTab, setActiveTab] = useState<'post-cargo' | 'find-cargo' | 'find-transport'>('find-cargo');
   const { toast } = useToast();
-  const { data: session } = useSession();
+  const { user, isSignedIn } = useUser();
   
   const [searchFilters, setSearchFilters] = useState({
     fromLocation: '',
@@ -140,7 +140,7 @@ export default function MarketplacePage() {
 
   const fetchCargoOffers = async (listType: string = 'all') => {
     // Don't fetch protected lists if user is not authenticated
-    if ((listType === 'my_offers' || listType === 'accepted_offers') && !session?.user?.id) {
+    if ((listType === 'my_offers' || listType === 'accepted_offers') && !isSignedIn) {
       setCargoOffers([]);
       setLoading(false);
       return;
@@ -177,7 +177,7 @@ export default function MarketplacePage() {
   // Add fetchTransportRequests function
   const fetchTransportRequests = async () => {
     // Only fetch if user is authenticated
-    if (!session?.user?.id) {
+    if (!isSignedIn || !user?.id) {
       setTransportRequests([]);
       return;
     }
@@ -316,7 +316,7 @@ export default function MarketplacePage() {
     if (!offerToDelete) return;
 
     // Check if user is still authenticated
-    if (!session?.user?.id) {
+    if (!isSignedIn || !user?.id) {
       toast({
         title: "Authentication Required",
         description: "Please refresh the page and log in again.",
@@ -475,7 +475,7 @@ export default function MarketplacePage() {
 
   const handleMarkDelivered = async (offerId: string) => {
     // Check if user is still authenticated
-    if (!session?.user?.id) {
+    if (!isSignedIn || !user?.id) {
       toast({
         title: "Authentication Required",
         description: "Please refresh the page and log in again.",
