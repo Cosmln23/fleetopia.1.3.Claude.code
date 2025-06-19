@@ -134,6 +134,79 @@ export interface EmailParams {
   variables?: Record<string, string>;
 }
 
+export interface EmailMessage {
+  id: string;
+  subject: string;
+  from: string;
+  to: string[];
+  cc?: string[];
+  bcc?: string[];
+  body: string;
+  isHTML: boolean;
+  attachments?: EmailAttachment[];
+  date: Date;
+  isRead: boolean;
+  threadId?: string;
+}
+
+export interface EmailAttachment {
+  filename: string;
+  contentType: string;
+  size: number;
+  content?: Buffer | string;
+  cid?: string;
+}
+
+export interface EmailFilters {
+  from?: string;
+  to?: string;
+  subject?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  isRead?: boolean;
+  hasAttachments?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+export interface EmailTemplate {
+  name: string;
+  subject: string;
+  body: string;
+  isHTML: boolean;
+  variables?: string[];
+}
+
+export interface SMSParams {
+  to: string;
+  message: string;
+  from?: string;
+}
+
+export interface WhatsAppParams {
+  to: string;
+  message: string;
+  type?: 'text' | 'media' | 'document';
+  mediaUrl?: string;
+}
+
+export interface NotificationParams {
+  to: string[];
+  title: string;
+  body: string;
+  icon?: string;
+  url?: string;
+  data?: Record<string, any>;
+}
+
+export interface NotificationTemplate {
+  name: string;
+  title: string;
+  body: string;
+  icon?: string;
+  variables?: string[];
+}
+
 // ===== UNIVERSAL WEATHER INTERFACE =====
 export interface UniversalWeatherAPI {
   getCurrentWeather(location: LocationQuery): Promise<APIResponse<WeatherData>>;
