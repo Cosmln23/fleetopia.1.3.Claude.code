@@ -101,10 +101,10 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({ offer, isOpen, onClose }
               <div
                 key={msg.id}
                 className={`flex items-start gap-3 ${
-                  msg.senderId === session.user.id ? 'justify-end' : 'justify-start'
+                  msg.senderId === session.user?.id ? 'justify-end' : 'justify-start'
                 }`}
               >
-                {msg.senderId !== session.user.id && (
+                {msg.senderId !== session.user?.id && (
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={msg.sender.image || ''} />
                     <AvatarFallback>{msg.sender.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
@@ -112,7 +112,7 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({ offer, isOpen, onClose }
                 )}
                 <div
                   className={`max-w-xs md:max-w-md p-3 rounded-lg ${
-                    msg.senderId === session.user.id
+                    msg.senderId === session.user?.id
                       ? 'bg-blue-600 text-white'
                       : 'bg-slate-700 text-slate-200'
                   }`}
@@ -122,10 +122,10 @@ export const ChatDialog: React.FC<ChatDialogProps> = ({ offer, isOpen, onClose }
                     {new Date(msg.createdAt).toLocaleTimeString()}
                   </p>
                 </div>
-                 {msg.senderId === session.user.id && (
+                 {msg.senderId === session.user?.id && (
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={session.user.image || ''} />
-                    <AvatarFallback>{session.user.name?.charAt(0).toUpperCase() || 'Me'}</AvatarFallback>
+                    <AvatarImage src={session.user?.image || ''} />
+                    <AvatarFallback>{session.user?.name?.charAt(0).toUpperCase() || 'Me'}</AvatarFallback>
                   </Avatar>
                 )}
               </div>
