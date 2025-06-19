@@ -16,6 +16,14 @@ interface DynamicField {
   description?: string;
 }
 
+interface Endpoint {
+  id: string;
+  name: string;
+  path: string;
+  method: string;
+  description: string;
+}
+
 interface APIIntegrationFormProps {
   onSubmit: (data: any) => void;
   onCancel?: () => void;
@@ -56,7 +64,7 @@ export function APIIntegrationForm({ onSubmit, initialData }: APIIntegrationForm
   );
 
   // Dynamic endpoints
-  const [endpoints, setEndpoints] = useState(
+  const [endpoints, setEndpoints] = useState<Endpoint[]>(
     initialData?.endpoints || [
       { id: 'endpoint-0', name: '', path: '', method: 'GET', description: '' }
     ]
