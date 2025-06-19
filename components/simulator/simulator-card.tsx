@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from 'react';
-import { Vehicle } from '@prisma/client';
+import { Vehicle, VehicleStatus } from '@prisma/client';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -26,10 +26,14 @@ export function SimulatorCard({ vehicle }: SimulatorCardProps) {
   const { toast } = useToast();
   const initialLocation = getInitialCoordinates(vehicle);
 
-  const [status, setStatus] = useState(vehicle.status);
+  const [status, setStatus] = useState<VehicleStatus>(vehicle.status);
   const [lat, setLat] = useState(initialLocation.lat.toString());
   const [lng, setLng] = useState(initialLocation.lng.toString());
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleStatusChange = (value: string) => {
+    setStatus(value as VehicleStatus);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,15 +86,19 @@ export function SimulatorCard({ vehicle }: SimulatorCardProps) {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor={`status-${vehicle.id}`} className="flex items-center"><Activity className="mr-2 h-4 w-4" />Status</Label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select value={status} onValueChange={handleStatusChange}>
               <SelectTrigger id={`status-${vehicle.id}`}>
                 <SelectValue placeholder="Select status" />
               </SelectTrigger>
               <SelectContent className="bg-gray-800 text-white border-gray-700">
-                <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="idle">Idle</SelectItem>
+                <SelectItem value="in_transit">In Transit</SelectItem>
+                <SelectItem value="en_route">En Route</SelectItem>
+                <SelectItem value="loading">Loading</SelectItem>
+                <SelectItem value="unloading">Unloading</SelectItem>
                 <SelectItem value="maintenance">Maintenance</SelectItem>
-                <SelectItem value="offline">Offline</SelectItem>
+                <SelectItem value="assigned">Assigned</SelectItem>
+                <SelectItem value="out_of_service">Out of Service</SelectItem>
               </SelectContent>
             </Select>
           </div>
