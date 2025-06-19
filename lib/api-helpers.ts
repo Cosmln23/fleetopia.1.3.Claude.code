@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { authOptions } from '@/lib/auth';
 import { applyRateLimit, rateLimiters, RateLimitError } from './rate-limit';
 
 interface ApiHandlerOptions {
@@ -37,7 +37,7 @@ export function createApiHandler(options: ApiHandlerOptions = {}) {
   return function withApiHandler(handler: ApiHandler) {
     return async function apiRouteHandler(
       request: NextRequest,
-      context?: { params?: Record<string, string> }
+      context: { params?: Record<string, string | string[]> }
     ): Promise<NextResponse> {
       try {
         // Apply rate limiting
