@@ -7,7 +7,7 @@ export async function GET() {
   try {
     let activeVehicles = 0;
     let aiAgentsOnline = 0;
-    let completedOffersToday = [];
+    let completedOffersToday: { price: number }[] = [];
     let totalVehicles = 0;
 
     try {
