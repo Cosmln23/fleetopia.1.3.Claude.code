@@ -3,12 +3,15 @@ import { prisma } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function PATCH(
-  request: Request,
-  context: { params: { id: string } }
-) {
+interface RouteContext {
+  params: {
+    id: string;
+  };
+}
+
+export async function PATCH(request: Request, { params }: RouteContext) {
   try {
-    const { id } = context.params;
+    const { id } = params;
     const body = await request.json();
     const { status, performance } = body;
 
