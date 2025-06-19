@@ -1,18 +1,23 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createApiHandler, apiResponse } from '@/lib/api-helpers';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { vehicleQuerySchema, createVehicleSchema } from '@/lib/validations';
-import { rateLimiters } from '@/lib/rate-limit';
 import { dbUtils } from '@/lib/db-utils';
 import { Prisma } from '@prisma/client';
 
-export const GET = createApiHandler({
-  requireAuth: true,
-  rateLimiter: rateLimiters.search,
-  querySchema: vehicleQuerySchema
-})(async ({ session, query }) => {
+export async function GET(request: NextRequest) {
   try {
-    const { status, page, limit } = query!;
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const url = new URL(request.url);
+    const status = url.searchParams.get('status');
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
 
     // Get user's fleets with caching
@@ -21,13 +26,16 @@ export const GET = createApiHandler({
 
     // If user has no fleets, return empty array
     if (fleetIds.length === 0) {
-      return apiResponse.success({
-        vehicles: [],
-        pagination: {
-          page,
-          limit,
-          total: 0,
-          totalPages: 0
+      return NextResponse.json({
+        success: true,
+        data: {
+          vehicles: [],
+          pagination: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 0
+          }
         }
       });
     }
@@ -64,40 +72,69 @@ export const GET = createApiHandler({
       })
     ]);
 
-    return apiResponse.success({
-      vehicles,
-      pagination: {
-        page,
-        limit,
-        total: totalCount,
-        totalPages: Math.ceil(totalCount / limit)
+    return NextResponse.json({
+      success: true,
+      data: {
+        vehicles,
+        pagination: {
+          page,
+          limit,
+          total: totalCount,
+          totalPages: Math.ceil(totalCount / limit)
+        }
       }
     });
   } catch (error) {
     // If it's a known Prisma error for DB connection, return a default empty response
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P1001') {
-      return apiResponse.success({
-        vehicles: [],
-        pagination: {
-          page: 1,
-          limit: 20,
-          total: 0,
-          totalPages: 0
+      return NextResponse.json({
+        success: true,
+        data: {
+          vehicles: [],
+          pagination: {
+            page: 1,
+            limit: 20,
+            total: 0,
+            totalPages: 0
+          }
         }
       });
     }
 
     console.error('Failed to fetch vehicles:', error);
-    throw error;
+    return NextResponse.json(
+      { 
+        error: 'Internal server error', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      },
+      { status: 500 }
+    );
   }
-});
+}
 
-export const POST = createApiHandler({
-  requireAuth: true,
-  rateLimiter: rateLimiters.create,
-  bodySchema: createVehicleSchema
-})(async ({ session, body }) => {
+export async function POST(request: NextRequest) {
   try {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    
+    // Basic validation using zod schema
+    const validation = createVehicleSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { 
+          error: 'Validation failed', 
+          message: 'Invalid request body',
+          details: validation.error.errors 
+        },
+        { status: 400 }
+      );
+    }
+
     const {
       name,
       type,
@@ -108,7 +145,7 @@ export const POST = createApiHandler({
       lng,
       currentRoute,
       fuelConsumption
-    } = body!;
+    } = validation.data;
 
     // Check for duplicate license plate
     const existingVehicle = await prisma.vehicle.findFirst({
@@ -121,7 +158,10 @@ export const POST = createApiHandler({
     });
 
     if (existingVehicle) {
-      return apiResponse.conflict('A vehicle with this license plate already exists in your fleet');
+      return NextResponse.json(
+        { error: 'A vehicle with this license plate already exists in your fleet' },
+        { status: 409 }
+      );
     }
     
     // Find or create a fleet for the authenticated user
@@ -153,10 +193,19 @@ export const POST = createApiHandler({
       fleetId: fleet.id,
     }, session.user.id);
 
-    return apiResponse.success(newVehicle, 201);
+    return NextResponse.json({ 
+      success: true, 
+      data: newVehicle 
+    }, { status: 201 });
 
   } catch (error) {
     console.error('Failed to create vehicle:', error);
-    throw error;
+    return NextResponse.json(
+      { 
+        error: 'Internal server error', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      },
+      { status: 500 }
+    );
   }
-}); 
+} 

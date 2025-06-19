@@ -1,15 +1,11 @@
-import { NextRequest } from 'next/server';
-import { createApiHandler, apiResponse } from '@/lib/api-helpers';
-import { rateLimiters } from '@/lib/rate-limit';
+import { NextRequest, NextResponse } from 'next/server';
 import { dbHealthCheck, getPerformanceMetrics } from '@/lib/db-utils';
 import { cache } from '@/lib/cache';
 
 // GET system health status
-export const GET = createApiHandler({
-  rateLimiter: rateLimiters.general
-})(async ({ req }) => {
+export async function GET(request: NextRequest) {
   try {
-    const url = new URL(req.url);
+    const url = new URL(request.url);
     const includeMetrics = url.searchParams.get('metrics') === 'true';
 
     // Basic health check
@@ -42,37 +38,50 @@ export const GET = createApiHandler({
     // Determine overall health status
     const overallStatus = dbHealth.status === 'healthy' ? 'healthy' : 'unhealthy';
 
-    return apiResponse.success({
-      ...health,
-      status: overallStatus
+    return NextResponse.json({
+      success: true,
+      data: {
+        ...health,
+        status: overallStatus
+      }
     });
 
   } catch (error) {
     console.error('Health check failed:', error);
-    return apiResponse.error('Health check failed', 500);
+    return NextResponse.json(
+      { error: 'Health check failed' },
+      { status: 500 }
+    );
   }
-});
+}
 
 // POST to clear cache (admin operation)
-export const POST = createApiHandler({
-  rateLimiter: rateLimiters.create
-})(async ({ req }) => {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await request.json();
     const { action } = body;
 
     if (action === 'clear-cache') {
       cache.clear();
-      return apiResponse.success({ 
-        message: 'Cache cleared successfully',
-        timestamp: new Date().toISOString()
+      return NextResponse.json({ 
+        success: true,
+        data: {
+          message: 'Cache cleared successfully',
+          timestamp: new Date().toISOString()
+        }
       });
     }
 
-    return apiResponse.error('Invalid action', 400);
+    return NextResponse.json(
+      { error: 'Invalid action' },
+      { status: 400 }
+    );
 
   } catch (error) {
     console.error('Cache management failed:', error);
-    return apiResponse.error('Cache management failed', 500);
+    return NextResponse.json(
+      { error: 'Cache management failed' },
+      { status: 500 }
+    );
   }
-});
+}
