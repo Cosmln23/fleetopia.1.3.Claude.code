@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { routeOptimizationService } from '../../../lib/route-optimization-service';
+import { routeOptimizationService } from '../../../lib/route-optimization-service.ts.backup';
 
 // Initialize enhanced service
 routeOptimizationService.initialize().then(() => {

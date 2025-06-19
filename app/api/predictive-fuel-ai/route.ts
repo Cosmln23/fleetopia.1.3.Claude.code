@@ -4,7 +4,7 @@ import PredictiveFuelAI, {
   WeatherData, 
   PredictiveAnalytics,
   StrategicRecommendation 
-} from '@/lib/predictive-fuel-ai';
+} from '@/lib/predictive-fuel-ai.ts.backup';
 
 // Global instance of PredictiveFuelAI
 let predictiveAI: PredictiveFuelAI | null = null;
