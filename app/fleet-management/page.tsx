@@ -524,7 +524,7 @@ export default function FleetManagementPage() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md max-h-[80vh] overflow-y-auto">
-                  <AddVehicleForm vehicle={editingVehicle} onFormSubmit={onFormSubmit} />
+                  <AddVehicleForm initialData={editingVehicle} onVehicleAdded={onFormSubmit} />
                 </DialogContent>
               </Dialog>
             </div>
