@@ -682,7 +682,7 @@ export default function MarketplacePage() {
             <form onSubmit={handleUpdateCargo} className="space-y-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                    <Input name="title" value={offerToEdit.title} onChange={handleEditInputChange} placeholder="Offer Title" required className="bg-slate-700 border-slate-600"/>
-                   <Input name="companyName" value={offerToEdit.companyName} onChange={handleEditInputChange} placeholder="Company Name" className="bg-slate-700 border-slate-600"/>
+                   <Input name="companyName" value={offerToEdit.companyName || ''} onChange={handleEditInputChange} placeholder="Company Name" className="bg-slate-700 border-slate-600"/>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <Input name="fromCountry" value={offerToEdit.fromCountry} onChange={handleEditInputChange} placeholder="From" required className="bg-slate-700 border-slate-600"/>
