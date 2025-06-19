@@ -632,7 +632,7 @@ export default function APIIntegrationsPage() {
                         <p className="text-sm text-slate-400">Total Requests</p>
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-green-400">{providers.filter(p => p.status === 'connected').length}</p>
+                        <p className="text-2xl font-bold text-green-400">{providers.filter(p => p.status === 'configured' || p.status === 'built-in').length}</p>
                         <p className="text-sm text-slate-400">Active APIs</p>
                       </div>
                       <div>
