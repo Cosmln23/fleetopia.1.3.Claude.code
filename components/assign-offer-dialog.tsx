@@ -11,7 +11,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Loader, Truck, AlertTriangle } from 'lucide-react';
-import { CargoOffer, Vehicle } from '@/types'; // Assuming types are in @/types
+import { CargoOffer } from '@prisma/client';
+
+interface Vehicle {
+  id: string;
+  name: string;
+  licensePlate: string;
+  driverName: string;
+}
 
 interface AssignOfferDialogProps {
   offer: CargoOffer | null;
