@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 
 export async function DELETE(
   request: NextRequest,
@@ -10,10 +9,10 @@ export async function DELETE(
   try {
     console.log('DELETE API: Starting delete process');
     
-    const session = await getServerSession(authOptions);
-    console.log('DELETE API: Session obtained:', session?.user?.id ? 'Valid' : 'Invalid');
+    const { userId } = await auth();
+    console.log('DELETE API: Session obtained:', userId ? 'Valid' : 'Invalid');
     
-    if (!session || !session.user || !session.user.id) {
+    if (!userId) {
       console.log('DELETE API: Unauthorized - no valid session');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
@@ -34,7 +33,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Cargo offer not found' }, { status: 404 });
     }
 
-    if (cargoOffer.userId !== session.user.id) {
+    if (cargoOffer.userId !== userId) {
       console.log('DELETE API: Permission denied - user mismatch');
       return NextResponse.json({ error: 'You can only delete your own cargo offers' }, { status: 403 });
     }
@@ -111,5 +110,63 @@ export async function PUT(
   } catch (error) {
     console.error(`Error updating cargo offer:`, error);
     return NextResponse.json({ message: 'Error updating cargo offer' }, { status: 500 });
+  }
+}
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const cargoId = params.id;
+
+    const cargoOffer = await prisma.cargoOffer.findUnique({
+      where: { id: cargoId },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        origin: true,
+        destination: true,
+        weight: true,
+        price: true,
+        status: true,
+        cargoType: true,
+        pickupDate: true,
+        deliveryDate: true,
+        originPostalCode: true,
+        destinationPostalCode: true,
+        createdAt: true,
+        userId: true,
+      }
+    });
+
+    if (!cargoOffer) {
+      return NextResponse.json(
+        { error: 'Cargo offer not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: cargoOffer
+    });
+
+  } catch (error) {
+    console.error('Failed to fetch cargo offer:', error);
+    return NextResponse.json(
+      { 
+        error: 'Internal server error', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      },
+      { status: 500 }
+    );
   }
 } 
