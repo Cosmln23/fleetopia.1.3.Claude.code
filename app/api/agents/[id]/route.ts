@@ -4,12 +4,11 @@ import { prisma } from '@/lib/db';
 export const dynamic = 'force-dynamic';
 
 export async function PATCH(
-  // @ts-ignore - HACK: Bypass Vercel build error
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: any
 ) {
   try {
-    const { id } = params;
+    const { id } = context.params;
     const body = await request.json();
     const { status, performance } = body;
 
