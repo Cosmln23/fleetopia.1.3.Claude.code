@@ -84,7 +84,14 @@ export default function APIIntegrationsPage() {
   const [showLogsModal, setShowLogsModal] = useState(false);
 
   // Remove mock systemLogs, rely on real-time data
-  const [systemLogs] = useState([]);
+  const [systemLogs] = useState<Array<{
+    id: string;
+    timestamp: Date;
+    level: 'INFO' | 'WARNING' | 'ERROR';
+    api: string;
+    message: string;
+    details?: any;
+  }>>([]);
 
   // Monitor API errors from real-time endpoint
   React.useEffect(() => {
@@ -927,7 +934,7 @@ export default function APIIntegrationsPage() {
               onClick={(e) => e.stopPropagation()}
             >
               {(() => {
-                const api = providers.find(a => a.id === showSettingsModal);
+                const api = providers.find(a => `${a.category}_${a.provider}` === showSettingsModal);
                 if (!api) return null;
                 
                 return (
@@ -937,7 +944,7 @@ export default function APIIntegrationsPage() {
                         <Settings className="w-6 h-6 text-blue-400" />
                         <div>
                           <h3 className="text-lg font-bold text-white">{api.name} Settings</h3>
-                          <p className="text-slate-400 text-sm">{api.provider} • {api.type}</p>
+                          <p className="text-slate-400 text-sm">{api.provider} • {api.category}</p>
                         </div>
                       </div>
                       <Button 
@@ -957,7 +964,7 @@ export default function APIIntegrationsPage() {
                           <div className="space-y-4">
                             <div>
                               <label className="block text-sm text-slate-300 mb-2">Response Timeout (ms)</label>
-                              <input type="number" defaultValue={api.responseTime * 2} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" />
+                              <input type="number" defaultValue={(api.responseTime || 500) * 2} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" />
                             </div>
                             <div>
                               <label className="block text-sm text-slate-300 mb-2">Retry Attempts</label>
