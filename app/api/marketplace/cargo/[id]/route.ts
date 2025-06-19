@@ -5,8 +5,9 @@ import { authOptions } from '@/lib/auth';
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { params } = context;
   try {
     console.log('DELETE API: Starting delete process');
     
@@ -85,8 +86,9 @@ export async function DELETE(
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { params } = context;
   try {
     const resolvedParams = await params;
     const id = resolvedParams.id;

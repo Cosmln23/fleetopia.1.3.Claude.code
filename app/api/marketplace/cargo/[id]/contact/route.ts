@@ -4,8 +4,9 @@ import { prisma } from '@/lib/prisma';
 // POST to express interest in a cargo offer (for non-authenticated users)
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { params } = context;
   try {
     const resolvedParams = await params;
     const offerId = resolvedParams.id;

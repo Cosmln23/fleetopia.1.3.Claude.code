@@ -6,8 +6,9 @@ import { authOptions } from '@/lib/auth';
 // GET all chat messages for a specific cargo offer
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { params } = context;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
@@ -53,8 +54,9 @@ export async function GET(
 // POST a new chat message to a specific cargo offer
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  const { params } = context;
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
