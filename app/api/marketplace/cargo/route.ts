@@ -1,8 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { CargoOffer } from '@prisma/client';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { cargoQuerySchema, createCargoOfferSchema } from '@/lib/validations';
 import { dbUtils } from '@/lib/db-utils';
 import { dispatcherEvents } from '@/lib/dispatcher-events';

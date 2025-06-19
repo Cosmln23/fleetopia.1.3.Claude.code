@@ -1,16 +1,15 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { vehicleQuerySchema, createVehicleSchema } from '@/lib/validations';
 import { dbUtils } from '@/lib/db-utils';
 import { Prisma } from '@prisma/client';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { userId } = await auth();
     
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Get user's fleets with caching
-    const userFleets = await dbUtils.getUserFleets(session.user.id);
+    const userFleets = await dbUtils.getUserFleets(userId);
     const fleetIds = userFleets.map(fleet => fleet.id);
 
     // If user has no fleets, return empty array
@@ -114,9 +113,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { userId } = await auth();
     
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -152,7 +151,7 @@ export async function POST(request: NextRequest) {
       where: { 
         licensePlate,
         fleet: {
-          userId: session.user.id
+          userId: userId
         }
       }
     });
@@ -166,16 +165,16 @@ export async function POST(request: NextRequest) {
     
     // Find or create a fleet for the authenticated user
     let fleet = await prisma.fleet.findFirst({
-      where: { userId: session.user.id }
+      where: { userId: userId }
     });
     
     if (!fleet) {
       // Create a fleet for this user
       fleet = await prisma.fleet.create({
         data: {
-          name: `${session.user.name || 'User'}'s Fleet`,
+          name: `User's Fleet`,
           status: 'active',
-          userId: session.user.id,
+          userId: userId,
         },
       });
     }
@@ -191,7 +190,7 @@ export async function POST(request: NextRequest) {
       currentRoute,
       fuelConsumption,
       fleetId: fleet.id,
-    }, session.user.id);
+    }, userId);
 
     return NextResponse.json({ 
       success: true, 
