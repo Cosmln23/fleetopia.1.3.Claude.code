@@ -171,17 +171,17 @@ export default function APIIntegrationsPage() {
       const result = await response.json();
       setTestResults(prev => ({ ...prev, [integrationId]: result }));
       
-      // Update integration status based on test result
-      setIntegrations(prev => prev.map(integration => 
-        integration.id === integrationId 
+      // Update provider status based on test result
+      setProviders(prev => prev.map(provider => 
+        `${provider.category}_${provider.provider}` === integrationId 
           ? { 
-              ...integration, 
-              status: result.success ? 'connected' : 'error',
-              health: result.success ? Math.max(90, integration.health) : Math.min(50, integration.health),
-              responseTime: result.responseTime || integration.responseTime,
+              ...provider, 
+              status: result.success ? 'configured' : 'available',
+              health: result.success ? Math.max(90, provider.health || 50) : Math.min(50, provider.health || 50),
+              responseTime: result.responseTime || provider.responseTime || 0,
               lastTested: 'Just now'
             }
-          : integration
+          : provider
       ));
       
     } catch (error) {
