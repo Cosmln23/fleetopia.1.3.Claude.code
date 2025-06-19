@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,7 +46,8 @@ import {
   Trash2,
   ToggleRight,
   FileText,
-  Package
+  Package,
+  RefreshCw
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { AddVehicleForm } from '@/components/add-vehicle-form';
@@ -54,6 +55,7 @@ import Link from 'next/link';
 import { toast as sonnerToast } from 'sonner';
 import { useToast } from '@/components/ui/use-toast';
 import { useSession, signIn } from 'next-auth/react';
+import { useDispatcherContext } from '@/contexts/dispatcher-context';
 
 interface CargoOffer {
   id: string;
@@ -102,8 +104,11 @@ interface CargoDetails extends CargoOffer {
 
 export default function FleetManagementPage() {
   const { data: session, status } = useSession();
+  const { refreshAnalysis } = useDispatcherContext();
+  
+  // Start with ZERO vehicles and no loading/error state
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const [fleetStats, setFleetStats] = useState({
@@ -119,40 +124,36 @@ export default function FleetManagementPage() {
   const [cargoDetails, setCargoDetails] = useState<CargoOffer | null>(null);
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
 
-  const { toast: uiToast } = useToast();
+  const { toast } = useToast();
 
-  const fetchVehicleData = async () => {
-    if (!session) return; // Don't fetch if not authenticated
+  // The ONLY function that fetches data
+  const fetchVehicleData = useCallback(async () => {
+    if (!session) {
+        toast({ title: "Authentication Error", description: "You must be logged in.", variant: "destructive" });
+        return;
+    }
     
+    setIsLoading(true);
+    setError(null);
     try {
       const response = await fetch('/api/vehicles');
       if (!response.ok) {
-        throw new Error('Failed to fetch vehicle data');
+        throw new Error('Server responded with an error.');
       }
-      const vehicles = await response.json();
-      setVehicles(vehicles || []);
-      updateFleetStats(vehicles || []);
+      const data = await response.json();
+      setVehicles(data.vehicles || []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unknown error occurred');
-      console.error(err);
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
+      setError(errorMessage);
+      setVehicles([]); // On error, reset to zero
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [session, toast]);
 
+  // This useEffect ONLY reacts to changes in the vehicles list to update stats.
+  // It does NOT fetch data.
   useEffect(() => {
-    if (status === 'loading') return; // Wait for session to load
-    
-    if (session) {
-      fetchVehicleData(); // Fetch initial data if authenticated
-    } else {
-      setIsLoading(false); // Stop loading if not authenticated
-    }
-    // Removed auto-refresh to prevent constant reloading
-    // Data will refresh when user performs actions (add, edit, delete, status change)
-  }, [session, status]);
-
-  const updateFleetStats = (vehicles: Vehicle[]) => {
     const total = vehicles.length;
     const active = vehicles.filter(v => v.status === 'active').length;
     const idle = vehicles.filter(v => v.status === 'idle').length;
@@ -163,7 +164,7 @@ export default function FleetManagementPage() {
       idleVehicles: idle,
       maintenanceVehicles: maintenance,
     });
-  };
+  }, [vehicles]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -197,7 +198,6 @@ export default function FleetManagementPage() {
         throw new Error('Failed to update status.');
       }
       
-      // Remove vehicle from marketplace when status changes
       try {
         await fetch('/api/vehicles/available', {
           method: 'DELETE',
@@ -214,7 +214,7 @@ export default function FleetManagementPage() {
     sonnerToast.promise(promise, {
       loading: 'Updating status...',
       success: (data: any) => {
-        fetchVehicleData(); // Refresh data to show changes
+        fetchVehicleData();
         return `Vehicle status updated to ${status}.`;
       },
       error: 'Error updating status.',
@@ -226,36 +226,27 @@ export default function FleetManagementPage() {
   };
 
   const handleDelete = async (vehicleId: string) => {
-    const confirmed = window.confirm('Are you sure you want to delete this vehicle?');
-    if (!confirmed) return;
+    const originalVehicles = [...vehicles];
+    setVehicles(vehicles.filter(v => v.id !== vehicleId)); // Optimistic update
 
     try {
-      const response = await fetch(`/api/vehicles/${vehicleId}`, {
-        method: 'DELETE',
-      });
-      
-      if (response.ok) {
-        uiToast({
-          title: "Success",
-          description: "Vehicle deleted successfully.",
-        });
-        fetchVehicleData(); // Refresh the list
-      } else {
-        throw new Error('Failed to delete vehicle');
+      const response = await fetch(`/api/vehicles/${vehicleId}`, { method: 'DELETE' });
+      if (!response.ok) {
+        throw new Error('Failed to delete vehicle on the server.');
       }
+      toast({ title: "Success", description: "Vehicle deleted successfully." });
+      refreshAnalysis(); // Flip the switch
     } catch (error) {
-      uiToast({
-        title: "Error",
-        description: "Failed to delete vehicle.",
-        variant: "destructive",
-      });
+      toast({ title: "Error", description: "Failed to delete vehicle.", variant: "destructive" });
+      setVehicles(originalVehicles); // Revert on error
     }
   };
-
+  
   const onFormSubmit = () => {
-    fetchVehicleData();
     setAddVehicleOpen(false);
     setEditingVehicle(null);
+    fetchVehicleData(); // Fetch data AFTER adding/editing a vehicle
+    refreshAnalysis(); // Flip the switch
   };
 
   const handleCloseEdit = () => {
@@ -264,7 +255,7 @@ export default function FleetManagementPage() {
 
   const handleOpenDetails = async (vehicle: Vehicle) => {
     if (vehicle.status !== 'assigned' && vehicle.status !== 'active') {
-      uiToast({
+      toast({
         title: "No Details Available",
         description: "Cargo details are only available for assigned or active vehicles.",
       });
@@ -282,12 +273,12 @@ export default function FleetManagementPage() {
       const data = await response.json();
       setCargoDetails(data);
     } catch (error: any) {
-      uiToast({
+      toast({
         title: "Error fetching details",
         description: error.message,
         variant: "destructive"
       });
-      setVehicleForDetails(null); // Close modal on error
+      setVehicleForDetails(null);
     } finally {
       setIsDetailsLoading(false);
     }
@@ -317,18 +308,17 @@ export default function FleetManagementPage() {
 
       const result = await response.json();
       
-      uiToast({
+      toast({
         title: "Success!",
         description: `${vehicle.name} has been posted to Find Transport marketplace!`,
       });
       
-      // Refresh the vehicle list to update the marketplace status indicators
       fetchVehicleData();
       
       console.log('Vehicle posted as available:', result);
     } catch (error) {
       console.error('Error posting vehicle:', error);
-      uiToast({
+      toast({
         title: "Error",
         description: "Failed to post vehicle to marketplace.",
         variant: "destructive",
@@ -340,7 +330,6 @@ export default function FleetManagementPage() {
     const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
     const [isPostedToMarketplace, setIsPostedToMarketplace] = useState(false);
 
-    // Check if this vehicle is posted to marketplace
     useEffect(() => {
       const checkMarketplaceStatus = async () => {
         try {
@@ -356,7 +345,7 @@ export default function FleetManagementPage() {
       };
       
       checkMarketplaceStatus();
-    }, [vehicle.id, vehicle.status]); // Added vehicle.status to dependencies
+    }, [vehicle.id, vehicle.status]);
 
     return (
       <motion.div
@@ -367,7 +356,6 @@ export default function FleetManagementPage() {
         className="h-full"
       >
         <Card className="bg-slate-800/70 border-slate-600 hover:border-blue-500 transition-all duration-300 min-h-[320px] relative">
-          {/* Posted to Marketplace Indicator */}
           {isPostedToMarketplace && (
             <div className="absolute top-2 left-2 right-2 z-10">
               <div className="flex items-center justify-center space-x-1 bg-blue-600/90 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
@@ -377,7 +365,6 @@ export default function FleetManagementPage() {
             </div>
           )}
           
-          {/* Header with title and menu */}
           <div className="p-4 pb-3 pt-8">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center space-x-3">
@@ -433,7 +420,6 @@ export default function FleetManagementPage() {
             </div>
           </div>
 
-          {/* Driver Info */}
           <div className="px-4 py-3 border-t border-slate-700/50">
             <div className="flex items-center space-x-4">
               <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
@@ -446,7 +432,6 @@ export default function FleetManagementPage() {
             </div>
           </div>
 
-          {/* Vehicle Details */}
           <div className="px-4 py-3 space-y-3 flex-1">
             <div className="grid grid-cols-1 gap-4">
               <div className="bg-slate-900/50 rounded-lg p-3">
@@ -472,7 +457,6 @@ export default function FleetManagementPage() {
             </div>
           </div>
 
-          {/* Actions Footer */}
           <div className="p-4 pt-3 border-t border-slate-700/50">
             <div className="flex justify-between">
               <Link href={`/real-time?focus=${vehicle.id}`} passHref>
@@ -492,31 +476,16 @@ export default function FleetManagementPage() {
     );
   };
 
-  // Show loading while checking authentication
   if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
-          <p className="text-white">Loading...</p>
-        </div>
-      </div>
-    );
+    return <div className="p-8">Loading session...</div>;
   }
 
-  // Show login prompt if not authenticated
   if (!session) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center">
-        <div className="text-center">
-          <Truck className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-4">Fleet Management</h1>
-          <p className="text-slate-400 mb-6">Please sign in to access your fleet</p>
-          <Button onClick={() => signIn()} className="bg-blue-600 hover:bg-blue-700">
-            Sign In
-          </Button>
+        <div className="flex flex-col items-center justify-center h-full">
+            <p className="mb-4">Please sign in to manage your fleet.</p>
+            <Button onClick={() => signIn()}>Sign In</Button>
         </div>
-      </div>
     );
   }
 
@@ -524,7 +493,6 @@ export default function FleetManagementPage() {
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
       <div className="container mx-auto px-6 py-8">
         
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -540,34 +508,29 @@ export default function FleetManagementPage() {
               </p>
             </div>
             <div className="flex items-center space-x-4">
-              <Dialog open={isAddVehicleOpen} onOpenChange={setAddVehicleOpen}>
+              <Button onClick={fetchVehicleData} disabled={isLoading}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                {isLoading ? 'Loading...' : 'Refresh Data'}
+              </Button>
+              <Dialog open={isAddVehicleOpen || !!editingVehicle} onOpenChange={(isOpen) => {
+                  if (!isOpen) {
+                      setAddVehicleOpen(false);
+                      setEditingVehicle(null);
+                  }
+              }}>
                 <DialogTrigger asChild>
-                  <Button>
-                    <PlusCircle className="mr-2 h-4 w-4" /> Add Vehicle
+                  <Button onClick={() => setAddVehicleOpen(true)}>
+                      <PlusCircle className="mr-2 h-4 w-4" /> Add Vehicle
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md max-h-[80vh] overflow-y-auto">
-                  <AddVehicleForm onVehicleAdded={onFormSubmit} />
+                  <AddVehicleForm vehicle={editingVehicle} onFormSubmit={onFormSubmit} />
                 </DialogContent>
               </Dialog>
-
-              <Badge variant="outline" className="text-green-400 border-green-400">
-                <Activity className="w-4 h-4 mr-2" />
-                {fleetStats.activeVehicles} Active
-              </Badge>
-              <Badge variant="outline" className="text-yellow-400 border-yellow-400">
-                <Users className="w-4 h-4 mr-2" />
-                {fleetStats.idleVehicles} Idle
-              </Badge>
-               <Badge variant="outline" className="text-slate-400 border-slate-400">
-                <TrendingUp className="w-4 h-4 mr-2" />
-                {fleetStats.totalVehicles} Total
-              </Badge>
             </div>
           </div>
         </motion.div>
 
-        {/* Fleet Overview Stats */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -616,7 +579,6 @@ export default function FleetManagementPage() {
           </Card>
         </motion.div>
 
-        {/* Main Dashboard */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -630,7 +592,6 @@ export default function FleetManagementPage() {
               <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
             </TabsList>
 
-            {/* Overview Tab */}
             <TabsContent value="overview" className="space-y-6">
               {isLoading && (
                 <div className="text-center py-12 text-slate-400">
@@ -660,7 +621,6 @@ export default function FleetManagementPage() {
               )}
             </TabsContent>
 
-            {/* Routes Tab */}
             <TabsContent value="routes">
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
@@ -683,7 +643,6 @@ export default function FleetManagementPage() {
               </Card>
             </TabsContent>
 
-            {/* Analytics Tab */}
             <TabsContent value="analytics">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="bg-slate-800/50 border-slate-700">
@@ -739,7 +698,6 @@ export default function FleetManagementPage() {
               </div>
             </TabsContent>
 
-            {/* Maintenance Tab */}
             <TabsContent value="maintenance">
               <Card className="bg-slate-800/50 border-slate-700">
                 <CardHeader>
@@ -764,7 +722,6 @@ export default function FleetManagementPage() {
           </Tabs>
         </motion.div>
 
-        {/* Edit Vehicle Dialog */}
         <Dialog open={!!editingVehicle} onOpenChange={(isOpen) => !isOpen && handleCloseEdit()}>
           <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md max-h-[80vh] overflow-y-auto">
             <AddVehicleForm 
@@ -774,7 +731,6 @@ export default function FleetManagementPage() {
           </DialogContent>
         </Dialog>
 
-        {/* Details Modal */}
         <Dialog open={!!vehicleForDetails} onOpenChange={(isOpen) => !isOpen && handleCloseDetails()}>
           <DialogContent className="bg-slate-900 border-slate-700 text-white">
             <DialogHeader>

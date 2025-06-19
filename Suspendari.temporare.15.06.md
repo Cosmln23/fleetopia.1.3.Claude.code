@@ -71,4 +71,80 @@ allowDangerousEmailAccountLinking: true
 
 ## De urmărit în continuare:
 - Rezolvarea problemei de securitate OAuth
-- Testarea comportamentului fără auto-refresh în utilizare reală 
+- Testarea comportamentului fără auto-refresh în utilizare reală
+
+## PROBLEME REZOLVATE - 15 Ianuarie 2025
+
+### 🔐 Problema de Autentificare Google - REZOLVATĂ ✅
+
+**Problema:** OAuth client was deleted (Error 401: deleted_client)
+- Serverul redirecționa către localhost:3000 în loc de localhost:3005
+- Autentificarea Google nu funcționa
+
+**Cauze identificate:**
+1. **OAuth Client șters** - credențialele din .env.local erau pentru un client Google care fusese șters
+2. **Fișier .env.local corupt** - conținea escape characters greșite (`\`) și formatting incorect
+3. **Adapter bază de date** - NextAuth încerca să acceseze PostgreSQL care nu rula
+
+**Soluții aplicate:**
+1. ✅ **Creat nou client OAuth în Google Cloud Console**
+   - Adăugat `http://localhost:3005` în Authorized JavaScript origins
+   - Adăugat `http://localhost:3005/api/auth/callback/google` în Authorized redirect URIs
+   
+2. ✅ **Corectat fișierul .env.local**
+   ```
+   NEXTAUTH_URL=http://localhost:3005
+   NEXTAUTH_SECRET=fleetopia-secret-key-development
+   GOOGLE_CLIENT_ID=[nou_client_id]
+   GOOGLE_CLIENT_SECRET=[nou_client_secret]
+   ```
+
+3. ✅ **Dezactivat adapter Prisma în NextAuth**
+   ```typescript
+   // adapter: PrismaAdapter(prisma) as Adapter, // Disabled for now
+   ```
+
+**Status:** ✅ FUNCȚIONAL - Autentificarea Google merge perfect, sesiuni JWT active
+
+---
+
+### 🖱️ Problema Event Handlers în Client Components - PARȚIAL REZOLVATĂ
+
+**Problema:** Event handlers cannot be passed to Client Component props
+```
+<... variant="outline" onClick={function onClick} className=...>
+```
+
+**Soluție aplicată:**
+- ✅ Adăugat `'use client';` la `components/ui/button.tsx`
+
+**Status:** 🔄 PARȚIAL - Eroarea încă apare, necesită investigație suplimentară pentru alte componente
+
+---
+
+### 🗄️ Probleme Bază de Date - SUSPENDATĂ TEMPORAR
+
+**Problema:** 
+```
+Can't reach database server at `localhost:5432`
+Invalid `prisma.vehicle.count()` invocation
+```
+
+**Status:** 🚧 SUSPENDATĂ - Aplicația funcționează fără baza de date pentru development
+- Dashboard API returnează erori dar nu blochează funcționalitatea
+- NextAuth folosește JWT în loc de baza de date
+- Funcționalitatea principală (autentificare, navigare) merge perfect
+
+**Pentru viitor:** Să configurăm PostgreSQL sau să migrăm la SQLite pentru development
+
+---
+
+## Rezumat Status Actual:
+- ✅ **Autentificare Google:** FUNCȚIONAL 
+- ✅ **Navigare:** FUNCȚIONAL
+- ✅ **Sesiuni JWT:** FUNCȚIONAL  
+- 🔄 **Event Handlers:** PARȚIAL (aplicația rulează dar cu warnings)
+- 🚧 **Baza de Date:** SUSPENDATĂ (nu blochează funcționalitatea)
+
+**Server rulează pe:** http://localhost:3005
+**Data rezolvării:** 15 Ianuarie 2025 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -121,6 +121,18 @@ const DispatcherPanel = React.memo(function DispatcherPanel({ className = '', co
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Fetch initial data and set up auto-refresh only when this panel is mounted/visible
+  useEffect(() => {
+    // Initial fetch
+    refresh();
+
+    // Set up auto-refresh timer
+    const interval = setInterval(refresh, 5 * 60 * 1000); // Refresh every 5 minutes
+
+    // Clean up the timer when the component unmounts
+    return () => clearInterval(interval);
+  }, [refresh]);
 
   // Don't render until mounted to prevent hydration issues
   if (!isMounted) {

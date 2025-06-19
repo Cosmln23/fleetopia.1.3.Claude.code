@@ -6,7 +6,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { Adapter } from 'next-auth/adapters';
 
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma) as Adapter,
+  // adapter: PrismaAdapter(prisma) as Adapter, // Disabled for now - no database required
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID as string,

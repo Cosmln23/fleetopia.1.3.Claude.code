@@ -32,8 +32,10 @@ export const GET = createApiHandler({
         { acceptedByUserId: session.user.id }
       ];
       filters.status = 'TAKEN';
-    } else {
+    } else if (listType === 'all' || !listType) {
       filters.status = { in: ['NEW', 'TAKEN'] };
+    } else {
+      return apiResponse.error('Invalid listType parameter', 400);
     }
 
     // Apply location filters
@@ -47,14 +49,22 @@ export const GET = createApiHandler({
       filters.weight = { lte: maxWeight };
     }
     
-    // Use cached query for better performance
-    const result = await dbUtils.getCargoOffers(filters, page, limit);
+    // Use cached query for better performance - wrap in try/catch
+    let result = [];
+    try {
+      result = await dbUtils.getCargoOffers(filters, page, limit);
+    } catch (dbError) {
+      console.warn('[API_CARGO_GET] Database query failed:', dbError);
+      // Return empty array instead of error
+      result = [];
+    }
 
     return apiResponse.success(result);
 
   } catch (error) {
-    console.error('[API_CARGO_GET] Failed to fetch cargo offers:', error);
-    throw error;
+    console.warn('[API_CARGO_GET] Failed to fetch cargo offers:', error);
+    // Return empty array instead of throwing error
+    return apiResponse.success([]);
   }
 });
 

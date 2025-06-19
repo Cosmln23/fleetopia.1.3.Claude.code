@@ -4,6 +4,7 @@ import { createApiHandler, apiResponse } from '@/lib/api-helpers';
 import { vehicleQuerySchema, createVehicleSchema } from '@/lib/validations';
 import { rateLimiters } from '@/lib/rate-limit';
 import { dbUtils } from '@/lib/db-utils';
+import { Prisma } from '@prisma/client';
 
 export const GET = createApiHandler({
   requireAuth: true,
@@ -45,9 +46,7 @@ export const GET = createApiHandler({
           type: true,
           status: true,
           driverName: true,
-          fuelConsumption: true,
           createdAt: true,
-          currentRoute: true,
           lat: true,
           lng: true
         },
@@ -75,6 +74,19 @@ export const GET = createApiHandler({
       }
     });
   } catch (error) {
+    // If it's a known Prisma error for DB connection, return a default empty response
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P1001') {
+      return apiResponse.success({
+        vehicles: [],
+        pagination: {
+          page: 1,
+          limit: 20,
+          total: 0,
+          totalPages: 0
+        }
+      });
+    }
+
     console.error('Failed to fetch vehicles:', error);
     throw error;
   }

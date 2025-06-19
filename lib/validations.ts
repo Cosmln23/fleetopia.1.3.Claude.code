@@ -65,7 +65,7 @@ export const cargoQuerySchema = z.object({
   fromLocation: z.string().max(100).optional(),
   toLocation: z.string().max(100).optional(),
   maxWeight: z.string().optional().transform((val) => val ? parseFloat(val) : undefined),
-  listType: z.enum(['my_offers', 'accepted_offers', 'conversations']).optional(),
+  listType: z.enum(['all', 'my_offers', 'accepted_offers', 'conversations']).optional(),
 }).merge(paginationSchema);
 
 // Fleet validation schemas

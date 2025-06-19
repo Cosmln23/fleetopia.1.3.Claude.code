@@ -1,10 +1,11 @@
 'use client';
 
-import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { DispatcherAnalysis, DispatcherSuggestion } from '@/lib/dispatcher-types';
 import { useSSE } from '@/hooks/use-sse';
 import { useToast } from '@/components/ui/use-toast';
+import { SystemAlert } from '@prisma/client';
 
 interface DispatcherState {
   analysis: DispatcherAnalysis | null;
@@ -15,6 +16,7 @@ interface DispatcherState {
   personalizedMessage: string;
   hasNewOpportunities: boolean;
   liveNotificationsEnabled: boolean;
+  alerts: SystemAlert[];
 }
 
 type DispatcherAction =
@@ -25,9 +27,10 @@ type DispatcherAction =
   | { type: 'SET_MESSAGE'; payload: string }
   | { type: 'ACCEPT_SUGGESTION'; payload: { suggestionId: string } }
   | { type: 'REFRESH_DATA' }
-  | { type: 'NEW_OPPORTUNITY'; payload: any }
+  | { type: 'NEW_OPPORTUNITY'; payload?: any }
   | { type: 'MARK_OPPORTUNITIES_SEEN' }
-  | { type: 'TOGGLE_LIVE_NOTIFICATIONS'; payload: boolean };
+  | { type: 'TOGGLE_LIVE_NOTIFICATIONS'; payload: boolean }
+  | { type: 'SET_ALERTS'; payload: SystemAlert[] };
 
 const initialState: DispatcherState = {
   analysis: null,
@@ -37,7 +40,8 @@ const initialState: DispatcherState = {
   isDispatcherActive: true,
   personalizedMessage: 'Initializing AI dispatcher...',
   hasNewOpportunities: false,
-  liveNotificationsEnabled: true
+  liveNotificationsEnabled: true,
+  alerts: []
 };
 
 function dispatcherReducer(state: DispatcherState, action: DispatcherAction): DispatcherState {
@@ -114,6 +118,12 @@ function dispatcherReducer(state: DispatcherState, action: DispatcherAction): Di
         liveNotificationsEnabled: action.payload
       };
     
+    case 'SET_ALERTS':
+      return {
+        ...state,
+        alerts: action.payload
+      };
+    
     default:
       return state;
   }
@@ -176,27 +186,51 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
       // Fetch analysis from API
       const response = await fetch('/api/dispatcher/analysis');
       if (!response.ok) {
-        throw new Error('Failed to fetch analysis');
+        const errorData = await response.json().catch(() => ({}));
+        console.warn('Dispatcher API failed:', errorData.details || 'No details available');
+        // Set default empty analysis instead of error
+        dispatch({ type: 'SET_ANALYSIS', payload: {
+          availableVehicles: 0,
+          newOffers: 0,
+          todayProfit: 0,
+          suggestions: [],
+          alerts: ['Dispatcher data not available. Add vehicles to activate.']
+        }});
+        return;
       }
       
       const analysis = await response.json();
       dispatch({ type: 'SET_ANALYSIS', payload: analysis });
 
-      // Generate personalized message
-      const messageResponse = await fetch('/api/dispatcher/message', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ analysis })
-      });
-      
-      if (messageResponse.ok) {
-        const { message } = await messageResponse.json();
-        dispatch({ type: 'SET_MESSAGE', payload: message });
+      // Generate personalized message - skip if first call fails
+      try {
+        const messageResponse = await fetch('/api/dispatcher/message', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ analysis })
+        });
+        
+        if (messageResponse.ok) {
+          const { message } = await messageResponse.json();
+          dispatch({ type: 'SET_MESSAGE', payload: message });
+        } else {
+          dispatch({ type: 'SET_MESSAGE', payload: 'Dispatcher ready for analysis.' });
+        }
+      } catch (msgError) {
+        dispatch({ type: 'SET_MESSAGE', payload: 'Dispatcher ready for analysis.' });
       }
 
     } catch (error) {
-      console.error('Error refreshing dispatcher analysis:', error);
-      dispatch({ type: 'SET_ERROR', payload: 'Failed to load dispatcher data' });
+      console.warn('Network error in dispatcher:', error);
+      // Set default state instead of error
+      dispatch({ type: 'SET_ANALYSIS', payload: {
+        availableVehicles: 0,
+        newOffers: 0,
+        todayProfit: 0,
+        suggestions: [],
+        alerts: ['Dispatcher offline. Check connection.']
+      }});
+      dispatch({ type: 'SET_MESSAGE', payload: 'Dispatcher temporarily offline.' });
     }
   }, [session?.user?.id, state.isDispatcherActive]);
 
@@ -250,14 +284,26 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
     dispatch({ type: 'TOGGLE_LIVE_NOTIFICATIONS', payload: enabled });
   }, []);
 
+  const fetchAlerts = useCallback(async () => {
+    if (!session?.user?.id) return;
+
+    try {
+      const response = await fetch('/api/dispatcher/alerts');
+      if (!response.ok) {
+        throw new Error('Failed to fetch alerts');
+      }
+      
+      const alerts = await response.json();
+      dispatch({ type: 'SET_ALERTS', payload: alerts });
+    } catch (error) {
+      console.error("Failed to fetch alerts:", error);
+    }
+  }, [session]);
+
   // Auto-refresh dispatcher data
   useEffect(() => {
     if (session?.user?.id && state.isDispatcherActive) {
       refreshAnalysis();
-      
-      // Set up auto-refresh every 5 minutes
-      const interval = setInterval(refreshAnalysis, 5 * 60 * 1000);
-      return () => clearInterval(interval);
     }
   }, [session?.user?.id, state.isDispatcherActive, refreshAnalysis]);
 

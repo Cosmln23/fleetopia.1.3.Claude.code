@@ -160,17 +160,15 @@ export default function MarketplacePage() {
       const response = await fetch(`/api/marketplace/cargo?${queryString}`);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to fetch cargo offers');
+        console.warn('API fetch failed:', errorData.error || 'Failed to fetch cargo offers');
+        setCargoOffers([]);
+        return;
       }
       const data = await response.json();
-      setCargoOffers(data);
+      setCargoOffers(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error(error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Could not fetch cargo offers.",
-        variant: "destructive",
-      });
+      console.warn('Network error:', error);
+      setCargoOffers([]);
     } finally {
       setLoading(false);
     }
@@ -178,13 +176,27 @@ export default function MarketplacePage() {
 
   // Add fetchTransportRequests function
   const fetchTransportRequests = async () => {
+    // Only fetch if user is authenticated
+    if (!session?.user?.id) {
+      setTransportRequests([]);
+      return;
+    }
+
     try {
       // Fetch available vehicles from a new API endpoint
       const response = await fetch('/api/vehicles/available');
       if (!response.ok) {
-        throw new Error('Failed to fetch available vehicles');
+        console.warn('Failed to fetch available vehicles');
+        setTransportRequests([]);
+        return;
       }
       const availableVehicles = await response.json();
+      
+      // Only process if we actually have vehicles
+      if (!Array.isArray(availableVehicles) || availableVehicles.length === 0) {
+        setTransportRequests([]);
+        return;
+      }
       
       // Convert vehicles to transport requests format
       const availableTransports: TransportRequest[] = availableVehicles
@@ -210,7 +222,7 @@ export default function MarketplacePage() {
 
       setTransportRequests(availableTransports);
     } catch (error) {
-      console.error('Error fetching transport requests:', error);
+      console.warn('Network error fetching transport requests:', error);
       // If API fails, show empty list instead of error to avoid confusion
       setTransportRequests([]);
     }

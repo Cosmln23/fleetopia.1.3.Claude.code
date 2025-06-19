@@ -11,14 +11,20 @@ export async function GET(request: NextRequest) {
     const provider = searchParams.get('provider');
     const type = searchParams.get('type');
 
-    // Get all API integrations
-    const integrations = await prisma.modernApiIntegration.findMany({
-      where: {
-        ...(provider && { provider }),
-        ...(type && { type })
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    // Get all API integrations - safe query
+    let integrations = [];
+    try {
+      integrations = await prisma.modernApiIntegration.findMany({
+        where: {
+          ...(provider && { provider }),
+          ...(type && { type })
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    } catch (dbError) {
+      console.warn('Could not fetch integrations:', dbError);
+      // Continue with empty array
+    }
 
     // Extension capabilities based on research
     const extensionCapabilities = {

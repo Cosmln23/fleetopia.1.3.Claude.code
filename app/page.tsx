@@ -45,28 +45,26 @@ import Link from 'next/link';
 // import MetricCard from '@/components/metric-card';
 
 interface DashboardMetrics {
-  totalAgents: number;
-  activeAgents: number;
-  marketplaceRevenue: number;
-  agentPerformance: number;
-  totalVehicles: number;
   activeVehicles: number;
-  fleetEfficiency: number;
-  fuelSavings: number;
-  totalRequests: number;
-  avgResponseTime: number;
-  successRate: number;
+  totalVehicles: number;
+  aiAgentsOnline: number;
+  revenueToday: number;
+  fuelEfficiency: number;
+  totalTrips: number;
+  averageDeliveryTime: number;
+  costSavings: number;
+  aiProcessingRate: number;
   connectedAPIs: number;
 }
 
-const dashboardPages = [
+const getDashboardPages = (metrics: DashboardMetrics) => [
   {
     title: 'Fleet Management',
     description: 'Manage your vehicles, drivers, and routes',
     href: '/fleet-management',
     icon: Truck,
     color: 'bg-blue-500',
-    stats: '12 Vehicles Active'
+    stats: `${metrics.activeVehicles} Vehicles Active`
   },
   {
     title: 'Marketplace',
@@ -74,7 +72,7 @@ const dashboardPages = [
     href: '/marketplace',
     icon: ShoppingCart,
     color: 'bg-green-500',
-    stats: '45 New Offers'
+    stats: `${metrics.totalTrips} Trips Today`
   },
   {
     title: 'Dispatch Center',
@@ -82,7 +80,7 @@ const dashboardPages = [
     href: '/dispatch',
     icon: ClipboardList,
     color: 'bg-orange-500',
-    stats: '3 Active Jobs'
+    stats: 'View Active Jobs'
   },
   {
     title: 'Free Maps',
@@ -90,7 +88,7 @@ const dashboardPages = [
     href: '/free-maps',
     icon: Map,
     color: 'bg-cyan-500',
-    stats: 'GPS Tracking'
+    stats: 'Plan Routes'
   },
   {
     title: 'ML Route Optimizer',
@@ -98,7 +96,7 @@ const dashboardPages = [
     href: '/ml-route-optimizer',
     icon: Brain,
     color: 'bg-pink-500',
-    stats: '25% Fuel Savings'
+    stats: `~${metrics.fuelEfficiency}% Efficiency`
   },
   {
     title: 'API Integrations',
@@ -106,7 +104,7 @@ const dashboardPages = [
     href: '/api-integrations',
     icon: Network,
     color: 'bg-indigo-500',
-    stats: '5 Connected'
+    stats: `${metrics.connectedAPIs} Connected`
   },
   {
     title: 'Settings',
@@ -114,37 +112,73 @@ const dashboardPages = [
     href: '/settings',
     icon: Settings,
     color: 'bg-gray-500',
-    stats: 'Profile Setup'
+    stats: 'Profile & Config'
   }
 ];
 
 export default function FleetopiaHome() {
   const [metrics, setMetrics] = useState<DashboardMetrics>({
-    totalAgents: 8,
-    activeAgents: 6,
-    marketplaceRevenue: 12750,
-    agentPerformance: 94.2,
-    totalVehicles: 12,
-    activeVehicles: 10,
-    fleetEfficiency: 87.3,
-    fuelSavings: 3120,
-    totalRequests: 2584,
-    avgResponseTime: 0.8,
-    successRate: 98.7,
-    connectedAPIs: 5
+    activeVehicles: 0,
+    totalVehicles: 0,
+    aiAgentsOnline: 0,
+    revenueToday: 0,
+    fuelEfficiency: 0,
+    totalTrips: 0,
+    averageDeliveryTime: 0,
+    costSavings: 0,
+    aiProcessingRate: 0,
+    connectedAPIs: 0,
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setMetrics(prev => ({
-        ...prev,
-        activeAgents: Math.max(1, prev.activeAgents + Math.floor(Math.random() * 3 - 1)),
-        totalRequests: prev.totalRequests + Math.floor(Math.random() * 10),
-      }));
-    }, 5000);
+    const fetchDashboardData = async () => {
+      try {
+        const response = await fetch('/api/dashboard');
+        if (response.ok) {
+          const data = await response.json();
+          setMetrics({ ...data, connectedAPIs: 0 }); // Set to 0 until API provides this
+        } else {
+          setMetrics({
+            activeVehicles: 0,
+            totalVehicles: 0,
+            aiAgentsOnline: 0,
+            revenueToday: 0,
+            fuelEfficiency: 0,
+            totalTrips: 0,
+            averageDeliveryTime: 0,
+            costSavings: 0,
+            aiProcessingRate: 0,
+            connectedAPIs: 0,
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard data:', error);
+        setMetrics({
+            activeVehicles: 0,
+            totalVehicles: 0,
+            aiAgentsOnline: 0,
+            revenueToday: 0,
+            fuelEfficiency: 0,
+            totalTrips: 0,
+            averageDeliveryTime: 0,
+            costSavings: 0,
+            aiProcessingRate: 0,
+            connectedAPIs: 0,
+          });
+      } finally {
+        setLoading(false);
+      }
+    };
 
+    fetchDashboardData();
+    
+    // Refresh data every 30 seconds
+    const interval = setInterval(fetchDashboardData, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  const dashboardPages = getDashboardPages(metrics);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -198,8 +232,8 @@ export default function FleetopiaHome() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-400">AI Agents</p>
-                  <p className="text-2xl font-bold text-white">{metrics.activeAgents}/{metrics.totalAgents}</p>
-                  <p className="text-xs text-slate-500">Active agents</p>
+                  <p className="text-2xl font-bold text-white">{metrics.aiAgentsOnline}</p>
+                  <p className="text-xs text-slate-500">Online</p>
                 </div>
                 <Bot className="w-8 h-8 text-purple-400" />
               </div>
@@ -221,11 +255,11 @@ export default function FleetopiaHome() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">API Connections</p>
-                  <p className="text-2xl font-bold text-white">{metrics.connectedAPIs}</p>
-                  <p className="text-xs text-slate-500">Integrations</p>
+                  <p className="text-sm text-slate-400">Today's Revenue</p>
+                  <p className="text-2xl font-bold text-white">${metrics.revenueToday.toLocaleString()}</p>
+                  <p className="text-xs text-slate-500">From {metrics.totalTrips} trips</p>
                 </div>
-                <Zap className="w-8 h-8 text-yellow-400" />
+                <DollarSign className="w-8 h-8 text-green-400" />
               </div>
             </CardContent>
           </Card>
@@ -233,11 +267,11 @@ export default function FleetopiaHome() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Success Rate</p>
-                  <p className="text-2xl font-bold text-white">{metrics.successRate}%</p>
-                  <p className="text-xs text-slate-500">System performance</p>
+                  <p className="text-sm text-slate-400">Fleet Efficiency</p>
+                  <p className="text-2xl font-bold text-white">{metrics.fuelEfficiency}%</p>
+                  <p className="text-xs text-slate-500">Vehicle utilization</p>
                 </div>
-                <CheckCircle className="w-8 h-8 text-green-400" />
+                <TrendingUp className="w-8 h-8 text-yellow-400" />
               </div>
             </CardContent>
           </Card>
@@ -305,15 +339,15 @@ export default function FleetopiaHome() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-green-400">{metrics.successRate}%</div>
+                    <div className="text-2xl font-bold text-green-400">{metrics.fuelEfficiency}%</div>
                     <div className="text-sm text-slate-400">Uptime</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-400">{metrics.avgResponseTime}s</div>
+                    <div className="text-2xl font-bold text-blue-400">{metrics.averageDeliveryTime}s</div>
                     <div className="text-sm text-slate-400">Response Time</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-400">{metrics.totalRequests.toLocaleString()}</div>
+                    <div className="text-2xl font-bold text-purple-400">{metrics.totalTrips.toLocaleString()}</div>
                     <div className="text-sm text-slate-400">Total Requests</div>
                   </div>
                 </div>

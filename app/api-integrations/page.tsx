@@ -65,10 +65,10 @@ export default function APIIntegrationsPage() {
     API_PROVIDERS.map(provider => ({
       ...provider,
       status: provider.tier === 'free' || provider.tier === 'freemium' ? 'built-in' : 'client-configurable',
-      health: provider.tier === 'free' || provider.tier === 'freemium' ? 85 : undefined,
-      lastTested: provider.tier === 'free' || provider.tier === 'freemium' ? 'Just now' : undefined,
-      requestsToday: provider.tier === 'free' || provider.tier === 'freemium' ? Math.floor(Math.random() * 1000) : undefined,
-      responseTime: provider.tier === 'free' || provider.tier === 'freemium' ? Math.floor(Math.random() * 200) + 50 : undefined
+      health: undefined,
+      lastTested: undefined,
+      requestsToday: 0,
+      responseTime: 0
     }))
   );
 
@@ -83,41 +83,8 @@ export default function APIIntegrationsPage() {
   const [showSettingsModal, setShowSettingsModal] = useState<string | null>(null);
   const [showLogsModal, setShowLogsModal] = useState(false);
 
-  // Mock logs data for demonstration
-  const [systemLogs] = useState([
-    {
-      id: '1',
-      timestamp: new Date(Date.now() - 300000),
-      level: 'ERROR',
-      api: 'Google Maps API',
-      message: 'Rate limit exceeded for geocoding requests',
-      details: { endpoint: '/geocode/json', status: 429, retryAfter: '60s' }
-    },
-    {
-      id: '2', 
-      timestamp: new Date(Date.now() - 600000),
-      level: 'WARNING',
-      api: 'Weather Service API',
-      message: 'High response time detected',
-      details: { responseTime: '2.3s', threshold: '1s', endpoint: '/current' }
-    },
-    {
-      id: '3',
-      timestamp: new Date(Date.now() - 900000),
-      level: 'INFO',
-      api: 'Fuel Price API',
-      message: 'Successfully updated fuel prices',
-      details: { recordsUpdated: 1247, duration: '450ms' }
-    },
-    {
-      id: '4',
-      timestamp: new Date(Date.now() - 1200000),
-      level: 'ERROR',
-      api: 'Payment Gateway',
-      message: 'Connection timeout during payment processing',
-      details: { timeout: '30s', transactionId: 'tx_1234567890' }
-    }
-  ]);
+  // Remove mock systemLogs, rely on real-time data
+  const [systemLogs] = useState([]);
 
   // Monitor API errors from real-time endpoint
   React.useEffect(() => {
@@ -236,8 +203,8 @@ export default function APIIntegrationsPage() {
     setRunningAllTests(true);
     console.log('🧪 Starting comprehensive API testing...');
     
-    const testPromises = integrations.map(async (integration) => {
-      await runIndividualTest(integration.id);
+    const testPromises = providers.map(async (provider) => {
+      await runIndividualTest(`${provider.category}_${provider.provider}`);
       // Add small delay between tests to avoid overwhelming
       await new Promise(resolve => setTimeout(resolve, 500));
     });
@@ -247,47 +214,6 @@ export default function APIIntegrationsPage() {
     console.log('✅ All API tests completed');
   };
 
-  const generateTestReport = () => {
-    const report = {
-      timestamp: new Date().toISOString(),
-      totalAPIs: integrations.length,
-      successfulTests: Object.values(testResults).filter((result: any) => result.success).length,
-      failedTests: Object.values(testResults).filter((result: any) => !result.success).length,
-      averageResponseTime: Object.values(testResults)
-        .filter((result: any) => result.responseTime)
-        .reduce((sum: number, result: any) => sum + result.responseTime, 0) / 
-        Object.values(testResults).filter((result: any) => result.responseTime).length || 0
-    };
-    
-    console.log('📊 Test Report:', report);
-    return report;
-  };
-
-  // Function to handle error badge clicks
-  const handleErrorClick = (apiId: string) => {
-    const api = integrations.find(a => a.id === apiId);
-    if (api && api.status === 'error') {
-      const errorId = `error-${Date.now()}`;
-      const mockError = {
-        id: errorId,
-        timestamp: new Date(),
-        type: 'api-connection',
-        message: `${api.name} connection failed`,
-        details: {
-          endpoint: api.endpoint,
-          provider: api.provider,
-          lastWorking: api.lastTested,
-          errorCode: 'CONN_TIMEOUT',
-          suggestion: 'Check API credentials and network connectivity'
-        },
-        status: 503
-      };
-      setApiErrors(prev => [mockError, ...prev]);
-      setShowErrorDetails(errorId);
-    }
-  };
-
-  // Function to handle settings button clicks
   const handleSettingsClick = (apiId: string) => {
     setShowSettingsModal(apiId);
   };
@@ -508,50 +434,6 @@ export default function APIIntegrationsPage() {
                 <div className="space-y-6">
                   <Card className="bg-slate-800/50 border-slate-700">
                     <CardHeader>
-                      <CardTitle className="text-slate-200">Quick Actions</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <Button 
-                        className="w-full justify-start"
-                        onClick={() => setShowAddForm(true)}
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Configure Client API
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start"
-                        onClick={() => setShowConnector(true)}
-                      >
-                        <LinkIcon className="w-4 h-4 mr-2" />
-                        Connect to Agent
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start"
-                        onClick={runAllAPITests}
-                        disabled={runningAllTests}
-                      >
-                        {runningAllTests ? (
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400 mr-2"></div>
-                        ) : (
-                          <TestTube className="w-4 h-4 mr-2" />
-                        )}
-                        {runningAllTests ? 'Testing All APIs...' : 'Test All APIs'}
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        className="w-full justify-start"
-                        onClick={() => setShowLogsModal(true)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        View Logs
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-slate-800/50 border-slate-700">
-                    <CardHeader>
                       <CardTitle className="flex items-center text-slate-200">
                         <Activity className="w-5 h-5 mr-2 text-blue-400" />
                         System Health
@@ -709,121 +591,31 @@ export default function APIIntegrationsPage() {
 
             {/* Testing Tab */}
             <TabsContent value="testing">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-slate-800/50 border-slate-700">
-                  <CardHeader>
-                    <CardTitle className="text-slate-200">API Testing Suite</CardTitle>
-                    <CardDescription>Test API endpoints and monitor performance</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-3">
-                      {integrations.filter(api => api.status === 'connected').map((api) => (
-                        <div key={api.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                          <div className="flex items-center space-x-3">
-                            {getCategoryIcon(api.category)}
-                            <span className="text-white">{api.name}</span>
-                          </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => runIndividualTest(api.id)}
-                            disabled={testing[api.id]}
-                          >
-                            {testing[api.id] ? (
-                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-400 mr-2"></div>
-                            ) : (
-                              <TestTube className="w-4 h-4 mr-2" />
-                            )}
-                            {testing[api.id] ? 'Testing...' : 'Test Now'}
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="bg-slate-800/50 border-slate-700">
-                  <CardHeader>
-                    <CardTitle className="text-slate-200">Test Results</CardTitle>
-                    <CardDescription>
-                      {Object.keys(testResults).length > 0 && (
-                        <div className="flex items-center space-x-4 mt-2">
-                          <span className="text-green-400">
-                            ✅ {Object.values(testResults).filter((r: any) => r.success).length} Passed
-                          </span>
-                          <span className="text-red-400">
-                            ❌ {Object.values(testResults).filter((r: any) => !r.success).length} Failed
-                          </span>
-                        </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>API Test Center</CardTitle>
+                  <CardDescription>
+                    Run diagnostics on your configured API integrations.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex space-x-2">
+                    <Button onClick={runAllAPITests} disabled={runningAllTests || providers.length === 0}>
+                      {runningAllTests ? (
+                        <>
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                          Testing...
+                        </>
+                      ) : (
+                        <>
+                          <TestTube className="w-4 h-4 mr-2" />
+                          Run All Tests
+                        </>
                       )}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {Object.keys(testResults).length === 0 ? (
-                      <div className="text-center py-8">
-                        <TestTube className="w-12 h-12 mx-auto text-slate-600 mb-4" />
-                        <p className="text-slate-400">Run API tests to see results here</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {Object.entries(testResults).map(([integrationId, result]: [string, any]) => {
-                          const integration = integrations.find(i => i.id === integrationId);
-                          return (
-                            <div key={integrationId} className="p-3 bg-slate-700/50 rounded-lg">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center space-x-2">
-                                  <div className={`w-3 h-3 rounded-full ${result.success ? 'bg-green-400' : 'bg-red-400'}`}></div>
-                                  <span className="text-white font-medium">{integration?.name}</span>
-                                </div>
-                                <div className="flex items-center space-x-2 text-xs">
-                                  {result.responseTime && (
-                                    <span className="text-blue-400">{result.responseTime}ms</span>
-                                  )}
-                                  <span className={result.success ? 'text-green-400' : 'text-red-400'}>
-                                    {result.success ? 'PASS' : 'FAIL'}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              <p className="text-sm text-slate-300 mb-2">{result.message}</p>
-                              
-                              {result.recommendations && result.recommendations.length > 0 && (
-                                <div className="text-xs space-y-1">
-                                  {result.recommendations.slice(0, 2).map((rec: any, idx: number) => (
-                                    <div key={idx} className={`p-2 rounded ${
-                                      rec.type === 'error' ? 'bg-red-900/30 text-red-300' :
-                                      rec.type === 'warning' ? 'bg-yellow-900/30 text-yellow-300' :
-                                      rec.type === 'success' ? 'bg-green-900/30 text-green-300' :
-                                      'bg-blue-900/30 text-blue-300'
-                                    }`}>
-                                      <div className="font-medium">{rec.title}</div>
-                                      <div className="opacity-80">{rec.message}</div>
-                                    </div>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          );
-                        })}
-                        
-                        <div className="mt-4 p-3 bg-blue-900/30 rounded-lg border border-blue-700/50">
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="w-full"
-                            onClick={() => {
-                              const report = generateTestReport();
-                              console.log('📊 Full Test Report Generated:', report);
-                            }}
-                          >
-                            📊 Generate Full Report
-                          </Button>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </TabsContent>
 
             {/* Analytics Tab */}
@@ -840,7 +632,7 @@ export default function APIIntegrationsPage() {
                         <p className="text-sm text-slate-400">Total Requests</p>
                       </div>
                       <div>
-                        <p className="text-2xl font-bold text-green-400">{connectedIntegrations}</p>
+                        <p className="text-2xl font-bold text-green-400">{providers.filter(p => p.status === 'connected').length}</p>
                         <p className="text-sm text-slate-400">Active APIs</p>
                       </div>
                       <div>
@@ -1135,7 +927,7 @@ export default function APIIntegrationsPage() {
               onClick={(e) => e.stopPropagation()}
             >
               {(() => {
-                const api = integrations.find(a => a.id === showSettingsModal);
+                const api = providers.find(a => a.id === showSettingsModal);
                 if (!api) return null;
                 
                 return (

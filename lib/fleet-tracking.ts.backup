@@ -250,10 +250,10 @@ export class FleetTrackingService {
       efficiency: ((originalDistance - optimized.distance) / originalDistance) * 100
     };
 
-    } catch (error) {
-      console.error('❌ Fallback optimization failed:', error);
-      throw error;
-    }
+  } catch (error) {
+    console.error('❌ Fallback optimization failed:', error);
+    throw error;
+  }
   }
 
   // Get ML Optimizer stats

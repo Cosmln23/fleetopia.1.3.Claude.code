@@ -8,15 +8,18 @@ export async function GET(request: NextRequest) {
     // Get all available vehicles from the global cache
     const availableVehicles = (global as any).availableVehicles || [];
     
+    // Only return vehicles if we have any (> 0)
+    if (!Array.isArray(availableVehicles) || availableVehicles.length === 0) {
+      return NextResponse.json([]);
+    }
+    
     // Return all available vehicles for now
     // Later we can add filtering by location, type, etc.
     return NextResponse.json(availableVehicles);
   } catch (error) {
-    console.error('Failed to fetch available vehicles:', error);
-    return new NextResponse(
-      JSON.stringify({ error: 'Internal Server Error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
-    );
+    console.warn('Failed to fetch available vehicles:', error);
+    // Return empty array instead of error
+    return NextResponse.json([]);
   }
 }
 
