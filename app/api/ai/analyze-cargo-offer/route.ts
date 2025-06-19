@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     const candidateVehicles = await prisma.vehicle.findMany({
       where: { 
         status: 'idle',
-        type: cargoOffer.vehicleType,
+        ...(cargoOffer.vehicleType && { type: cargoOffer.vehicleType }),
       },
     });
 

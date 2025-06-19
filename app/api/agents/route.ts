@@ -63,8 +63,8 @@ export async function GET(request: NextRequest) {
       },
       ...(includeAnalytics && {
         analytics: {
-          avgPerformance: agent.performance || 0,
-          totalRevenue: agent.revenue || 0,
+          avgPerformance: agent.rating || 0,
+          totalRevenue: (agent.downloads || 0) * (agent.price || 0),
           recentPerformanceCount: 0,
           recentRevenueCount: 0,
           trend: 'stable'
@@ -123,13 +123,13 @@ export async function POST(request: NextRequest) {
         data: {
           name: body.name || 'New Agent',
           description: body.description || 'AI Agent description',
-          type: body.type || 'standard',
           category: body.category || 'general',
           version: body.version || '1.0.0',
           status: 'active',
-          performance: 0,
-          revenue: 0,
           capabilities: body.capabilities || [],
+          configuration: {},
+          performance: {},
+          requiresAPI: {},
           evolutionCycle: 1,
           evolutionStatus: 'LEARNING',
           protocolCompliance: 'PARTIAL',

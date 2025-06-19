@@ -42,101 +42,45 @@ export async function GET(request: Request) {
       whereClause.agentId = agentId;
     }
 
-    // Get performance logs
-    const performanceLogs = await prisma.agentPerformanceLog.findMany({
+    // Get agent metrics (combines performance and usage data)
+    const agentMetrics = await prisma.agentMetric.findMany({
       where: whereClause,
       include: {
         agent: {
           select: {
             id: true,
             name: true,
-            type: true,
-            category: true,
-            supervisorId: true
+            category: true
           }
         }
       },
       orderBy: { timestamp: 'desc' }
     });
 
-    // Get revenue logs
-    const revenueLogs = await prisma.agentRevenueLog.findMany({
-      where: whereClause,
-      include: {
-        agent: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-            category: true,
-            supervisorId: true
-          }
-        }
-      },
-      orderBy: { timestamp: 'desc' }
-    });
+    // Filter by supervisor if specified (placeholder for future implementation)
+    let filteredMetrics = agentMetrics;
 
-    // Filter by supervisor if specified
-    let filteredPerformanceLogs = performanceLogs;
-    let filteredRevenueLogs = revenueLogs;
-
-    if (supervisorId) {
-      filteredPerformanceLogs = performanceLogs.filter(log => 
-        log.agent.supervisorId === supervisorId
-      );
-      filteredRevenueLogs = revenueLogs.filter(log => 
-        log.agent.supervisorId === supervisorId
-      );
-    }
-
-    // Aggregate data
+    // Return simplified analytics based on available data
     const analytics = {
       timeRange,
-      totalPerformanceLogs: filteredPerformanceLogs.length,
-      totalRevenueLogs: filteredRevenueLogs.length,
-      totalRevenue: filteredRevenueLogs.reduce((sum, log) => sum + log.amount, 0),
-      avgPerformance: filteredPerformanceLogs.length > 0 
-        ? filteredPerformanceLogs.reduce((sum, log) => sum + log.value, 0) / filteredPerformanceLogs.length
-        : 0,
-      performanceByMetric: filteredPerformanceLogs.reduce((acc, log) => {
-        if (!acc[log.metric]) {
-          acc[log.metric] = { count: 0, total: 0, avg: 0 };
-        }
-        acc[log.metric].count++;
-        acc[log.metric].total += log.value;
-        acc[log.metric].avg = acc[log.metric].total / acc[log.metric].count;
-        return acc;
-      }, {} as any),
-      revenueBySource: filteredRevenueLogs.reduce((acc, log) => {
-        if (!acc[log.source]) {
-          acc[log.source] = { count: 0, total: 0 };
-        }
-        acc[log.source].count++;
-        acc[log.source].total += log.amount;
-        return acc;
-      }, {} as any),
-      agentBreakdown: filteredPerformanceLogs.reduce((acc, log) => {
-        const agentId = log.agent.id;
+      totalMetrics: filteredMetrics.length,
+      agentCount: new Set(filteredMetrics.map(m => m.agentId)).size,
+      metricsBreakdown: filteredMetrics.reduce((acc: any, metric) => {
+        const agentId = metric.agentId;
         if (!acc[agentId]) {
           acc[agentId] = {
-            agent: log.agent,
-            performanceCount: 0,
-            avgPerformance: 0,
-            totalRevenue: 0
+            agent: metric.agent,
+            metricsCount: 0,
+            lastUpdate: metric.timestamp
           };
         }
-        acc[agentId].performanceCount++;
+        acc[agentId].metricsCount++;
+        if (metric.timestamp > acc[agentId].lastUpdate) {
+          acc[agentId].lastUpdate = metric.timestamp;
+        }
         return acc;
-      }, {} as any)
+      }, {})
     };
-
-    // Add revenue data to agent breakdown
-    filteredRevenueLogs.forEach(log => {
-      const agentId = log.agent.id;
-      if (analytics.agentBreakdown[agentId]) {
-        analytics.agentBreakdown[agentId].totalRevenue += log.amount;
-      }
-    });
 
     return NextResponse.json(analytics);
   } catch (error) {
