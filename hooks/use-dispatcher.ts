@@ -186,22 +186,22 @@ export function useDispatcher(): DispatcherHookReturn {
 
 // Additional specialized hooks
 export function useDispatcherSuggestions(priority?: 'high' | 'medium' | 'low') {
-  const { analysis } = useDispatcherContext();
+  const { state } = useDispatcherContext();
   
   return useMemo(() => {
-    if (!analysis) return [];
+    if (!state.analysis) return [];
     return priority 
-      ? analysis.suggestions.filter(s => s.priority === priority)
-      : analysis.suggestions;
-  }, [analysis, priority]);
+      ? state.analysis.suggestions.filter(s => s.priority === priority)
+      : state.analysis.suggestions;
+  }, [state.analysis, priority]);
 }
 
 export function useDispatcherAlerts() {
-  const { analysis } = useDispatcherContext();
+  const { state } = useDispatcherContext();
   
   return useMemo(() => {
-    return analysis?.alerts || [];
-  }, [analysis]);
+    return state.analysis?.alerts || [];
+  }, [state.analysis]);
 }
 
 export function useDispatcherMetrics() {

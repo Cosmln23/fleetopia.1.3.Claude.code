@@ -175,6 +175,73 @@ export interface FuelStation {
   lastUpdated: Date;
 }
 
+export interface FuelPrices {
+  diesel: number;
+  gasoline: number;
+  lpg?: number;
+  cng?: number;
+  electric?: number;
+}
+
+export interface FuelPriceHistory {
+  date: Date;
+  dieselPrice: number;
+  gasolinePrice: number;
+  lpgPrice?: number;
+  cngPrice?: number;
+}
+
+export interface RouteQuery {
+  origin: { lat: number; lng: number };
+  destination: { lat: number; lng: number };
+  distance?: number;
+}
+
+export interface FuelRecommendation {
+  fuelType: FuelType;
+  route: RouteQuery;
+  recommendedStations: {
+    station: FuelStation;
+    savingsPerLiter: number;
+    totalSavings: number;
+    detourDistance: number;
+    detourTime: number;
+  }[];
+  totalPotentialSavings: number;
+  averagePriceAlongRoute: number;
+  cheapestPrice: number;
+  analysis: {
+    bestStrategy: string;
+    confidenceLevel: number;
+    lastUpdated: Date;
+  };
+}
+
+export interface FuelOptimizationParams {
+  vehicleType?: string;
+  currentConsumption?: number;
+  routeType?: 'highway' | 'city' | 'mixed';
+  drivingStyle?: 'eco' | 'normal' | 'aggressive';
+  loadWeight?: number;
+}
+
+export interface FuelOptimization {
+  currentConsumption: number;
+  optimizedConsumption: number;
+  fuelSavings: {
+    litersSaved: number;
+    costSaved: number;
+    co2Reduced: number;
+  };
+  recommendations: {
+    category: string;
+    title: string;
+    description: string;
+    potentialSaving: number;
+  }[];
+  implementationPlan: string[];
+}
+
 // ===== SUPPORT TYPES =====
 export type CargoStatus = 'NEW' | 'TAKEN' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED';
 export type FuelType = 'diesel' | 'gasoline' | 'lpg' | 'cng' | 'electric';

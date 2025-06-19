@@ -47,9 +47,11 @@ const defaultCenter = {
 
 const isActiveStatus = (status: VehicleStatus) => {
   return [
-    VehicleStatus.IN_TRANSIT,
-    // Note: The new VehicleStatus enum doesn't include 'loading' or 'unloading'.
-    // Adjust logic here if those states need to be handled differently.
+    VehicleStatus.in_transit,
+    VehicleStatus.en_route,
+    VehicleStatus.assigned,
+    VehicleStatus.loading,
+    VehicleStatus.unloading,
   ].includes(status);
 };
 
@@ -181,7 +183,7 @@ function MapView({ isLoaded, vehicles, focusedVehicle, directions, onMapLoad, se
         >
           <div className="p-2 bg-white rounded-lg shadow-lg dark:bg-gray-800">
             <h3 className="font-bold text-lg text-gray-900 dark:text-white">
-              {selectedVehicle.make} {selectedVehicle.model} ({selectedVehicle.year})
+              {selectedVehicle.name} ({selectedVehicle.type})
             </h3>
             <p className="text-gray-700 dark:text-gray-300">
               License: {selectedVehicle.licensePlate}
