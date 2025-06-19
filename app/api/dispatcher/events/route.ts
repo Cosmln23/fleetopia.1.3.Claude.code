@@ -1,12 +1,11 @@
 import { NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { dispatcherEvents } from '@/lib/dispatcher-events';
 
 export async function GET(request: NextRequest) {
-  const session = await getServerSession(authOptions);
+  const { userId } = await auth();
   
-  if (!session?.user?.id) {
+  if (!userId) {
     return new Response('Unauthorized', { status: 401 });
   }
 
@@ -14,7 +13,6 @@ export async function GET(request: NextRequest) {
   const stream = new ReadableStream({
     start(controller) {
       const writer = controller;
-      const userId = session.user!.id;
       
       // Add client to event emitter
       dispatcherEvents.addClient(userId, writer as any);

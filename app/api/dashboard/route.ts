@@ -1,79 +1,105 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/db';
+import { NextResponse, NextRequest } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { auth } from '@clerk/nextjs/server';
 
-export const dynamic = 'force-dynamic';
-
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    let activeVehicles = 0;
-    let aiAgentsOnline = 0;
-    let completedOffersToday: { price: number }[] = [];
-    let totalVehicles = 0;
-
-    try {
-      // Get vehicle count (only available vehicles)
-      activeVehicles = await prisma.vehicle.count({
-        where: { 
-          OR: [
-            { status: 'assigned' },
-            { status: 'idle' },
-            { status: 'in_transit' }
-          ]
-        }
-      });
-
-      // Get AI agents count
-      aiAgentsOnline = await prisma.aIAgent.count({
-        where: { status: 'active' }
-      });
-
-      // Calculate today's revenue from completed cargo offers
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      completedOffersToday = await prisma.cargoOffer.findMany({
-        where: {
-          status: 'COMPLETED',
-          updatedAt: { gte: today }
-        },
-        select: { price: true }
-      });
-
-      // Calculate basic fleet efficiency from vehicle status
-      totalVehicles = await prisma.vehicle.count();
-    } catch (dbError) {
-      console.warn('Database query failed, using default values:', dbError);
-      // Use default values when database is not accessible
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const revenueToday = completedOffersToday.reduce((sum, offer) => sum + offer.price, 0);
-    const totalTrips = completedOffersToday.length;
-    const fuelEfficiency = totalVehicles > 0 ? ((activeVehicles / totalVehicles) * 100) : 0;
-
-    const dashboardData = {
-      activeVehicles,
-      aiAgentsOnline,
-      revenueToday: revenueToday || 0,
-      fuelEfficiency: Number(fuelEfficiency.toFixed(1)),
-      totalTrips,
-      averageDeliveryTime: 0,
-      costSavings: 0,
-      aiProcessingRate: aiAgentsOnline * 60
-    };
-
-    return NextResponse.json(dashboardData);
-  } catch (error) {
-    console.warn('Dashboard API error:', error);
-    // Return empty data instead of error
-    return NextResponse.json({
-      activeVehicles: 0,
-      aiAgentsOnline: 0,
-      revenueToday: 0,
-      fuelEfficiency: 0,
-      totalTrips: 0,
-      averageDeliveryTime: 0,
-      costSavings: 0,
-      aiProcessingRate: 0
+    // Get user's fleets
+    const userFleets = await prisma.fleet.findMany({
+      where: { userId: userId },
+      include: {
+        vehicles: {
+          select: {
+            id: true,
+            status: true,
+          }
+        }
+      }
     });
+
+    const fleetIds = userFleets.map(fleet => fleet.id);
+
+    // Get dashboard metrics
+    const [
+      totalVehicles,
+      activeVehicles,
+      totalCargoOffers,
+      activeCargoOffers,
+      recentAlerts
+    ] = await Promise.all([
+      // Total vehicles in user's fleets
+      prisma.vehicle.count({
+        where: { fleetId: { in: fleetIds } }
+      }),
+      
+      // Active vehicles
+      prisma.vehicle.count({
+        where: { 
+          fleetId: { in: fleetIds },
+          status: 'active'
+        }
+      }),
+      
+      // Total cargo offers by user
+      prisma.cargoOffer.count({
+        where: { userId: userId }
+      }),
+      
+      // Active cargo offers
+      prisma.cargoOffer.count({
+        where: { 
+          userId: userId,
+          status: 'available'
+        }
+      }),
+      
+      // Recent system alerts
+      prisma.systemAlert.findMany({
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          message: true,
+          type: true,
+          createdAt: true,
+          read: true
+        }
+      })
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        metrics: {
+          totalVehicles,
+          activeVehicles,
+          totalCargoOffers,
+          activeCargoOffers
+        },
+        recentAlerts,
+        fleets: userFleets.map(fleet => ({
+          id: fleet.id,
+          name: fleet.name,
+          vehicleCount: fleet.vehicles.length,
+          activeVehicles: fleet.vehicles.filter(v => v.status === 'active').length
+        }))
+      }
+    });
+
+  } catch (error) {
+    console.error('Failed to fetch dashboard data:', error);
+    return NextResponse.json(
+      { 
+        error: 'Internal server error', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      },
+      { status: 500 }
+    );
   }
 }
