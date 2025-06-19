@@ -14,17 +14,17 @@ interface SimulatorCardProps {
   vehicle: Vehicle;
 }
 
-// Helper to parse location from Prisma's JSON type
-const parseLocation = (location: any) => {
-  if (typeof location === 'object' && location !== null && 'lat' in location && 'lng' in location) {
-    return { lat: Number(location.lat) || 0, lng: Number(location.lng) || 0 };
-  }
-  return { lat: 0, lng: 0 };
+// Helper to get coordinates from Vehicle lat/lng properties
+const getInitialCoordinates = (vehicle: Vehicle) => {
+  return { 
+    lat: vehicle.lat || 0, 
+    lng: vehicle.lng || 0 
+  };
 };
 
 export function SimulatorCard({ vehicle }: SimulatorCardProps) {
   const { toast } = useToast();
-  const initialLocation = parseLocation(vehicle.location);
+  const initialLocation = getInitialCoordinates(vehicle);
 
   const [status, setStatus] = useState(vehicle.status);
   const [lat, setLat] = useState(initialLocation.lat.toString());
@@ -37,10 +37,8 @@ export function SimulatorCard({ vehicle }: SimulatorCardProps) {
 
     const updatedData = {
       status,
-      location: {
-        lat: parseFloat(lat),
-        lng: parseFloat(lng),
-      },
+      lat: parseFloat(lat),
+      lng: parseFloat(lng),
     };
 
     try {
