@@ -47,6 +47,7 @@ export const createCargoOfferSchema = z.object({
   deliveryDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid delivery date'),
   price: z.number().min(0, 'Price must be positive').max(1000000, 'Price too large'),
   priceType: z.enum(['fixed', 'negotiable', 'per_km']).optional().default('fixed'),
+  companyName: z.string().max(100, "Company name is too long").optional(),
   requirements: z.union([
     z.string(),
     z.array(z.string())

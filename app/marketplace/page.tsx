@@ -723,9 +723,9 @@ export default function MarketplacePage() {
       </Dialog>
       {/* Add Cargo Dialog */}
       <Dialog open={isAddCargoOpen} onOpenChange={setIsAddCargoOpen}>
-        <DialogContent className="sm:max-w-[625px]">
+        <DialogContent className="sm:max-w-[625px] bg-slate-900 border-slate-700 text-white">
             <DialogHeader>
-                <DialogTitle>Adaugă o Ofertă de Marfă Nouă</DialogTitle>
+                <DialogTitle>Post a New Cargo Offer</DialogTitle>
                 <DialogDescription>
                 Completează detaliile de mai jos pentru a publica o nouă oportunitate de transport.
                 </DialogDescription>

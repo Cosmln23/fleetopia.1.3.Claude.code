@@ -135,7 +135,8 @@ export async function POST(request: NextRequest) {
       loadingDate,
       deliveryDate,
       requirements,
-      urgency
+      urgency,
+      companyName
     } = validation.data;
 
     const newCargoOffer = await prisma.cargoOffer.create({
@@ -158,6 +159,7 @@ export async function POST(request: NextRequest) {
         priceType,
         requirements,
         urgency,
+        companyName,
         status: CargoStatus.NEW,
         userId: userId,
       },
