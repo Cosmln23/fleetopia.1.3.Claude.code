@@ -92,14 +92,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
     const body = await request.json();
     const {
       name,
@@ -131,7 +123,7 @@ export async function POST(request: NextRequest) {
         performance: performance || {},
         marketplace,
         requiresAPI: true,
-        userId: user.id
+        userId: userId
       },
       include: {
         createdBy: {
@@ -161,14 +153,6 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
     const body = await request.json();
     const { id, ...updateData } = body;
 
@@ -183,7 +167,7 @@ export async function PUT(request: NextRequest) {
     const existingAgent = await prisma.aIAgent.findFirst({
       where: {
         id,
-        userId: user.id
+        userId: userId
       }
     });
 
@@ -225,14 +209,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email }
-    });
-
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -247,7 +223,7 @@ export async function DELETE(request: NextRequest) {
     const existingAgent = await prisma.aIAgent.findFirst({
       where: {
         id,
-        userId: user.id
+        userId: userId
       }
     });
 
