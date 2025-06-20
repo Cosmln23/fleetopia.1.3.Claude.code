@@ -7,6 +7,10 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
+    "postinstall": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "prepare-deploy": "node scripts/prepare-deploy.js",
+    "railway:build": "npm run prepare-deploy && npm run build",
     "test:predictive-ai": "node test-predictive-fuel-ai.js",
     "test:vehicle-optimization": "node test-vehicle-optimization.js"
   },

@@ -21,3 +21,18 @@ yarn-error.log*
 # Other
 .DS_Store
 *.pem
+
+# Development and test files
+test-*.js
+*.log
+server.log
+
+# Development documentation
+*.md
+!README.md
+*.txt
+*.pdf
+
+# IDE
+.vscode/
+.idea/

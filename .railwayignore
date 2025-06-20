@@ -1,0 +1,52 @@
+# Test files - explicitly exclude all variants
+test-*.js
+test-dynamic-fuel-pricing.js
+test-driver-personalization.js
+test-historical-learning.js
+test-micro-optimization.js
+test-predictive-fuel-ai.js
+test-real-time-api.js
+test-vehicle-optimization.js
+test-dynamic-fuel-pricing-fixed.js
+*.test.js
+*.test.ts
+
+# Development files
+*.md
+.env*
+!.env.template
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+server.log
+
+# Development documentation
+AGENT_*.md
+CHANGELOG*.md
+CONTINUE_*.md
+DEVELOPMENT_LOG.md
+EtapaAgenti*.md
+FAZA_*.md
+Jurnal_*.md
+MAPS_TODO.md
+NEXT_CHAT_PROMPT.md
+NOTES.md
+plan*.txt
+SESSION_NOTES_*.md
+Suspendari*.md
+UNIVERSAL_API_BRIDGE_NOTES.md
+VS_CODE_SETUP.md
+ssl-fix.txt
+
+# PDF files
+*.pdf 
