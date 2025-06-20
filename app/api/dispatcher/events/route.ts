@@ -9,50 +9,45 @@ export async function GET(request: NextRequest) {
   try {
     console.log('=== POLLING DISPATCHER EVENTS START ===');
     
-    console.log('1. Getting auth for polling...');
     const authResult = await auth();
-    console.log('2. Full auth result:', authResult);
-    
     const { userId } = authResult;
-    console.log('3. Extracted userId:', { userId: userId ? 'PRESENT' : 'NULL', userIdType: typeof userId });
     
     if (!userId) {
-      console.log('4. Polling No userId - returning 401');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    console.log('5. Auth successful, preparing response...');
-    
-    // For now, return a simple response without Prisma to isolate the issue
+    // Simple, clean response to avoid Content-Length issues
     const response = {
       success: true,
       timestamp: new Date().toISOString(),
-      userId: userId,
       data: {
-        alerts: [],
-        recentCargo: [],
         connected: true,
-        message: 'Polling endpoint working'
+        alerts: [],
+        recentCargo: []
       }
     };
 
-    console.log('6. Returning simple polling response');
-    return NextResponse.json(response);
+    return new NextResponse(JSON.stringify(response), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
+    });
     
   } catch (error) {
-    console.error('=== POLLING DISPATCHER EVENTS ERROR ===');
-    console.error('Error type:', error?.constructor?.name);
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
-    console.error('Full error object:', error);
+    console.error('Polling error:', error);
     
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        type: error?.constructor?.name
-      },
-      { status: 500 }
-    );
+    return new NextResponse(JSON.stringify({
+      error: 'Internal server error',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    }), {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
   }
 }
