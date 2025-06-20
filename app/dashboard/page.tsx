@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -37,7 +36,11 @@ export default function DashboardPage() {
         setIsLoading(true);
         const response = await fetch('/api/dashboard');
         const data = await response.json();
-        setDashboardData(data);
+        if (data.success) {
+          setDashboardData(data);
+        } else {
+            throw new Error(data.error || 'Failed to fetch dashboard data');
+        }
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
         // Fallback to default values if API fails

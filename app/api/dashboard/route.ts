@@ -76,8 +76,23 @@ export async function GET(request: NextRequest) {
       })
     ]);
 
+    // Placeholder data for metrics not yet implemented
+    const revenueToday = 0; // Placeholder
+    const fuelEfficiency = 0; // Placeholder
+    const totalTrips = 0; // Placeholder
+    const averageDeliveryTime = 0; // Placeholder
+    const costSavings = 0; // Placeholder
+    const aiAgentsOnline = 0; // Placeholder
+
     return NextResponse.json({
       success: true,
+      activeVehicles,
+      aiAgentsOnline,
+      revenueToday,
+      fuelEfficiency,
+      totalTrips,
+      averageDeliveryTime,
+      costSavings,
       data: {
         metrics: {
           totalVehicles,
