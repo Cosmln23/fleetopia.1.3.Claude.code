@@ -727,79 +727,79 @@ export default function MarketplacePage() {
             <DialogHeader>
                 <DialogTitle>Post a New Cargo Offer</DialogTitle>
                 <DialogDescription>
-                Completează detaliile de mai jos pentru a publica o nouă oportunitate de transport.
+                Fill in the details below to publish a new transport opportunity. Fields marked with an asterisk (*) are required.
                 </DialogDescription>
             </DialogHeader>
             <form onSubmit={handlePostCargo}>
             <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="title" placeholder="Titlu Anunț (ex: Mobilă București - Cluj)" value={newCargo.title} onChange={handleInputChange} required />
-                    <Input name="companyName" placeholder="Nume Companie" value={newCargo.companyName} onChange={handleInputChange} />
+                    <Input name="title" placeholder="Offer Title (e.g., Furniture Warsaw - Berlin) *" value={newCargo.title} onChange={handleInputChange} required />
+                    <Input name="companyName" placeholder="Company Name" value={newCargo.companyName} onChange={handleInputChange} />
                 </div>
-                <Textarea name="requirements" placeholder="Cerințe speciale (ex: lift hidraulic, temperatură controlată)" value={newCargo.requirements} onChange={handleInputChange}/>
+                <Textarea name="requirements" placeholder="Special requirements (e.g., hydraulic lift, controlled temperature)" value={newCargo.requirements} onChange={handleInputChange}/>
                 <div className="grid grid-cols-2 gap-4">
                     <Select name="fromCountry" onValueChange={(value) => handleSelectChange('fromCountry', value)}>
                         <SelectTrigger>
-                            <SelectValue placeholder="Țara de plecare" />
+                            <SelectValue placeholder="Origin Country *" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-slate-800 text-white border-slate-700">
                             {europeanCountries.map(c => <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                      <Select name="toCountry" onValueChange={(value) => handleSelectChange('toCountry', value)}>
                         <SelectTrigger>
-                            <SelectValue placeholder="Țara de destinație" />
+                            <SelectValue placeholder="Destination Country *" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="bg-slate-800 text-white border-slate-700">
                             {europeanCountries.map(c => <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
                  <div className="grid grid-cols-2 gap-4">
-                    <Input name="fromCity" placeholder="Oraș Plecare" value={newCargo.fromCity} onChange={handleInputChange} required />
-                    <Input name="toCity" placeholder="Oraș Destinație" value={newCargo.toCity} onChange={handleInputChange} required />
+                    <Input name="fromCity" placeholder="Origin City *" value={newCargo.fromCity} onChange={handleInputChange} required />
+                    <Input name="toCity" placeholder="Destination City *" value={newCargo.toCity} onChange={handleInputChange} required />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="fromAddress" placeholder="Adresă Plecare" value={newCargo.fromAddress} onChange={handleInputChange} required />
-                    <Input name="toAddress" placeholder="Adresă Destinație" value={newCargo.toAddress} onChange={handleInputChange} required />
+                    <Input name="fromAddress" placeholder="Origin Address *" value={newCargo.fromAddress} onChange={handleInputChange} required />
+                    <Input name="toAddress" placeholder="Destination Address *" value={newCargo.toAddress} onChange={handleInputChange} required />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="fromPostalCode" placeholder="Cod Poștal Plecare" value={newCargo.fromPostalCode} onChange={handleInputChange} />
-                    <Input name="toPostalCode" placeholder="Cod Poștal Destinație" value={newCargo.toPostalCode} onChange={handleInputChange} />
+                    <Input name="fromPostalCode" placeholder="Origin Postal Code" value={newCargo.fromPostalCode} onChange={handleInputChange} />
+                    <Input name="toPostalCode" placeholder="Destination Postal Code" value={newCargo.toPostalCode} onChange={handleInputChange} />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                    <Input name="weight" type="number" placeholder="Greutate (kg)" value={newCargo.weight} onChange={handleInputChange} required />
-                    <Input name="volume" type="number" placeholder="Volum (m³)" value={newCargo.volume} onChange={handleInputChange} />
-                    <Input name="cargoType" placeholder="Tip Marfă" value={newCargo.cargoType} onChange={handleInputChange} />
+                    <Input name="weight" type="number" placeholder="Weight (kg) *" value={newCargo.weight} onChange={handleInputChange} required />
+                    <Input name="volume" type="number" placeholder="Volume (m³)" value={newCargo.volume} onChange={handleInputChange} />
+                    <Input name="cargoType" placeholder="Cargo Type" value={newCargo.cargoType} onChange={handleInputChange} />
                 </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="loadingDate" className="text-sm font-medium text-gray-500">Dată Încărcare</label>
+                        <label htmlFor="loadingDate" className="text-sm font-medium text-gray-500">Loading Date *</label>
                         <Input id="loadingDate" name="loadingDate" type="date" value={newCargo.loadingDate} onChange={handleInputChange} required />
                     </div>
                      <div>
-                        <label htmlFor="deliveryDate" className="text-sm font-medium text-gray-500">Dată Livrare</label>
+                        <label htmlFor="deliveryDate" className="text-sm font-medium text-gray-500">Delivery Date *</label>
                         <Input id="deliveryDate" name="deliveryDate" type="date" value={newCargo.deliveryDate} onChange={handleInputChange} required />
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="price" type="number" placeholder="Preț" value={newCargo.price} onChange={handleInputChange} required />
+                    <Input name="price" type="number" placeholder="Price *" value={newCargo.price} onChange={handleInputChange} required />
                     <Select name="urgency" defaultValue="medium" onValueChange={(value) => handleSelectChange('urgency', value)}>
                         <SelectTrigger>
-                            <SelectValue placeholder="Urgență" />
+                            <SelectValue placeholder="Urgency" />
                         </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="low">Scăzută</SelectItem>
-                            <SelectItem value="medium">Medie</SelectItem>
-                            <SelectItem value="high">Ridicată</SelectItem>
+                        <SelectContent className="bg-slate-800 text-white border-slate-700">
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
             </div>
             <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddCargoOpen(false)}>Anulează</Button>
+                <Button variant="outline" onClick={() => setIsAddCargoOpen(false)}>Cancel</Button>
                 <Button type="submit" disabled={posting}>
-                    {posting ? 'Se postează...' : 'Postează Ofertă'}
+                    {posting ? 'Posting...' : 'Post Offer'}
                 </Button>
             </DialogFooter>
             </form>
