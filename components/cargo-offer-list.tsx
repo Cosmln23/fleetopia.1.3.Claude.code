@@ -34,10 +34,10 @@ const CargoOfferList = React.memo(function CargoOfferList({
   setOfferToDelete,
   setOfferToAssign
 }: CargoOfferListProps) {
-  const { user, isSignedIn } = useUser();
+  const { user } = useUser();
 
-  // Memoize user ID to prevent unnecessary re-renders
-  const userId = useMemo(() => session?.user?.id, [session?.user?.id]);
+  // Obținem ID-ul utilizatorului din hook-ul Clerk
+  const userId = user?.id;
 
   // Memoized individual offer card to prevent unnecessary re-renders
   const CargoOfferCard = React.memo(function CargoOfferCard({ 
