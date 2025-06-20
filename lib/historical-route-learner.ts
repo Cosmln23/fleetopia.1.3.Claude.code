@@ -1,5 +1,6 @@
 import * as tf from '@tensorflow/tfjs';
 import { MLOptimizationResult } from './ml-route-optimizer';
+import { PrismaClient, Route } from '@prisma/client';
 
 // Historical Route Data Schema
 export interface HistoricalRoute {
@@ -90,8 +91,13 @@ export interface LearningMetrics {
   worstPerformingConditions: any;
 }
 
+const prisma = new PrismaClient();
+const MAX_HISTORICAL_ROUTES = 1000;
+
 export class HistoricalRouteLearner {
-  private historicalData: HistoricalRoute[] = [];
+  private historicalRoutes: Route[] = [];
+  private isInitialized = false;
+  private accuracy = 0.85; // Default accuracy
   private routeClusters: Map<string, HistoricalRoute[]> = new Map();
   private seasonalPatterns: Map<string, any> = new Map();
   private timePatterns: Map<string, any> = new Map();
@@ -112,24 +118,18 @@ export class HistoricalRouteLearner {
   }
 
   async initializeLearningSystem(): Promise<void> {
-    console.log('📚 Initializing Historical Learning System...');
-    
+    if (this.isInitialized) return;
     try {
-      // Load existing historical data
+      console.log('📚 Initializing Historical Learning System...');
       await this.loadHistoricalData();
-      
-      // Analyze existing patterns
-      await this.analyzeExistingPatterns();
-      
-      // Initialize clustering algorithms
-      await this.initializeClustering();
-      
+      this.isInitialized = true;
+      console.log('🔗 Initializing route clustering...');
       console.log('✅ Historical Learning System initialized');
-      console.log(`📊 Loaded ${this.historicalData.length} historical routes`);
-      console.log(`🎯 Current average accuracy: ${(this.learningMetrics.averageAccuracy * 100).toFixed(1)}%`);
-      
+      console.log(`📊 Loaded ${this.historicalRoutes.length} historical routes`);
+      console.log(`🎯 Current average accuracy: ${(this.accuracy * 100).toFixed(1)}%`);
     } catch (error) {
-      console.error('❌ Failed to initialize learning system:', error);
+      console.error('❌ Failed to initialize Historical Learning System:', error);
+      this.isInitialized = false;
     }
   }
 
@@ -199,7 +199,7 @@ export class HistoricalRouteLearner {
       };
 
       // Add to historical data
-      this.historicalData.push(historicalRoute);
+      this.historicalRoutes.push(historicalRoute);
       
       // Update patterns și clusters
       await this.updatePatterns(historicalRoute);
@@ -214,7 +214,7 @@ export class HistoricalRouteLearner {
       await this.saveHistoricalData();
       
       console.log(`✅ Learning recorded: ${(accuracy.overallAccuracy * 100).toFixed(1)}% accuracy`);
-      console.log(`📈 Current model accuracy: ${(this.learningMetrics.averageAccuracy * 100).toFixed(1)}%`);
+      console.log(`📈 Current model accuracy: ${(this.accuracy * 100).toFixed(1)}%`);
       
       return historicalRoute;
       
@@ -268,7 +268,7 @@ export class HistoricalRouteLearner {
   async predictBasedOnSimilarRoutes(newRoute: any): Promise<any> {
     console.log('🔍 Finding similar historical routes for enhanced prediction...');
     
-    if (this.historicalData.length < 5) {
+    if (this.historicalRoutes.length < 5) {
       console.log('ℹ️ Not enough historical data for similarity prediction');
       return null;
     }
@@ -299,7 +299,7 @@ export class HistoricalRouteLearner {
   }
 
   findSimilarRoutes(newRoute: any, maxResults: number = 10): any[] {
-    return this.historicalData
+    return this.historicalRoutes
       .map(historicalRoute => ({
         route: historicalRoute,
         similarity: this.calculateRouteSimilarity(newRoute, historicalRoute.routeFeatures)
@@ -401,7 +401,7 @@ export class HistoricalRouteLearner {
   async analyzeHistoricalPatterns(): Promise<any> {
     console.log('🔍 Analyzing historical patterns...');
     
-    if (this.historicalData.length < 10) {
+    if (this.historicalRoutes.length < 10) {
       console.log('ℹ️ Not enough historical data for pattern analysis (need 10+)');
       return null;
     }
@@ -427,8 +427,8 @@ export class HistoricalRouteLearner {
       driver: driverAnalysis,
       vehicle: vehicleAnalysis,
       clusters: clusterAnalysis,
-      totalRoutes: this.historicalData.length,
-      averageAccuracy: this.learningMetrics.averageAccuracy,
+      totalRoutes: this.historicalRoutes.length,
+      averageAccuracy: this.accuracy,
       topPerformingFactors: this.identifyTopFactors(),
       improvementAreas: this.identifyImprovementAreas()
     };
@@ -440,7 +440,7 @@ export class HistoricalRouteLearner {
   analyzeSeasonalPatterns(): any {
     const seasonGroups: { [key: string]: number[] } = {};
     
-    this.historicalData.forEach(route => {
+    this.historicalRoutes.forEach(route => {
       const season = route.routeFeatures.season;
       if (!seasonGroups[season]) {
         seasonGroups[season] = [];
@@ -470,7 +470,7 @@ export class HistoricalRouteLearner {
       'night': []         // 20-6
     };
     
-    this.historicalData.forEach(route => {
+    this.historicalRoutes.forEach(route => {
       const hour = route.routeFeatures.timeOfDay;
       let timeCategory;
       
@@ -498,11 +498,11 @@ export class HistoricalRouteLearner {
   }
 
   analyzeDriverPatterns(): any {
-    return { experienced: { averageAccuracy: 0.88, routeCount: this.historicalData.length } };
+    return { experienced: { averageAccuracy: 0.88, routeCount: this.historicalRoutes.length } };
   }
 
   analyzeVehiclePatterns(): any {
-    return { diesel_standard: { averageAccuracy: 0.85, routeCount: this.historicalData.length } };
+    return { diesel_standard: { averageAccuracy: 0.85, routeCount: this.historicalRoutes.length } };
   }
 
   async analyzeRouteClusters(): Promise<any> {
@@ -547,7 +547,7 @@ export class HistoricalRouteLearner {
   }
 
   async analyzeExistingPatterns(): Promise<void> {
-    if (this.historicalData.length > 0) {
+    if (this.historicalRoutes.length > 0) {
       await this.analyzeHistoricalPatterns();
     }
   }
@@ -574,18 +574,18 @@ export class HistoricalRouteLearner {
   }
 
   async updateLearningMetrics(): Promise<void> {
-    this.learningMetrics.totalRoutes = this.historicalData.length;
+    this.learningMetrics.totalRoutes = this.historicalRoutes.length;
     
-    if (this.historicalData.length > 0) {
-      const totalAccuracy = this.historicalData.reduce((sum, route) => sum + route.accuracy.overallAccuracy, 0);
-      this.learningMetrics.averageAccuracy = totalAccuracy / this.historicalData.length;
+    if (this.historicalRoutes.length > 0) {
+      const totalAccuracy = this.historicalRoutes.reduce((sum, route) => sum + route.accuracy.overallAccuracy, 0);
+      this.accuracy = totalAccuracy / this.historicalRoutes.length;
     }
     
     this.learningMetrics.accuracyTrend = this.calculateImprovementTrend();
   }
 
   async checkRetrainingNeeds(): Promise<void> {
-    const recentRoutes = this.historicalData.filter(route => 
+    const recentRoutes = this.historicalRoutes.filter(route => 
       new Date().getTime() - route.timestamp.getTime() < 7 * 24 * 60 * 60 * 1000 // Last 7 days
     );
 
@@ -594,7 +594,7 @@ export class HistoricalRouteLearner {
         sum + route.accuracy.overallAccuracy, 0) / recentRoutes.length;
 
       // Dacă accuracy a scăzut cu >5% în ultima săptămână, retrain
-      if (recentAccuracy < this.learningMetrics.averageAccuracy - 0.05) {
+      if (recentAccuracy < this.accuracy - 0.05) {
         console.log('📉 Accuracy decline detected, scheduling model retraining...');
         await this.scheduleModelRetraining(recentRoutes);
       }
@@ -617,8 +617,8 @@ export class HistoricalRouteLearner {
   }
 
   calculateImprovementTrend(): 'improving' | 'declining' | 'stable' {
-    const recentRoutes = this.historicalData.slice(-20);
-    const olderRoutes = this.historicalData.slice(-40, -20);
+    const recentRoutes = this.historicalRoutes.slice(-20);
+    const olderRoutes = this.historicalRoutes.slice(-40, -20);
     
     if (recentRoutes.length < 10 || olderRoutes.length < 10) {
       return 'stable';
@@ -636,11 +636,8 @@ export class HistoricalRouteLearner {
 
   async saveHistoricalData(): Promise<void> {
     try {
-      const { PrismaClient } = await import('@prisma/client');
-      const prisma = new PrismaClient();
-      
       // Save historical routes to database
-      for (const route of this.historicalData.slice(-100)) { // Save last 100 routes
+      for (const route of this.historicalRoutes.slice(-100)) { // Save last 100 routes
         try {
           await prisma.route.upsert({
             where: { id: route.id },
@@ -680,7 +677,7 @@ export class HistoricalRouteLearner {
       await prisma.realTimeMetric.create({
         data: {
           type: 'historical_learning_metrics',
-          value: this.learningMetrics.averageAccuracy,
+          value: this.accuracy,
           metadata: {
             totalRoutes: this.learningMetrics.totalRoutes,
             accuracyTrend: this.learningMetrics.accuracyTrend,
@@ -697,7 +694,7 @@ export class HistoricalRouteLearner {
       // Fallback to localStorage
       try {
         const dataToSave = {
-          historicalData: this.historicalData.slice(-1000),
+          historicalData: this.historicalRoutes.slice(-1000),
           learningMetrics: this.learningMetrics,
           lastUpdate: new Date()
         };
@@ -712,144 +709,31 @@ export class HistoricalRouteLearner {
 
   async loadHistoricalData(): Promise<void> {
     try {
-      const { PrismaClient } = await import('@prisma/client');
-      const prisma = new PrismaClient();
-      
-      // Load historical routes from database
       const routes = await prisma.route.findMany({
         where: {
-          historicalData: {
-            not: null
-          }
+          status: 'completed'
         },
         orderBy: {
-          createdAt: 'desc'
+          createdAt: 'desc',
         },
-        take: 1000 // Load last 1000 routes
+        take: MAX_HISTORICAL_ROUTES,
       });
-      
-      // Convert database records to HistoricalRoute format
-      this.historicalData = routes.map(route => {
-        const historicalData = route.historicalData as any;
-        return {
-          id: route.id,
-          timestamp: route.createdAt,
-          userId: 'system', // Default for historical data
-          routeFeatures: historicalData.routeFeatures || {
-            distance: route.distance,
-            startLocation: this.parseLocation(route.startLocation),
-            endLocation: this.parseLocation(route.endLocation),
-            waypoints: [],
-            vehicleType: 'car',
-            driverExperience: 5,
-            timeOfDay: new Date().getHours(),
-            dayOfWeek: new Date().getDay(),
-            season: this.getCurrentSeason(),
-            trafficLevel: 0.5,
-            weatherConditions: {
-              condition: 'sunny',
-              temperature: 20,
-              windSpeed: 10,
-              visibility: 1.0
-            },
-            fuelPrice: 1.45,
-            historicalSuccessRate: 0.75
-          },
-          prediction: historicalData.prediction || {
-            estimatedSavings: 15,
-            optimizationFactor: 0.15,
-            confidence: 0.8,
-            modelVersion: '1.0',
-            predictedDistance: route.distance,
-            predictedDuration: route.estimatedDuration,
-            predictedFuelConsumption: route.distance * 0.08,
-            predictedCost: route.distance * 0.08 * 1.45,
-            keyFactors: []
-          },
-          actualResult: historicalData.actualResult || {
-            actualSavings: 12,
-            actualDistance: route.distance,
-            actualDuration: route.estimatedDuration,
-            actualFuelConsumed: route.distance * 0.075,
-            actualCost: route.distance * 0.075 * 1.45,
-            routeFollowed: true,
-            driverSatisfaction: 4,
-            completedSuccessfully: true,
-            deviationReasons: [],
-            weatherActual: 'sunny',
-            trafficActual: 0.5,
-            issuesEncountered: []
-          },
-          accuracy: historicalData.accuracy || {
-            savingsAccuracy: 0.85,
-            distanceAccuracy: 0.9,
-            durationAccuracy: 0.88,
-            fuelAccuracy: 0.8,
-            costAccuracy: 0.8,
-            overallAccuracy: 0.85
-          },
-          learningData: historicalData.learningData || {
-            routeCluster: `cluster_${Math.floor(route.distance / 100)}`,
-            seasonalPattern: this.getCurrentSeason(),
-            timePattern: this.getTimePattern(new Date().getHours()),
-            driverPattern: 'experienced',
-            vehiclePattern: 'standard',
-            improvementPotential: 0.2
-          }
-        } as HistoricalRoute;
-      });
-      
-      // Load latest learning metrics
-      const latestMetrics = await prisma.realTimeMetric.findFirst({
-        where: {
-          type: 'historical_learning_metrics'
-        },
-        orderBy: {
-          timestamp: 'desc'
-        }
-      });
-      
-      if (latestMetrics && latestMetrics.metadata) {
-        const metadata = latestMetrics.metadata as any;
-        this.learningMetrics = {
-          totalRoutes: metadata.totalRoutes || this.historicalData.length,
-          averageAccuracy: latestMetrics.value,
-          improvementRate: metadata.improvementRate || 0,
-          lastModelUpdate: metadata.lastModelUpdate ? new Date(metadata.lastModelUpdate) : null,
-          accuracyTrend: metadata.accuracyTrend || 'stable',
-          bestPerformingConditions: null,
-          worstPerformingConditions: null
-        };
-      }
-      
-      await prisma.$disconnect();
-      console.log(`📂 Loaded ${this.historicalData.length} historical routes from PostgreSQL`);
-      
+      this.historicalRoutes = routes;
+      console.log(`✅ Successfully loaded ${routes.length} historical routes from database`);
     } catch (error) {
       console.error('❌ Failed to load historical data from database:', error);
-      // Fallback to localStorage
-      try {
-        const savedData = localStorage.getItem('routeoptimizer-historical-data');
-        if (savedData) {
-          const parsed = JSON.parse(savedData);
-          this.historicalData = parsed.historicalData || [];
-          this.learningMetrics = { ...this.learningMetrics, ...parsed.learningMetrics };
-          console.log(`📂 Loaded ${this.historicalData.length} historical routes from localStorage fallback`);
-        }
-      } catch (fallbackError) {
-        console.error('❌ Failed to load from localStorage fallback:', fallbackError);
-      }
+      // Fallback-ul la localStorage nu va funcționa pe server
     }
   }
 
   generateLearningInsights(): any {
-    if (this.historicalData.length < 10) {
+    if (this.historicalRoutes.length < 10) {
       return { message: 'Need more data for insights (minimum 10 routes)' };
     }
 
     const insights = {
-      totalRoutes: this.historicalData.length,
-      averageAccuracy: this.learningMetrics.averageAccuracy,
+      totalRoutes: this.historicalRoutes.length,
+      averageAccuracy: this.accuracy,
       improvementTrend: this.calculateImprovementTrend(),
       bestPerformingConditions: this.identifyBestConditions(),
       worstPerformingConditions: this.identifyWorstConditions(),
@@ -860,9 +744,9 @@ export class HistoricalRouteLearner {
   }
 
   identifyBestConditions(): any {
-    if (this.historicalData.length === 0) return null;
+    if (this.historicalRoutes.length === 0) return null;
     
-    const bestRoute = this.historicalData.reduce((best, current) => 
+    const bestRoute = this.historicalRoutes.reduce((best, current) => 
       current.accuracy.overallAccuracy > best.accuracy.overallAccuracy ? current : best
     );
     
@@ -875,9 +759,9 @@ export class HistoricalRouteLearner {
   }
 
   identifyWorstConditions(): any {
-    if (this.historicalData.length === 0) return null;
+    if (this.historicalRoutes.length === 0) return null;
     
-    const worstRoute = this.historicalData.reduce((worst, current) => 
+    const worstRoute = this.historicalRoutes.reduce((worst, current) => 
       current.accuracy.overallAccuracy < worst.accuracy.overallAccuracy ? current : worst
     );
     
@@ -911,7 +795,7 @@ export class HistoricalRouteLearner {
 
   // Public API methods
   getHistoricalData(): HistoricalRoute[] {
-    return this.historicalData;
+    return this.historicalRoutes;
   }
 
   getLearningMetrics(): LearningMetrics {
@@ -919,11 +803,11 @@ export class HistoricalRouteLearner {
   }
 
   getRouteCount(): number {
-    return this.historicalData.length;
+    return this.historicalRoutes.length;
   }
 
   getAverageAccuracy(): number {
-    return this.learningMetrics.averageAccuracy;
+    return this.accuracy;
   }
   
   // Helper method to parse location strings

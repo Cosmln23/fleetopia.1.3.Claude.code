@@ -1,227 +1,34 @@
 import { MLOptimizationResult } from './ml-route-optimizer';
+import { PrismaClient, Vehicle, Maintenance } from '@prisma/client';
 
 // Comprehensive Vehicle Profile Interface
 export interface VehicleProfile {
-  // Identificare vehicul
-  vehicleId: string;
-  plateNumber: string;
-  vehicleName: string;
+  id: string;
+  name: string;
+  licensePlate: string;
+  currentState: any;
+  restrictions: any[];
+  historicalPerformance: any[];
+  associations: any;
+  optimizationData: any;
+  updatedAt: Date;
   createdAt: Date;
-  lastUpdated: Date;
-  
-  // Specificații tehnice complete
-  technicalSpecs: {
-    type: 'car' | 'van' | 'truck' | 'motorcycle' | 'electric' | 'hybrid';
-    category: 'personal' | 'commercial' | 'heavy_duty' | 'specialized';
-    brand: string;
-    model: string;
-    year: number;
-    
-    engine: {
-      fuelType: 'petrol' | 'diesel' | 'electric' | 'hybrid' | 'lpg' | 'cng';
-      engineSize: number;
-      horsePower: number;
-      torque: number;
-      emissionStandard: string;
-    };
-    
-    dimensions: {
-      length: number;
-      width: number;
-      height: number;
-      wheelbase: number;
-      groundClearance: number;
-    };
-    
-    weight: {
-      emptyWeight: number;
-      maxGrossWeight: number;
-      maxLoadCapacity: number;
-      trailerCapacity: number;
-    };
-    
-    fuelSystem: {
-      tankCapacity: number;
-      reserveCapacity: number;
-      refuelTime: number;
-      fuelType: string;
-    };
-    
-    performance: {
-      maxSpeed: number;
-      acceleration0to100: number;
-      cityRange: number;
-      highwayRange: number;
-      combinedRange: number;
-    };
-    
-    manufacturerConsumption: {
-      cityConsumption: number;
-      highwayConsumption: number;
-      combinedConsumption: number;
-      co2Emissions: number;
-    };
-  };
-  
-  // Starea actuală a vehiculului
-  currentState: {
-    fuelLevel: number;
-    estimatedRange: number;
-    lastRefuelDate: Date;
-    currentLoad: number;
-    loadDistribution: string;
-    trailerAttached: boolean;
-    trailerWeight: number;
-    maintenanceStatus: 'excellent' | 'good' | 'fair' | 'needs_service' | 'critical';
-    lastServiceKm: number;
-    nextServiceDue: number;
-    lastServiceDate: Date;
-    
-    componentCondition: {
-      tireCondition: 'new' | 'good' | 'worn' | 'needs_replacement';
-      brakeCondition: 'excellent' | 'good' | 'fair' | 'needs_service';
-      engineCondition: 'excellent' | 'good' | 'fair' | 'poor';
-      transmissionCondition: 'excellent' | 'good' | 'fair' | 'poor';
-    };
-    
-    specialConditions: {
-      airConditioningOn: boolean;
-      heatingOn: boolean;
-      auxEquipmentRunning: string[];
-      drivingMode: 'eco' | 'normal' | 'sport' | 'heavy_duty';
-    };
-  };
-  
-  // Restricții legale și operaționale
-  restrictions: {
-    legalRestrictions: {
-      maxDrivingTimePerDay: number;
-      mandatoryRestDuration: number;
-      nightDrivingAllowed: boolean;
-      weekendDrivingAllowed: boolean;
-      
-      restrictedZones: Array<{
-        zoneId: string;
-        zoneName: string;
-        restrictionType: 'weight' | 'height' | 'length' | 'pollution' | 'time' | 'complete';
-        restrictionValue: number;
-        timeRestrictions: string;
-      }>;
-      
-      speedLimitations: {
-        cityMaxSpeed: number;
-        countryMaxSpeed: number;
-        highwayMaxSpeed: number;
-        loadedMaxSpeed: number;
-      };
-    };
-    
-    physicalRestrictions: {
-      bridgeWeightLimits: number;
-      tunnelHeightLimits: number;
-      roadWidthLimits: number;
-      turningRadius: number;
-    };
-    
-    operationalRestrictions: {
-      maxDailyDistance: number;
-      approvedRouteTypes: string[];
-      fuelStationCompatibility: string[];
-      chargingStationRequirements: string;
-    };
-  };
-  
-  // Historical performance data
-  historicalPerformance: {
-    realWorldConsumption: {
-      actualCityConsumption: number;
-      actualHighwayConsumption: number;
-      actualCombinedConsumption: number;
-      consumptionVariability: number;
-      loadImpactFactor: number;
-    };
-    
-    conditionPerformance: {
-      winterConsumptionIncrease: number;
-      summerConsumptionIncrease: number;
-      mountainDrivingImpact: number;
-      cityTrafficImpact: number;
-      highSpeedImpact: number;
-    };
-    
-    reliabilityStats: {
-      averageBreakdownRate: number;
-      maintenanceCostPerKm: number;
-      depreciationRate: number;
-      availabilityRate: number;
-    };
-    
-    usagePatterns: {
-      dailyAverageDistance: number;
-      weeklyUsagePattern: number[];
-      seasonalUsageVariation: number;
-      primaryUsageType: 'urban' | 'highway' | 'mixed' | 'off_road';
-      loadFactorAverage: number;
-    };
-  };
-  
-  // Associations pentru cross-referencing
-  associations: {
-    primaryDriver: string | null;
-    secondaryDrivers: string[];
-    usageFrequency: Map<string, number>;
-    performanceByDriver: Map<string, {
-      fuelEfficiency: number;
-      maintenanceCare: number;
-      vehicleAbuse: number;
-    }>;
-  };
-  
-  // Learning și optimization metadata
-  optimizationData: {
-    profileCompleteness: number;
-    dataQuality: number;
-    optimizationPotential: number;
-    lastOptimizationUpdate: Date;
-    specialOptimizations: string[];
-  };
 }
 
-export interface VehicleOptimizationResult extends MLOptimizationResult {
+export interface VehicleOptimizationResult {
   vehicleOptimized: boolean;
   vehicleId: string;
-  fuelAnalysis: {
-    estimatedConsumption: number;
-    fuelNeeded: number;
-    fuelNeededLiters: number;
-    currentFuelAmount: number;
-    canCompleteWithCurrentFuel: boolean;
-    recommendedRefuelStops: any[];
-    factors: {
-      baseConsumption: string;
-      loadImpact: string;
-      maintenanceImpact: string;
-      seasonalImpact: string;
-      specialConditions: string;
-    };
+  distance: number;
+  duration: number;
+  fuelConsumption: number;
+  operatingCost: number;
+  optimizationFactor: number;
+  savings: {
+    fuel: number;
+    time: number;
+    cost: number;
   };
-  operatingCost: {
-    totalCost: number;
-    breakdown: {
-      fuel: number;
-      maintenance: number;
-      tireWear: number;
-      depreciation: number;
-      driver: number;
-      tolls: number;
-    };
-    costPerKm: number;
-  };
-  warnings: VehicleWarning[];
-  viabilityScore: number;
-  efficiencyGain: number;
-  chargingRequired?: boolean;
-  chargingStops?: any[];
+  recommendations: string[];
 }
 
 export interface VehicleWarning {
@@ -246,22 +53,14 @@ export class VehicleSpecificOptimizer {
 
     try {
       console.log('🚛 Initializing Vehicle-Specific Optimization Engine...');
-      
-      // Load existing vehicle profiles
       await this.loadVehicleProfiles();
-      
-      // Initialize specialized optimizers
-      await this.initializeSpecializedOptimizers();
-      
-      // Setup optimization algorithms
-      await this.setupOptimizationAlgorithms();
-      
       this.isInitialized = true;
+      console.log('🧠 Initializing specialized vehicle optimizers...');
+      console.log('📋 Setting up vehicle optimization algorithms...');
       console.log('✅ Vehicle-Specific Optimization Engine initialized');
       console.log(`🚗 Loaded ${this.vehicleProfiles.size} vehicle profiles`);
-      
     } catch (error) {
-      console.error('❌ Failed to initialize vehicle optimization:', error);
+      console.error('❌ Failed to initialize Vehicle-Specific Optimization Engine:', error);
       this.isInitialized = false;
     }
   }
@@ -284,7 +83,7 @@ export class VehicleSpecificOptimizer {
       
       // Recalculate optimization potential
       profile.optimizationData = this.calculateOptimizationData(profile);
-      profile.lastUpdated = new Date();
+      profile.updatedAt = new Date();
       
       // Save updated profile
       this.vehicleProfiles.set(vehicleId, profile);
@@ -302,13 +101,9 @@ export class VehicleSpecificOptimizer {
 
   private createNewVehicleProfile(vehicleId: string, vehicleData: any): VehicleProfile {
     return {
-      vehicleId: vehicleId,
-      plateNumber: vehicleData.plateNumber || vehicleId,
-      vehicleName: vehicleData.vehicleName || `Vehicle ${vehicleId}`,
-      createdAt: new Date(),
-      lastUpdated: new Date(),
-      
-      technicalSpecs: this.extractTechnicalSpecs(vehicleData),
+      id: vehicleId,
+      name: vehicleData.name || `Vehicle ${vehicleId}`,
+      licensePlate: vehicleData.licensePlate || vehicleId,
       currentState: this.initializeCurrentState(vehicleData),
       restrictions: this.setupVehicleRestrictions(vehicleData),
       historicalPerformance: this.initializeHistoricalPerformance(),
@@ -324,7 +119,9 @@ export class VehicleSpecificOptimizer {
         optimizationPotential: 0.6, 
         lastOptimizationUpdate: new Date(), 
         specialOptimizations: [] 
-      }
+      },
+      updatedAt: new Date(),
+      createdAt: new Date()
     };
   }
 
@@ -752,17 +549,8 @@ export class VehicleSpecificOptimizer {
     return Math.random() * 0.15 + 0.05; // 5-20% efficiency gain
   }
 
-  private async initializeSpecializedOptimizers() {
-    console.log('🧠 Initializing specialized vehicle optimizers...');
-  }
-
-  private async setupOptimizationAlgorithms() {
-    console.log('📋 Setting up vehicle optimization algorithms...');
-  }
-
   async saveVehicleProfiles(): Promise<void> {
     try {
-      const { PrismaClient } = await import('@prisma/client');
       const prisma = new PrismaClient();
       
       for (const [vehicleId, profile] of this.vehicleProfiles) {
@@ -816,16 +604,12 @@ export class VehicleSpecificOptimizer {
 
   async loadVehicleProfiles(): Promise<void> {
     try {
-      const { PrismaClient } = await import('@prisma/client');
       const prisma = new PrismaClient();
-      
-      // Load vehicles from PostgreSQL
-      const vehicles = await prisma.vehicle.findMany({
+      const profiles = await prisma.vehicle.findMany({
         select: {
           id: true,
           name: true,
           licensePlate: true,
-          specifications: true,
           currentState: true,
           restrictions: true,
           historicalPerformance: true,
@@ -835,59 +619,11 @@ export class VehicleSpecificOptimizer {
           createdAt: true
         }
       });
-      
-      // Convert database records to VehicleProfile format
-      vehicles.forEach(vehicle => {
-        if (vehicle.specifications) {
-          const profile: VehicleProfile = {
-            vehicleId: vehicle.id,
-            plateNumber: vehicle.licensePlate || vehicle.id,
-            vehicleName: vehicle.name || `Vehicle ${vehicle.id}`,
-            createdAt: vehicle.createdAt,
-            lastUpdated: vehicle.updatedAt,
-            technicalSpecs: vehicle.specifications as any,
-            currentState: vehicle.currentState as any || this.initializeCurrentState({}),
-            restrictions: vehicle.restrictions as any || this.setupVehicleRestrictions({}),
-            historicalPerformance: vehicle.historicalPerformance as any || this.initializeHistoricalPerformance(),
-            associations: {
-              primaryDriver: (vehicle.associations as any)?.primaryDriver || null,
-              secondaryDrivers: (vehicle.associations as any)?.secondaryDrivers || [],
-              usageFrequency: new Map(Object.entries((vehicle.associations as any)?.usageFrequency || {})),
-              performanceByDriver: new Map(Object.entries((vehicle.associations as any)?.performanceByDriver || {}))
-            },
-            optimizationData: vehicle.optimizationData as any || {
-              profileCompleteness: 0.3,
-              dataQuality: 0.5,
-              optimizationPotential: 0.6,
-              lastOptimizationUpdate: new Date(),
-              specialOptimizations: []
-            }
-          };
-          
-          this.vehicleProfiles.set(vehicle.id, profile);
-        }
-      });
-      
-      await prisma.$disconnect();
-      console.log(`📂 Loaded ${this.vehicleProfiles.size} vehicle profiles from PostgreSQL`);
-      
+      profiles.forEach(p => this.vehicleProfiles.set(p.id, p as any));
+      console.log(`✅ Successfully loaded ${profiles.length} vehicle profiles from database`);
     } catch (error) {
       console.error('❌ Failed to load vehicle profiles from database:', error);
-      // Fallback to localStorage
-      try {
-        const savedData = localStorage.getItem('routeoptimizer-vehicle-profiles');
-        if (savedData) {
-          const parsed = JSON.parse(savedData);
-          
-          Object.entries(parsed.vehicleProfiles || {}).forEach(([vehicleId, profile]) => {
-            this.vehicleProfiles.set(vehicleId, profile as VehicleProfile);
-          });
-          
-          console.log(`📂 Loaded ${this.vehicleProfiles.size} vehicle profiles from localStorage fallback`);
-        }
-      } catch (fallbackError) {
-        console.error('❌ Failed to load vehicle profiles from localStorage fallback:', fallbackError);
-      }
+       // Fallback la localStorage nu este o idee bună pe server
     }
   }
 

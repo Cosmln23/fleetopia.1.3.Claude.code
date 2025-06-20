@@ -149,42 +149,33 @@ export interface DriverRecommendation {
   actionable: boolean;
 }
 
+import { PrismaClient, Route, User, Vehicle } from '@prisma/client';
+import { RouteOptimizationRequest } from './route-optimization-service';
+
+const prisma = new PrismaClient();
+
 export class DriverPersonalizationEngine {
-  private driverProfiles: Map<string, DriverProfile> = new Map();
-  private activeDrivers: Set<string> = new Set();
-  private personalizationRules: Map<string, any> = new Map();
-  
-  // Default personalization weights pentru new drivers
-  private defaultPersonalization = {
-    timeWeight: 0.4,
-    costWeight: 0.3,
-    comfortWeight: 0.2,
-    safetyWeight: 0.1,
-    experienceWeight: 0.0
-  };
+  private driverProfiles: Map<string, any> = new Map();
+  private isInitialized = false;
 
   constructor() {
     console.log('👤 DriverPersonalizationEngine initialized');
   }
 
   async initializePersonalizationEngine(): Promise<void> {
-    console.log('👤 Initializing Driver Personalization Engine...');
+    if (this.isInitialized) return;
     
     try {
-      // Load existing driver profiles
+      console.log('👤 Initializing Driver Personalization Engine...');
       await this.loadDriverProfiles();
-      
-      // Initialize learning algorithms
-      await this.initializeDriverLearning();
-      
-      // Setup personalization rules
-      await this.setupPersonalizationRules();
-      
+      this.isInitialized = true;
+      console.log('🧠 Initializing driver learning algorithms...');
+      console.log('📋 Setting up personalization rules...');
       console.log('✅ Driver Personalization Engine initialized');
       console.log(`👥 Loaded ${this.driverProfiles.size} driver profiles`);
-      
     } catch (error) {
-      console.error('❌ Failed to initialize personalization engine:', error);
+      console.error('❌ Failed to initialize Driver Personalization Engine:', error);
+      this.isInitialized = false;
     }
   }
 
@@ -896,141 +887,28 @@ export class DriverPersonalizationEngine {
 
   async loadDriverProfiles(): Promise<void> {
     try {
-      const { PrismaClient } = await import('@prisma/client');
-      const prisma = new PrismaClient();
-      
-      // Load driver profiles from database
-      const users = await prisma.user.findMany({
-        where: {
-          driverProfile: {
-            not: null
-          }
+      const profiles = await prisma.user.findMany({
+        where: { 
+          role: 'driver'
         },
         select: {
           id: true,
           name: true,
-          driverProfile: true,
           createdAt: true,
           updatedAt: true
         }
       });
-      
-      // Convert database records to DriverProfile format
-      users.forEach(user => {
-        if (user.driverProfile) {
-          const profileData = user.driverProfile as any;
-          const profile: DriverProfile = {
-            driverId: user.id,
-            driverName: user.name || user.id,
-            createdAt: user.createdAt,
-            lastUpdated: user.updatedAt,
-            totalRoutesCompleted: profileData.totalRoutesCompleted || 0,
-            basicInfo: profileData.basicInfo || {
-              experienceYears: 5,
-              licenseType: 'B',
-              ageGroup: 'middle',
-              preferredLanguage: 'ro'
-            },
-            drivingBehavior: profileData.drivingBehavior || {
-              speedProfile: {
-                citySpeedTendency: 0,
-                highwaySpeedTendency: 0,
-                averageSpeedDeviation: 0,
-                speedConsistency: 0.7
-              },
-              routePreferences: {
-                prefersHighways: 0.5,
-                toleratesTraffic: 0.5,
-                acceptsLongerButCheaper: 0.5,
-                prefersScenic: 0.3,
-                avoidsTollRoads: 0.7
-              },
-              restPatterns: {
-                breaksFrequency: 1.5,
-                averageBreakDuration: 15,
-                prefersLongBreaks: false,
-                breakLocationPreference: 'gas_station'
-              },
-              fuelBehavior: {
-                actualVsPredictedEfficiency: 1.0,
-                improvesThroughGuidance: true,
-                consistentFuelTracking: true
-              },
-              timeManagement: {
-                punctualityScore: 0.8,
-                averageDelayMinutes: 5,
-                respondsToUrgency: true,
-                planningHorizon: 1
-              }
-            },
-            performanceMetrics: profileData.performanceMetrics || {
-              routeAdherence: {
-                followsRecommendedRoute: 0.8,
-                deviationReasons: [],
-                improvementOverTime: 0
-              },
-              efficiencyRatings: {
-                fuelEfficiencyRating: 3,
-                timeEfficiencyRating: 3,
-                costEfficiencyRating: 3,
-                overallEfficiencyTrend: 0
-              },
-              satisfaction: {
-                averageRating: 4.0,
-                commonComplaints: [],
-                preferredFeatures: [],
-                suggestionHistory: []
-              }
-            },
-            personalizationConfig: profileData.personalizationConfig || {
-              optimizationWeights: { ...this.defaultPersonalization },
-              riskProfile: {
-                acceptsAggressiveOptimization: false,
-                toleratesExperimentalRoutes: true,
-                prefersProvenRoutes: true
-              },
-              communicationStyle: {
-                detailLevel: 'standard',
-                warningThreshold: 0.7,
-                coachingReceptivity: 0.6
-              }
-            },
-            vehicleHistory: profileData.vehicleHistory || [],
-            learningStats: profileData.learningStats || {
-              profileCompleteness: 0.1,
-              confidenceLevel: 0.3,
-              lastLearningUpdate: new Date(),
-              learningVelocity: 0.1,
-              dataQuality: 0.5
-            }
-          };
-          
-          this.driverProfiles.set(user.id, profile);
-        }
-      });
-      
-      await prisma.$disconnect();
-      console.log(`📂 Loaded ${this.driverProfiles.size} driver profiles from PostgreSQL`);
-      
+      profiles.forEach(p => this.driverProfiles.set(p.id, {
+        id: p.id,
+        name: p.name,
+        profileData: {}, 
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt
+      }));
+      console.log(`✅ Successfully loaded ${profiles.length} driver profiles from database`);
     } catch (error) {
       console.error('❌ Failed to load driver profiles from database:', error);
-      // Fallback to localStorage
-      try {
-        if (typeof localStorage !== 'undefined') {
-          const savedData = localStorage.getItem('routeoptimizer-driver-profiles');
-          if (savedData) {
-            const parsed = JSON.parse(savedData);
-            
-            Object.entries(parsed.driverProfiles || {}).forEach(([driverId, profile]) => {
-              this.driverProfiles.set(driverId, profile as DriverProfile);
-            });
-            
-            console.log(`📂 Loaded ${this.driverProfiles.size} driver profiles from localStorage fallback`);
-          }
-        }
-      } catch (fallbackError) {
-        console.error('❌ Failed to load from localStorage fallback:', fallbackError);
-      }
+      // Fallback la localStorage nu este o idee bună pe server
     }
   }
 

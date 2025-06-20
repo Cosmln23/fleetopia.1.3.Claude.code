@@ -9,7 +9,6 @@ const nextConfig = {
   images: { 
     unoptimized: true 
   },
-  serverExternalPackages: ['prisma']
 };
 
 module.exports = nextConfig;
