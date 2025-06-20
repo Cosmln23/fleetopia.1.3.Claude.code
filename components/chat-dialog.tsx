@@ -4,7 +4,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send } from 'lucide-react';
@@ -16,136 +23,188 @@ type MessageWithSender = PrismaChatMessage & {
   sender: Partial<User>;
 };
 
-interface ChatDialogProps {
-  offer: CargoOffer;
-  isOpen: boolean;
-  onClose: () => void;
+interface ChatMessage {
+  id: string;
+  content: string;
+  createdAt: string;
+  senderId: string;
+  sender: {
+    name: string | null;
+    image: string | null;
+  } | null;
 }
 
-export const ChatDialog: React.FC<ChatDialogProps> = ({ offer, isOpen, onClose }) => {
-  const { user, isSignedIn } = useUser();
-  const { toast } = useToast();
-  const [messages, setMessages] = useState<MessageWithSender[]>([]);
+interface ChatDialogProps {
+  cargoOfferId: string;
+}
+
+export function ChatDialog({ cargoOfferId }: ChatDialogProps) {
+  const { user } = useUser();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (cargoOfferId) {
+      fetchMessages();
+    }
+  }, [cargoOfferId]);
+
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+      scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  }, [messages]);
 
   const fetchMessages = async () => {
-    if (!offer.id) return;
+    setIsLoading(true);
     try {
-      const response = await fetch(`/api/marketplace/cargo/${offer.id}/chat`);
+      const response = await fetch(`/api/marketplace/cargo/${cargoOfferId}/chat`);
       if (response.ok) {
         const data = await response.json();
         setMessages(data);
       } else {
-        toast({ title: 'Error', description: 'Failed to fetch messages.', variant: 'destructive' });
+        toast({
+          title: "Error",
+          description: "Failed to load chat messages.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'An error occurred while fetching messages.', variant: 'destructive' });
-    }
-  };
-
-  useEffect(() => {
-    if (isOpen) {
-      fetchMessages();
-      // Poll for new messages every 5 seconds
-      const interval = setInterval(fetchMessages, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [isOpen]);
-
-  useEffect(() => {
-    // Auto-scroll to bottom
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight });
-    }
-  }, [messages]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || !offer.id) return;
-
-    setIsLoading(true);
-    try {
-      const response = await fetch(`/api/marketplace/cargo/${offer.id}/chat`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newMessage }),
+      console.error('Error fetching chat:', error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred.",
+        variant: "destructive",
       });
-
-      if (response.ok) {
-        const sentMessage = await response.json();
-        setMessages(prev => [...prev, sentMessage]);
-        setNewMessage('');
-      } else {
-        toast({ title: 'Error', description: 'Failed to send message.', variant: 'destructive' });
-      }
-    } catch (error) {
-      toast({ title: 'Error', description: 'An error occurred while sending the message.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isSignedIn || !user) return null;
+  const handleSendMessage = async () => {
+    if (newMessage.trim() === '' || !user) return;
+
+    const optimisticMessage: ChatMessage = {
+      id: `temp-${Date.now()}`,
+      content: newMessage,
+      createdAt: new Date().toISOString(),
+      senderId: user.id,
+      sender: {
+        name: user.firstName,
+        image: user.imageUrl,
+      },
+    };
+
+    setMessages(prev => [...prev, optimisticMessage]);
+    setNewMessage('');
+
+    try {
+      const response = await fetch(`/api/marketplace/cargo/${cargoOfferId}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: newMessage }),
+      });
+
+      if (!response.ok) {
+        setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id)); // Revert optimistic update
+        toast({
+          title: "Error",
+          description: "Failed to send message.",
+          variant: "destructive",
+        });
+      } else {
+        // Option 1: Re-fetch all messages to get the real one
+        fetchMessages();
+        // Option 2: Replace optimistic message with real one from response
+        // const savedMessage = await response.json();
+        // setMessages(prev => prev.map(m => m.id === optimisticMessage.id ? savedMessage : m));
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id)); // Revert optimistic update
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred while sending.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl h-[70vh] flex flex-col">
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline">Open Chat</Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Chat for: {offer.title}</DialogTitle>
+          <DialogTitle>Chat for Cargo Offer</DialogTitle>
+          <DialogDescription>
+            Discuss details with the other party.
+          </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-grow p-4 border rounded-md" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex items-start gap-3 ${
-                  msg.senderId === session.user?.id ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                {msg.senderId !== session.user?.id && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={msg.sender.image || ''} />
-                    <AvatarFallback>{msg.sender.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-                  </Avatar>
-                )}
-                <div
-                  className={`max-w-xs md:max-w-md p-3 rounded-lg ${
-                    msg.senderId === session.user?.id
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-slate-700 text-slate-200'
-                  }`}
-                >
-                  <p className="text-sm">{msg.content}</p>
-                  <p className="text-xs opacity-70 mt-1 text-right">
-                    {new Date(msg.createdAt).toLocaleTimeString()}
-                  </p>
-                </div>
-                 {msg.senderId === session.user?.id && (
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={session.user?.image || ''} />
-                    <AvatarFallback>{session.user?.name?.charAt(0).toUpperCase() || 'Me'}</AvatarFallback>
-                  </Avatar>
-                )}
+        <div className="space-y-4 py-4">
+          <div className="h-[400px] pr-4">
+          {isLoading ? (
+            <div className="flex justify-center items-center h-full">
+              <p>Loading chat...</p>
+            </div>
+          ) : (
+            <ScrollArea className="h-full w-full" ref={scrollAreaRef}>
+              <div className="space-y-4">
+                {messages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className={`flex items-end gap-2 ${
+                      msg.senderId === user?.id ? 'justify-end' : 'justify-start'
+                    }`}
+                  >
+                    {msg.senderId !== user?.id && (
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={msg.sender?.image || ''} />
+                        <AvatarFallback>{msg.sender?.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                      </Avatar>
+                    )}
+                    <div
+                      className={`max-w-[70%] rounded-lg px-4 py-2 ${
+                        msg.senderId === user?.id
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <p className="text-sm">{msg.content}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    {msg.senderId === user?.id && (
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.imageUrl || ''} />
+                        <AvatarFallback>{user?.firstName?.charAt(0).toUpperCase() || 'M'}</AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                ))}
               </div>
-            ))}
+            </ScrollArea>
+          )}
           </div>
-        </ScrollArea>
-        <DialogFooter>
-          <form onSubmit={handleSendMessage} className="flex w-full gap-2">
+          <div className="flex gap-2">
             <Input
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
               placeholder="Type your message..."
               disabled={isLoading}
             />
-            <Button type="submit" disabled={isLoading}>
-              <Send className="h-4 w-4" />
+            <Button onClick={handleSendMessage} disabled={isLoading || newMessage.trim() === ''}>
+              Send
             </Button>
-          </form>
-        </DialogFooter>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
-}; 
+} 

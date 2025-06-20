@@ -1,13 +1,14 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 import { DispatcherAnalysis } from '@/lib/dispatcher-types';
 
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { userId } = auth();
+    const user = await currentUser();
     
-    if (!userId) {
+    if (!userId || !user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate personalized message in English
-    const userName = session.user.name || 'User';
+    const userName = user.firstName || 'User';
     const { availableVehicles, newOffers, suggestions, todayProfit } = analysis;
 
     let message: string;
