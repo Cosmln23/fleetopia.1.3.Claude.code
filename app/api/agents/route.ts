@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 
 export async function GET(request: NextRequest) {
   try {
@@ -105,9 +104,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { userId } = await auth();
     
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json({ 
         success: false, 
         error: 'Unauthorized' 
@@ -139,7 +138,7 @@ export async function POST(request: NextRequest) {
           weight: 0.5,
           mcpCompatible: false,
           createdBy: {
-            connect: { id: session.user.id }
+            connect: { id: userId }
           }
         }
       });

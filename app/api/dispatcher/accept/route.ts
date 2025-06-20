@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
+
 import { acceptSuggestionSchema } from '@/lib/validations';
 import { prisma } from '@/lib/prisma';
 import { dbUtils } from '@/lib/db-utils';
@@ -8,8 +8,8 @@ import { dbUtils } from '@/lib/db-utils';
 export async function POST(request: NextRequest, context: { params?: Record<string, string | string[]> }) {
   try {
     // Get session for authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized', message: 'Authentication required' },
         { status: 401 }
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest, context: { params?: Record<stri
       
     try {
       // Use cached database operation with transaction
-      const result = await dbUtils.acceptCargoOffer(cargoOfferId, vehicleId, session.user.id);
+      const result = await dbUtils.acceptCargoOffer(cargoOfferId, vehicleId, userId);
 
       return NextResponse.json({ 
         success: true,

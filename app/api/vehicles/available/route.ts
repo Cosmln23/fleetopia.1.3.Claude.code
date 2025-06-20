@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
+
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,9 +25,9 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { userId } = await auth();
     
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
       where: { 
         id: vehicleId,
         fleet: {
-          userId: session.user.id
+          userId: userId
         }
       },
       include: {
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       pricePerKm: pricePerKm || 1.5,
       ownerName: vehicle.fleet.owner.name,
       postedAt: new Date().toISOString(),
-      userId: session.user.id
+      userId: userId
     };
 
     // For demonstration, we'll store this in a global variable or simple cache

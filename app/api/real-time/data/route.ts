@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -14,16 +14,16 @@ const getEmptyResponse = (message: string) => ({
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { userId } = await auth();
     
-    if (!session?.user?.id) {
+    if (!userId) {
       // Return empty data instead of demo data
       return NextResponse.json(getEmptyResponse('Please log in to see your vehicles'));
     }
 
     // Find user's fleets
     const userFleets = await prisma.fleet.findMany({
-      where: { userId: session.user.id },
+      where: { userId: userId },
       select: { id: true }
     });
 

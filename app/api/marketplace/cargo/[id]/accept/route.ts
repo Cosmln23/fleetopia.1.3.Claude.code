@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
+
 
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const { userId } = await auth();
 
-    if (!session || !session.user || !session.user.id) {
+    if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const params = await context.params;
     const offerId = params.id;
-    const userId = session.user.id;
+    
 
     const cargoOffer = await prisma.cargoOffer.findUnique({
       where: { id: offerId },

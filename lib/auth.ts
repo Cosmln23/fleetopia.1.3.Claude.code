@@ -1,89 +1,51 @@
-import { NextAuthOptions } from 'next-auth';
-import GoogleProvider from 'next-auth/providers/google';
-import CredentialsProvider from 'next-auth/providers/credentials';
+import { auth, currentUser } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 
-// Fallback pentru demo când variabilele de mediu nu sunt setate
-const providers = [];
-
-// Adaugă Google provider doar dacă variabilele sunt configurate
-if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-  providers.push(
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      allowDangerousEmailAccountLinking: true,
-    })
-  );
+// Clerk authentication utilities
+export async function requireAuth() {
+  const { userId } = auth();
+  
+  if (!userId) {
+    redirect('/sign-in');
+  }
+  
+  return userId;
 }
 
-// Adaugă credentials provider cu utilizatori predefiniti
-providers.push(
-  CredentialsProvider({
-    name: 'Fleetopia Login',
-    credentials: {
-      email: { label: 'Email', type: 'email', placeholder: 'owner@fleetopia.com' },
-      password: { label: 'Password', type: 'password', placeholder: 'owner123' },
-    },
-    async authorize(credentials) {
-      // Utilizatori predefiniti - în viitor vor fi din baza de date
-      const users = [
-        {
-          id: 'owner-001',
-          email: 'owner@fleetopia.com',
-          password: 'owner123',
-          name: 'Fleet Owner',
-          role: 'OWNER'
-        },
-        {
-          id: 'editor-001', 
-          email: 'editor@fleetopia.com',
-          password: 'editor123',
-          name: 'Fleet Editor',
-          role: 'EDITOR'
-        }
-      ];
+export async function getCurrentUser() {
+  const user = await currentUser();
+  return user;
+}
 
-      const user = users.find(u => 
-        u.email === credentials?.email && u.password === credentials?.password
-      );
+export async function getUserId() {
+  const { userId } = auth();
+  return userId;
+}
 
-      if (user) {
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        };
-      }
-      
-      return null;
-    },
-  })
-);
+export async function requireRole(allowedRoles: string[] = ['owner', 'editor']) {
+  const user = await currentUser();
+  
+  if (!user) {
+    redirect('/sign-in');
+  }
+  
+  const userRole = user.publicMetadata?.role as string || 'user';
+  
+  if (!allowedRoles.includes(userRole)) {
+    throw new Error('Insufficient permissions');
+  }
+  
+  return user;
+}
 
-export const authOptions: NextAuthOptions = {
-  providers,
-  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-demo',
-  session: {
-    strategy: 'jwt',
-  },
-  callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = (user as any).role;
-      }
-      return token;
-    },
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.sub as string;
-        (session.user as any).role = token.role;
-      }
-      return session;
-    },
-  },
-  pages: {
-    // Pagini custom de login în viitor
-    // signIn: '/auth/signin',
-  },
-}; 
+// Helper function to check if user is authenticated
+export function isAuthenticated() {
+  const { userId } = auth();
+  return !!userId;
+}
+
+// Get user role from metadata
+export async function getUserRole() {
+  const user = await currentUser();
+  return user?.publicMetadata?.role as string || 'user';
+} 

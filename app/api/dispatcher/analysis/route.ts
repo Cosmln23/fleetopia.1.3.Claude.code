@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
+
 import { prisma } from '@/lib/prisma';
 import { DispatcherAnalysis } from '@/lib/dispatcher-types';
 import { Prisma } from '@prisma/client';
@@ -23,9 +23,9 @@ const defaultAnalysis: DispatcherAnalysis = {
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const { userId } = await auth();
     
-    if (!session?.user?.id) {
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     let vehicleCount = 0;
     try {
       vehicleCount = await prisma.vehicle.count({
-        where: { fleet: { userId: session.user.id } },
+        where: { fleet: { userId: userId } },
       });
     } catch (error) {
       console.warn('Could not count vehicles:', error);
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     try {
       [userFleets, newOffers] = await Promise.all([
         prisma.fleet.findMany({
-          where: { userId: session.user.id },
+          where: { userId: userId },
           include: {
             vehicles: {
               where: {

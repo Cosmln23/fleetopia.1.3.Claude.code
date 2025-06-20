@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
+
 
 // GET all chat messages for a specific cargo offer
 export async function GET(
@@ -9,14 +9,14 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const params = await context.params;
     const offerId = params.id;
-    const userId = session.user.id;
+    
 
     const cargoOffer = await prisma.cargoOffer.findUnique({
       where: { id: offerId },
@@ -56,14 +56,14 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const { userId } = await auth();
+    if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
 
     const params = await context.params;
     const offerId = params.id;
-    const userId = session.user.id;
+    
 
     const { message } = await request.json();
     const content = message;
