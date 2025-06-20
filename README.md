@@ -96,8 +96,9 @@ cp .env.example .env
 Editează fișierul `.env` cu configurările tale:
 ```env
 DATABASE_URL="postgresql://username:password@localhost:5432/fleetopia"
-NEXTAUTH_SECRET="your-secret-key"
-NEXTAUTH_URL="http://localhost:3000"
+# Clerk Authentication (replaces NextAuth)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="your-clerk-publishable-key"
+CLERK_SECRET_KEY="your-clerk-secret-key"
 ```
 
 5. **Configurează baza de date (opțional)**
@@ -282,7 +283,7 @@ Aplicația folosește **Tailwind CSS** cu suport pentru teme întunecate/luminoa
 - ✅ **Tailwind CSS** pentru styling
 - ✅ **React Query** pentru state management
 - ✅ **Zod** pentru validare
-- ✅ **NextAuth** pentru autentificare
+- ✅ **Clerk** pentru autentificare modernă
 
 ## 🎯 Status Actual al Proiectului
 

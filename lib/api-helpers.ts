@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@clerk/nextjs/server';
 import { applyRateLimit, rateLimiters, RateLimitError } from './rate-limit';
 
 interface ApiHandlerOptions {
@@ -58,13 +57,14 @@ export function createApiHandler(options: ApiHandlerOptions = {}) {
         // Get session if auth is required
         let session = null;
         if (requireAuth) {
-          session = await getServerSession(authOptions);
-          if (!session?.user?.id) {
+          const { userId } = await auth();
+          if (!userId) {
             return NextResponse.json(
               { error: 'Unauthorized', message: 'Authentication required' },
               { status: 401 }
             );
           }
+          session = { user: { id: userId } };
         }
 
         // Parse and validate request body
