@@ -1,6 +1,9 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@clerk/nextjs/server';
+import { VehicleStatus, CargoStatus } from '@prisma/client';
+
+export const dynamic = 'force-dynamic'; // Force dynamic rendering
 
 export async function GET(request: NextRequest) {
   try {
@@ -42,7 +45,7 @@ export async function GET(request: NextRequest) {
       prisma.vehicle.count({
         where: { 
           fleetId: { in: fleetIds },
-          status: 'active'
+          status: VehicleStatus.in_transit
         }
       }),
       
@@ -55,7 +58,7 @@ export async function GET(request: NextRequest) {
       prisma.cargoOffer.count({
         where: { 
           userId: userId,
-          status: 'available'
+          status: CargoStatus.NEW
         }
       }),
       
@@ -87,7 +90,7 @@ export async function GET(request: NextRequest) {
           id: fleet.id,
           name: fleet.name,
           vehicleCount: fleet.vehicles.length,
-          activeVehicles: fleet.vehicles.filter(v => v.status === 'active').length
+          activeVehicles: fleet.vehicles.filter(v => v.status === VehicleStatus.in_transit).length
         }))
       }
     });

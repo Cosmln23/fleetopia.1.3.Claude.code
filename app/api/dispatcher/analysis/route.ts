@@ -3,7 +3,9 @@ import { auth } from '@clerk/nextjs/server';
 
 import { prisma } from '@/lib/prisma';
 import { DispatcherAnalysis } from '@/lib/dispatcher-types';
-import { Prisma } from '@prisma/client';
+import { Prisma, VehicleStatus, CargoStatus } from '@prisma/client';
+
+export const dynamic = 'force-dynamic'; // Force dynamic rendering
 
 const standbyAnalysis: DispatcherAnalysis = {
   availableVehicles: 0,
@@ -59,7 +61,7 @@ export async function GET(request: NextRequest) {
           include: {
             vehicles: {
               where: {
-                status: { in: ['idle', 'assigned'] }
+                status: { in: [VehicleStatus.idle, VehicleStatus.assigned] }
               },
               select: {
                 id: true,
@@ -73,7 +75,7 @@ export async function GET(request: NextRequest) {
         }),
         prisma.cargoOffer.findMany({
           where: {
-            status: 'NEW',
+            status: CargoStatus.NEW,
             createdAt: { gte: yesterday }
           },
           select: {
