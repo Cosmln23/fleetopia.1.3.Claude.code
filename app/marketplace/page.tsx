@@ -255,6 +255,7 @@ export default function MarketplacePage() {
 
   const handlePostCargo = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('handlePostCargo called');
 
     const parsedData = {
       ...newCargo,
@@ -263,9 +264,14 @@ export default function MarketplacePage() {
       price: parseFloat(newCargo.price) || 0,
     };
 
+    console.log('Parsed data:', parsedData);
+
     const validation = createCargoOfferSchema.safeParse(parsedData);
 
+    console.log('Validation result:', validation);
+
     if (!validation.success) {
+      console.log('Validation errors:', validation.error.errors);
       const errorMessages = validation.error.errors.map(err => err.message).join('\n- ');
       toast({
           title: "Validation Failed",
@@ -277,9 +283,12 @@ export default function MarketplacePage() {
     }
 
     if (!isSignedIn) {
+      console.log('User not signed in');
       toast({ title: "Error", description: "You must be logged in to post an offer.", variant: "destructive" });
       return;
     }
+    
+    console.log('Starting API call...');
     setPosting(true);
     try {
       const response = await fetch('/api/marketplace/cargo', {
@@ -288,7 +297,10 @@ export default function MarketplacePage() {
         body: JSON.stringify(validation.data),
       });
 
+      console.log('API response:', response.status);
+
       if (response.ok) {
+        console.log('Success - offer posted');
         toast({ title: "Success", description: "Cargo offer has been posted." });
         setIsAddCargoOpen(false);
         setNewCargo({
