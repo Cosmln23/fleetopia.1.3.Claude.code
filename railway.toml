@@ -1,20 +1,6 @@
 [build]
 builder = "nixpacks"
-
-[build.watchPatterns]
-include = ["**/*.{ts,tsx,js,jsx,json,prisma}"]
-exclude = [
-  "test-*.js", 
-  "test-dynamic-fuel-pricing.js",
-  "*.md", 
-  "*.log", 
-  "scripts/", 
-  "*.txt", 
-  "*.pdf",
-  "node_modules/**",
-  ".git/**",
-  ".next/**"
-]
+watchPatterns = ["**/*.{ts,tsx,js,jsx,json,prisma}"]
 
 [deploy]
 startCommand = "npm start"

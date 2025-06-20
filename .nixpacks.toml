@@ -1,31 +1,14 @@
 [phases.setup]
-nixPkgs = ['nodejs_18', 'yarn']
+nixPkgs = ['nodejs_18']
 
 [phases.install]
 cmds = ['npm ci']
 
-[phases.build]
+[phases.build] 
 cmds = ['npm run build']
 
 [start]
 cmd = 'npm start'
 
 [variables]
-NODE_ENV = 'production'
-
-# Explicitly exclude problematic files
-[build]
-ignorePaths = [
-  'test-*.js',
-  '*.test.js', 
-  '*.test.ts',
-  '*.md',
-  '!README.md',
-  '*.log',
-  '*.txt',
-  '*.pdf',
-  'scripts/',
-  '.git/',
-  '.next/',
-  'node_modules/'
-] 
+NODE_ENV = 'production' 
