@@ -10,10 +10,10 @@
       "has": [
         {
           "type": "host",
-          "value": "fleetopia.co"
+          "value": "www.fleetopia.co"
         }
       ],
-      "destination": "https://www.fleetopia.co/$1",
+      "destination": "https://fleetopia.co/$1",
       "permanent": true
     }
   ]
