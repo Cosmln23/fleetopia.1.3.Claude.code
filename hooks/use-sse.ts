@@ -1,131 +1,124 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 
-interface SSEEventHandler {
+interface PollingEventHandler {
   [event: string]: (data: any) => void;
 }
 
-export function useSSE(url: string, eventHandlers: SSEEventHandler) {
+// Replace SSE with polling for better Vercel compatibility
+export function useSSE(url: string, eventHandlers: PollingEventHandler) {
   const { user, isSignedIn } = useUser();
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountedRef = useRef(false);
-  const maxRetries = 5;
-  const retryCountRef = useRef(0);
+  const [isConnected, setIsConnected] = useState(false);
+  const lastDataRef = useRef<any>(null);
 
-  const connect = useCallback(() => {
-    // Don't connect if component is unmounted or conditions not met
-    if (!isSignedIn || !user?.id || typeof window === 'undefined' || isUnmountedRef.current) {
+  const poll = useCallback(async () => {
+    if (!isSignedIn || !user?.id || isUnmountedRef.current) {
+      setIsConnected(false);
       return;
     }
 
     try {
-      // Close existing connection properly
-      if (eventSourceRef.current) {
-        eventSourceRef.current.onopen = null;
-        eventSourceRef.current.onerror = null;
-        eventSourceRef.current.onmessage = null;
-        eventSourceRef.current.close();
+      console.log('Polling dispatcher events...');
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        console.error('Polling failed:', response.status);
+        setIsConnected(false);
+        return;
       }
 
-      // Create new EventSource
-      eventSourceRef.current = new EventSource(url);
+      const data = await response.json();
+      setIsConnected(true);
 
-      // Handle connection events
-      eventSourceRef.current.onopen = () => {
-        console.log('SSE connected');
-        retryCountRef.current = 0; // Reset retry count on successful connection
-      };
+      // Simulate SSE connected event on first successful poll
+      if (!lastDataRef.current && eventHandlers['connected']) {
+        eventHandlers['connected']({ 
+          message: 'Dispatcher notifications connected',
+          timestamp: new Date().toISOString()
+        });
+      }
 
-      eventSourceRef.current.onerror = (error) => {
-        console.error('SSE error:', error);
-        
-        // Only attempt reconnection if component is still mounted
-        if (!isUnmountedRef.current && 
-            typeof window !== 'undefined' && 
-            eventSourceRef.current?.readyState === (EventSource ? EventSource.CLOSED : 2) && 
-            retryCountRef.current < maxRetries) {
-          
-          // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-          const delay = Math.pow(2, retryCountRef.current) * 1000;
-          retryCountRef.current++;
-          
-          console.log(`Attempting to reconnect in ${delay}ms (attempt ${retryCountRef.current}/${maxRetries})`);
-          
-          reconnectTimeoutRef.current = setTimeout(() => {
-            // Double-check component is still mounted before reconnecting
-            if (!isUnmountedRef.current) {
-              connect();
-            }
-          }, delay);
-        }
-      };
+      // Check for new alerts
+      if (data.data?.alerts && Array.isArray(data.data.alerts)) {
+        const newAlerts = data.data.alerts.filter((alert: any) => {
+          const lastAlerts = lastDataRef.current?.data?.alerts || [];
+          return !lastAlerts.find((la: any) => la.id === alert.id);
+        });
 
-      // Set up event handlers
-      Object.entries(eventHandlers).forEach(([event, handler]) => {
-        eventSourceRef.current?.addEventListener(event, (e: any) => {
-          // Only handle events if component is still mounted
-          if (!isUnmountedRef.current) {
-            try {
-              const data = JSON.parse(e.data);
-              handler(data);
-            } catch (parseError) {
-              console.error('Error parsing SSE data:', parseError);
-            }
+        // Trigger alert handlers for new alerts
+        newAlerts.forEach((alert: any) => {
+          if (eventHandlers['new-alert']) {
+            eventHandlers['new-alert'](alert);
           }
         });
-      });
+      }
+
+      // Check for new cargo
+      if (data.data?.recentCargo && Array.isArray(data.data.recentCargo)) {
+        const newCargo = data.data.recentCargo.filter((cargo: any) => {
+          const lastCargo = lastDataRef.current?.data?.recentCargo || [];
+          return !lastCargo.find((lc: any) => lc.id === cargo.id);
+        });
+
+        // Trigger cargo handlers for new cargo
+        newCargo.forEach((cargo: any) => {
+          if (eventHandlers['new-cargo']) {
+            eventHandlers['new-cargo'](cargo);
+          }
+        });
+      }
+
+      lastDataRef.current = data;
 
     } catch (error) {
-      console.error('Error creating SSE connection:', error);
+      console.error('Polling error:', error);
+      setIsConnected(false);
     }
   }, [url, eventHandlers, isSignedIn, user?.id]);
 
-  const disconnect = useCallback(() => {
-    // Mark as unmounted to prevent reconnection attempts
-    isUnmountedRef.current = true;
-    
-    // Clear any pending reconnection timeouts
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
+  const startPolling = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
     }
-    
-    // Close EventSource connection properly
-    if (eventSourceRef.current) {
-      // Remove all event listeners before closing
-      eventSourceRef.current.onopen = null;
-      eventSourceRef.current.onerror = null;
-      eventSourceRef.current.onmessage = null;
-      
-      // Close connection
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
+
+    // Poll immediately
+    poll();
+
+    // Then poll every 10 seconds
+    intervalRef.current = setInterval(poll, 10000);
+  }, [poll]);
+
+  const stopPolling = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
-    
-    // Reset retry count
-    retryCountRef.current = 0;
+    setIsConnected(false);
+    lastDataRef.current = null;
   }, []);
 
   useEffect(() => {
-    // Reset unmounted flag when effect runs
     isUnmountedRef.current = false;
-    
+
     if (isSignedIn && user?.id && typeof window !== 'undefined') {
-      connect();
+      startPolling();
+    } else {
+      stopPolling();
     }
 
-    // Cleanup on dependency change or unmount
     return () => {
-      disconnect();
+      isUnmountedRef.current = true;
+      stopPolling();
     };
-  }, [connect, disconnect, isSignedIn, user?.id]);
+  }, [startPolling, stopPolling, isSignedIn, user?.id]);
 
   return {
-    isConnected: typeof window !== 'undefined' && eventSourceRef.current?.readyState === 1,
-    reconnect: connect,
-    disconnect
+    isConnected,
+    reconnect: startPolling,
+    disconnect: stopPolling
   };
 }
