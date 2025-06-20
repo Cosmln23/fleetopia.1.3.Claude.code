@@ -97,16 +97,36 @@ export async function GET(request: NextRequest) {
 // POST a new cargo offer
 export async function POST(request: NextRequest) {
   try {
+    console.log('=== POST CARGO OFFER START ===');
+    
+    console.log('1. Getting auth...');
     const { userId } = await auth();
+    console.log('2. Auth result:', { userId: userId ? 'PRESENT' : 'NULL', userIdLength: userId?.length });
     
     if (!userId) {
+      console.log('3. No userId - returning 401');
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    console.log('4. Reading request body...');
     const body = await request.json();
+    console.log('5. Body received:', { 
+      hasTitle: !!body.title,
+      hasFromAddress: !!body.fromAddress,
+      hasToAddress: !!body.toAddress,
+      hasWeight: !!body.weight,
+      hasPrice: !!body.price
+    });
     
+    console.log('6. Starting validation...');
     const validation = createCargoOfferSchema.safeParse(body);
+    console.log('7. Validation result:', { 
+      success: validation.success, 
+      errorCount: validation.success ? 0 : validation.error.errors.length 
+    });
+    
     if (!validation.success) {
+      console.log('8. Validation failed:', validation.error.errors);
       return NextResponse.json(
         { 
           error: 'Validation failed', 
@@ -117,6 +137,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('9. Extracting validated data...');
     const {
       title,
       fromAddress,
@@ -139,6 +160,17 @@ export async function POST(request: NextRequest) {
       companyName
     } = validation.data;
 
+    console.log('10. Preparing prisma create...');
+    console.log('11. Data to create:', {
+      title,
+      fromCountry,
+      toCountry,
+      weight,
+      price,
+      userId: userId ? 'PRESENT' : 'NULL'
+    });
+
+    console.log('12. Creating cargo offer in database...');
     const newCargoOffer = await prisma.cargoOffer.create({
       data: {
         title,
@@ -165,6 +197,9 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('13. Cargo offer created successfully:', { id: newCargoOffer.id });
+
+    console.log('14. Creating system alert...');
     // Create a system alert
     await prisma.systemAlert.create({
       data: {
@@ -174,8 +209,11 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log('15. System alert created');
+
     // Send real-time notification to all dispatchers
     try {
+      console.log('16. Sending real-time notification...');
       await dispatcherEvents.emitToAll('new-cargo', {
         id: newCargoOffer.id,
         title: newCargoOffer.title,
@@ -185,17 +223,25 @@ export async function POST(request: NextRequest) {
         price: newCargoOffer.price,
         timestamp: new Date().toISOString()
       });
+      console.log('17. Real-time notification sent successfully');
     } catch (eventError) {
-      console.log('Real-time notification failed:', eventError);
+      console.log('17. Real-time notification failed:', eventError);
     }
 
+    console.log('18. Returning success response');
     return NextResponse.json({ 
       success: true, 
       data: newCargoOffer 
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Failed to create cargo offer:', error);
+    console.error('=== POST CARGO OFFER ERROR ===');
+    console.error('Error type:', error?.constructor?.name);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    console.error('Full error object:', error);
+    console.error('=== END ERROR DETAILS ===');
+    
     return NextResponse.json(
       { 
         error: 'Internal server error', 
