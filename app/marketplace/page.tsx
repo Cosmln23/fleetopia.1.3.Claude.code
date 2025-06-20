@@ -68,6 +68,7 @@ import { CargoOffer } from '@prisma/client';
 import { CargoOfferList } from "@/components/cargo-offer-list";
 import { useChat } from '@/contexts/chat-provider';
 import { DispatcherPanel } from '@/components/dispatcher-panel';
+import { createCargoOfferSchema } from '@/lib/validations';
 
 interface TransportRequest {
   id: string;
@@ -254,8 +255,29 @@ export default function MarketplacePage() {
 
   const handlePostCargo = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const parsedData = {
+      ...newCargo,
+      weight: parseFloat(newCargo.weight) || 0,
+      volume: newCargo.volume ? parseFloat(newCargo.volume) : undefined,
+      price: parseFloat(newCargo.price) || 0,
+    };
+
+    const validation = createCargoOfferSchema.safeParse(parsedData);
+
+    if (!validation.success) {
+      const errorMessages = validation.error.errors.map(err => err.message).join('\n- ');
+      toast({
+          title: "Validation Failed",
+          description: `Please fix the following errors:\n- ${errorMessages}`,
+          variant: "destructive",
+          duration: 5000,
+      });
+      return;
+    }
+
     if (!isSignedIn) {
-      toast({ title: "Eroare", description: "Trebuie să fii autentificat pentru a posta o ofertă.", variant: "destructive" });
+      toast({ title: "Error", description: "You must be logged in to post an offer.", variant: "destructive" });
       return;
     }
     setPosting(true);
@@ -263,16 +285,11 @@ export default function MarketplacePage() {
       const response = await fetch('/api/marketplace/cargo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...newCargo,
-          weight: parseFloat(newCargo.weight) || 0,
-          volume: parseFloat(newCargo.volume) || 0,
-          price: parseFloat(newCargo.price) || 0,
-        }),
+        body: JSON.stringify(validation.data),
       });
 
       if (response.ok) {
-        toast({ title: "Succes", description: "Oferta de marfă a fost postată." });
+        toast({ title: "Success", description: "Cargo offer has been posted." });
         setIsAddCargoOpen(false);
         setNewCargo({
           title: '',
@@ -723,24 +740,24 @@ export default function MarketplacePage() {
       </Dialog>
       {/* Add Cargo Dialog */}
       <Dialog open={isAddCargoOpen} onOpenChange={setIsAddCargoOpen}>
-        <DialogContent className="sm:max-w-[625px] bg-slate-900 border-slate-700 text-white">
+        <DialogContent className="sm:max-w-[550px] bg-slate-900 border-slate-700 text-white">
             <DialogHeader>
                 <DialogTitle>Post a New Cargo Offer</DialogTitle>
                 <DialogDescription>
-                Fill in the details below to publish a new transport opportunity. Fields marked with an asterisk (*) are required.
+                Fill in the details below to publish a new transport opportunity.
                 </DialogDescription>
             </DialogHeader>
             <form onSubmit={handlePostCargo}>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="title" placeholder="Offer Title (e.g., Furniture Warsaw - Berlin) *" value={newCargo.title} onChange={handleInputChange} required />
+                    <Input name="title" placeholder="Offer Title (e.g., Furniture Warsaw - Berlin)" value={newCargo.title} onChange={handleInputChange} />
                     <Input name="companyName" placeholder="Company Name" value={newCargo.companyName} onChange={handleInputChange} />
                 </div>
                 <Textarea name="requirements" placeholder="Special requirements (e.g., hydraulic lift, controlled temperature)" value={newCargo.requirements} onChange={handleInputChange}/>
                 <div className="grid grid-cols-2 gap-4">
                     <Select name="fromCountry" onValueChange={(value) => handleSelectChange('fromCountry', value)}>
                         <SelectTrigger>
-                            <SelectValue placeholder="Origin Country *" />
+                            <SelectValue placeholder="Origin Country" />
                         </SelectTrigger>
                         <SelectContent className="bg-slate-800 text-white border-slate-700">
                             {europeanCountries.map(c => <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>)}
@@ -748,7 +765,7 @@ export default function MarketplacePage() {
                     </Select>
                      <Select name="toCountry" onValueChange={(value) => handleSelectChange('toCountry', value)}>
                         <SelectTrigger>
-                            <SelectValue placeholder="Destination Country *" />
+                            <SelectValue placeholder="Destination Country" />
                         </SelectTrigger>
                         <SelectContent className="bg-slate-800 text-white border-slate-700">
                             {europeanCountries.map(c => <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>)}
@@ -756,34 +773,34 @@ export default function MarketplacePage() {
                     </Select>
                 </div>
                  <div className="grid grid-cols-2 gap-4">
-                    <Input name="fromCity" placeholder="Origin City *" value={newCargo.fromCity} onChange={handleInputChange} required />
-                    <Input name="toCity" placeholder="Destination City *" value={newCargo.toCity} onChange={handleInputChange} required />
+                    <Input name="fromCity" placeholder="Origin City" value={newCargo.fromCity} onChange={handleInputChange} />
+                    <Input name="toCity" placeholder="Destination City" value={newCargo.toCity} onChange={handleInputChange} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="fromAddress" placeholder="Origin Address *" value={newCargo.fromAddress} onChange={handleInputChange} required />
-                    <Input name="toAddress" placeholder="Destination Address *" value={newCargo.toAddress} onChange={handleInputChange} required />
+                    <Input name="fromAddress" placeholder="Origin Address" value={newCargo.fromAddress} onChange={handleInputChange} />
+                    <Input name="toAddress" placeholder="Destination Address" value={newCargo.toAddress} onChange={handleInputChange} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <Input name="fromPostalCode" placeholder="Origin Postal Code" value={newCargo.fromPostalCode} onChange={handleInputChange} />
                     <Input name="toPostalCode" placeholder="Destination Postal Code" value={newCargo.toPostalCode} onChange={handleInputChange} />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
-                    <Input name="weight" type="number" placeholder="Weight (kg) *" value={newCargo.weight} onChange={handleInputChange} required />
+                    <Input name="weight" type="number" placeholder="Weight (kg)" value={newCargo.weight} onChange={handleInputChange} />
                     <Input name="volume" type="number" placeholder="Volume (m³)" value={newCargo.volume} onChange={handleInputChange} />
                     <Input name="cargoType" placeholder="Cargo Type" value={newCargo.cargoType} onChange={handleInputChange} />
                 </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <label htmlFor="loadingDate" className="text-sm font-medium text-gray-500">Loading Date *</label>
-                        <Input id="loadingDate" name="loadingDate" type="date" value={newCargo.loadingDate} onChange={handleInputChange} required />
+                        <label htmlFor="loadingDate" className="text-sm font-medium text-gray-500">Loading Date</label>
+                        <Input id="loadingDate" name="loadingDate" type="date" value={newCargo.loadingDate} onChange={handleInputChange} />
                     </div>
                      <div>
-                        <label htmlFor="deliveryDate" className="text-sm font-medium text-gray-500">Delivery Date *</label>
-                        <Input id="deliveryDate" name="deliveryDate" type="date" value={newCargo.deliveryDate} onChange={handleInputChange} required />
+                        <label htmlFor="deliveryDate" className="text-sm font-medium text-gray-500">Delivery Date</label>
+                        <Input id="deliveryDate" name="deliveryDate" type="date" value={newCargo.deliveryDate} onChange={handleInputChange} />
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="price" type="number" placeholder="Price *" value={newCargo.price} onChange={handleInputChange} required />
+                    <Input name="price" type="number" placeholder="Price" value={newCargo.price} onChange={handleInputChange} />
                     <Select name="urgency" defaultValue="medium" onValueChange={(value) => handleSelectChange('urgency', value)}>
                         <SelectTrigger>
                             <SelectValue placeholder="Urgency" />
