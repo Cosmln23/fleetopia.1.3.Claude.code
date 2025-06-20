@@ -12,6 +12,9 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: ['@prisma/client'],
   },
+  // Netlify configuration
+  output: 'standalone',
+  distDir: '.next',
   // Custom webpack configuration
   webpack: (config, { isServer }) => {
     // Optimize for production builds

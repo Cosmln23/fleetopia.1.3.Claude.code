@@ -1,0 +1,8 @@
+# API routes
+/api/* /.netlify/functions/___netlify-handler 200
+
+# Next.js static files
+/_next/* /_next/:splat 200
+
+# All other routes - SPA fallback
+/* /index.html 200 
