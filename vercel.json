@@ -1,6 +1,17 @@
 {
   "redirects": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.fleetopia.co"
+        }
+      ],
+      "destination": "https://fleetopia.co/",
+      "permanent": true
+    },
+    {
       "source": "/(.*)",
       "has": [
         {
