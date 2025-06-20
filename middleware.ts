@@ -12,8 +12,21 @@ const isProtectedRoute = createRouteMatcher([
   '/free-maps(.*)'
 ])
 
+const isPublicApiRoute = createRouteMatcher([
+  '/api/test-auth',
+  '/api/marketplace/cargo'
+])
+
 export default clerkMiddleware((auth, req) => {
-  if (isProtectedRoute(req)) auth().protect()
+  // Don't protect API routes - let them handle auth internally
+  if (req.nextUrl.pathname.startsWith('/api/')) {
+    return
+  }
+  
+  // Only protect page routes, not API routes
+  if (isProtectedRoute(req)) {
+    auth().protect()
+  }
 })
 
 export const config = {
