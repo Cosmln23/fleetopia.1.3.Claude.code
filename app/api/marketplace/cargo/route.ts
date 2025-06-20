@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { CargoOffer } from '@prisma/client';
+import { CargoOffer, CargoStatus } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
 import { cargoQuerySchema, createCargoOfferSchema } from '@/lib/validations';
 import { dbUtils } from '@/lib/db-utils';
@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
     // Build where conditions
     const whereConditions: any = {};
     
-    if (status) {
-      whereConditions.status = status;
+    if (status && Object.values(CargoStatus).includes(status as CargoStatus)) {
+      whereConditions.status = status as CargoStatus;
     }
     
     if (type) {
@@ -40,17 +40,24 @@ export async function GET(request: NextRequest) {
         select: {
           id: true,
           title: true,
-          description: true,
-          origin: true,
-          destination: true,
+          fromCountry: true,
+          toCountry: true,
+          fromCity: true,
+          toCity: true,
           weight: true,
           price: true,
           status: true,
           cargoType: true,
-          pickupDate: true,
+          loadingDate: true,
           deliveryDate: true,
           createdAt: true,
           userId: true,
+          companyName: true,
+          companyRating: true,
+          distance: true,
+          volume: true,
+          requirements: true,
+          urgency: true,
         },
         orderBy: {
           createdAt: 'desc',
@@ -90,7 +97,7 @@ export async function GET(request: NextRequest) {
 // POST a new cargo offer
 export async function POST(request: NextRequest) {
   try {
-    const { userId } = await auth();
+    const { userId } = auth();
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -98,7 +105,6 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json();
     
-    // Basic validation using zod schema
     const validation = createCargoOfferSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
@@ -113,32 +119,46 @@ export async function POST(request: NextRequest) {
 
     const {
       title,
-      description,
-      origin,
-      destination,
+      fromAddress,
+      fromCountry,
+      fromCity,
+      fromPostalCode,
+      toAddress,
+      toCountry,
+      toCity,
+      toPostalCode,
       weight,
+      volume,
       price,
+      priceType,
       cargoType,
-      pickupDate,
+      loadingDate,
       deliveryDate,
-      originPostalCode,
-      destinationPostalCode
+      requirements,
+      urgency
     } = validation.data;
 
     const newCargoOffer = await prisma.cargoOffer.create({
       data: {
         title,
-        description,
-        origin,
-        destination,
+        fromAddress,
+        fromCountry,
+        fromCity,
+        toAddress,
+        toCountry,
+        toCity,
         weight,
         price,
         cargoType,
-        pickupDate: new Date(pickupDate),
+        loadingDate: new Date(loadingDate),
         deliveryDate: new Date(deliveryDate),
-        originPostalCode,
-        destinationPostalCode,
-        status: 'available',
+        fromPostalCode,
+        toPostalCode,
+        volume,
+        priceType,
+        requirements,
+        urgency,
+        status: CargoStatus.NEW,
         userId: userId,
       },
     });
@@ -146,7 +166,7 @@ export async function POST(request: NextRequest) {
     // Create a system alert
     await prisma.systemAlert.create({
       data: {
-        message: `New cargo offer: ${newCargoOffer.title} from ${newCargoOffer.origin} to ${newCargoOffer.destination}`,
+        message: `New cargo offer: ${newCargoOffer.title} from ${newCargoOffer.fromCountry} to ${newCargoOffer.toCountry}`,
         type: 'cargo',
         relatedId: newCargoOffer.id,
       },
@@ -157,15 +177,14 @@ export async function POST(request: NextRequest) {
       await dispatcherEvents.emitToAll('new-cargo', {
         id: newCargoOffer.id,
         title: newCargoOffer.title,
-        fromCountry: newCargoOffer.origin,
-        toCountry: newCargoOffer.destination,
-        urgency: newCargoOffer.cargoType,
+        fromCountry: newCargoOffer.fromCountry,
+        toCountry: newCargoOffer.toCountry,
+        urgency: newCargoOffer.urgency,
         price: newCargoOffer.price,
         timestamp: new Date().toISOString()
       });
     } catch (eventError) {
       console.log('Real-time notification failed:', eventError);
-      // Don't fail the main request if notifications fail
     }
 
     return NextResponse.json({ 
