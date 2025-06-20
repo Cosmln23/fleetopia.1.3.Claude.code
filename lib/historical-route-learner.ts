@@ -636,30 +636,209 @@ export class HistoricalRouteLearner {
 
   async saveHistoricalData(): Promise<void> {
     try {
-      const dataToSave = {
-        historicalData: this.historicalData.slice(-1000), // Keep last 1000 routes
-        learningMetrics: this.learningMetrics,
-        lastUpdate: new Date()
-      };
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
       
-      localStorage.setItem('routeoptimizer-historical-data', JSON.stringify(dataToSave));
-      console.log('💾 Historical data saved successfully');
+      // Save historical routes to database
+      for (const route of this.historicalData.slice(-100)) { // Save last 100 routes
+        try {
+          await prisma.route.upsert({
+            where: { id: route.id },
+            update: {
+              historicalData: {
+                routeFeatures: route.routeFeatures,
+                prediction: route.prediction,
+                actualResult: route.actualResult,
+                accuracy: route.accuracy,
+                learningData: route.learningData
+              } as any,
+              updatedAt: new Date()
+            },
+            create: {
+              id: route.id,
+              startLocation: `${route.routeFeatures.startLocation.lat},${route.routeFeatures.startLocation.lng}`,
+              endLocation: `${route.routeFeatures.endLocation.lat},${route.routeFeatures.endLocation.lng}`,
+              distance: route.routeFeatures.distance,
+              estimatedDuration: route.prediction.predictedDuration,
+              historicalData: {
+                routeFeatures: route.routeFeatures,
+                prediction: route.prediction,
+                actualResult: route.actualResult,
+                accuracy: route.accuracy,
+                learningData: route.learningData
+              } as any,
+              createdAt: route.timestamp,
+              updatedAt: new Date()
+            }
+          });
+        } catch (routeError) {
+          console.error(`Failed to save route ${route.id}:`, routeError);
+        }
+      }
+      
+      // Save learning metrics to RealTimeMetric table
+      await prisma.realTimeMetric.create({
+        data: {
+          type: 'historical_learning_metrics',
+          value: this.learningMetrics.averageAccuracy,
+          metadata: {
+            totalRoutes: this.learningMetrics.totalRoutes,
+            accuracyTrend: this.learningMetrics.accuracyTrend,
+            improvementRate: this.learningMetrics.improvementRate,
+            lastModelUpdate: this.learningMetrics.lastModelUpdate
+          } as any
+        }
+      });
+      
+      await prisma.$disconnect();
+      console.log('💾 Historical data saved to PostgreSQL successfully');
     } catch (error) {
-      console.error('❌ Failed to save historical data:', error);
+      console.error('❌ Failed to save historical data to database:', error);
+      // Fallback to localStorage
+      try {
+        const dataToSave = {
+          historicalData: this.historicalData.slice(-1000),
+          learningMetrics: this.learningMetrics,
+          lastUpdate: new Date()
+        };
+        
+        localStorage.setItem('routeoptimizer-historical-data', JSON.stringify(dataToSave));
+        console.log('💾 Historical data saved to localStorage as fallback');
+      } catch (fallbackError) {
+        console.error('❌ Failed to save to localStorage fallback:', fallbackError);
+      }
     }
   }
 
   async loadHistoricalData(): Promise<void> {
     try {
-      const savedData = localStorage.getItem('routeoptimizer-historical-data');
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        this.historicalData = parsed.historicalData || [];
-        this.learningMetrics = { ...this.learningMetrics, ...parsed.learningMetrics };
-        console.log(`📂 Loaded ${this.historicalData.length} historical routes`);
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
+      
+      // Load historical routes from database
+      const routes = await prisma.route.findMany({
+        where: {
+          historicalData: {
+            not: null
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 1000 // Load last 1000 routes
+      });
+      
+      // Convert database records to HistoricalRoute format
+      this.historicalData = routes.map(route => {
+        const historicalData = route.historicalData as any;
+        return {
+          id: route.id,
+          timestamp: route.createdAt,
+          userId: 'system', // Default for historical data
+          routeFeatures: historicalData.routeFeatures || {
+            distance: route.distance,
+            startLocation: this.parseLocation(route.startLocation),
+            endLocation: this.parseLocation(route.endLocation),
+            waypoints: [],
+            vehicleType: 'car',
+            driverExperience: 5,
+            timeOfDay: new Date().getHours(),
+            dayOfWeek: new Date().getDay(),
+            season: this.getCurrentSeason(),
+            trafficLevel: 0.5,
+            weatherConditions: {
+              condition: 'sunny',
+              temperature: 20,
+              windSpeed: 10,
+              visibility: 1.0
+            },
+            fuelPrice: 1.45,
+            historicalSuccessRate: 0.75
+          },
+          prediction: historicalData.prediction || {
+            estimatedSavings: 15,
+            optimizationFactor: 0.15,
+            confidence: 0.8,
+            modelVersion: '1.0',
+            predictedDistance: route.distance,
+            predictedDuration: route.estimatedDuration,
+            predictedFuelConsumption: route.distance * 0.08,
+            predictedCost: route.distance * 0.08 * 1.45,
+            keyFactors: []
+          },
+          actualResult: historicalData.actualResult || {
+            actualSavings: 12,
+            actualDistance: route.distance,
+            actualDuration: route.estimatedDuration,
+            actualFuelConsumed: route.distance * 0.075,
+            actualCost: route.distance * 0.075 * 1.45,
+            routeFollowed: true,
+            driverSatisfaction: 4,
+            completedSuccessfully: true,
+            deviationReasons: [],
+            weatherActual: 'sunny',
+            trafficActual: 0.5,
+            issuesEncountered: []
+          },
+          accuracy: historicalData.accuracy || {
+            savingsAccuracy: 0.85,
+            distanceAccuracy: 0.9,
+            durationAccuracy: 0.88,
+            fuelAccuracy: 0.8,
+            costAccuracy: 0.8,
+            overallAccuracy: 0.85
+          },
+          learningData: historicalData.learningData || {
+            routeCluster: `cluster_${Math.floor(route.distance / 100)}`,
+            seasonalPattern: this.getCurrentSeason(),
+            timePattern: this.getTimePattern(new Date().getHours()),
+            driverPattern: 'experienced',
+            vehiclePattern: 'standard',
+            improvementPotential: 0.2
+          }
+        } as HistoricalRoute;
+      });
+      
+      // Load latest learning metrics
+      const latestMetrics = await prisma.realTimeMetric.findFirst({
+        where: {
+          type: 'historical_learning_metrics'
+        },
+        orderBy: {
+          timestamp: 'desc'
+        }
+      });
+      
+      if (latestMetrics && latestMetrics.metadata) {
+        const metadata = latestMetrics.metadata as any;
+        this.learningMetrics = {
+          totalRoutes: metadata.totalRoutes || this.historicalData.length,
+          averageAccuracy: latestMetrics.value,
+          improvementRate: metadata.improvementRate || 0,
+          lastModelUpdate: metadata.lastModelUpdate ? new Date(metadata.lastModelUpdate) : null,
+          accuracyTrend: metadata.accuracyTrend || 'stable',
+          bestPerformingConditions: null,
+          worstPerformingConditions: null
+        };
       }
+      
+      await prisma.$disconnect();
+      console.log(`📂 Loaded ${this.historicalData.length} historical routes from PostgreSQL`);
+      
     } catch (error) {
-      console.error('❌ Failed to load historical data:', error);
+      console.error('❌ Failed to load historical data from database:', error);
+      // Fallback to localStorage
+      try {
+        const savedData = localStorage.getItem('routeoptimizer-historical-data');
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          this.historicalData = parsed.historicalData || [];
+          this.learningMetrics = { ...this.learningMetrics, ...parsed.learningMetrics };
+          console.log(`📂 Loaded ${this.historicalData.length} historical routes from localStorage fallback`);
+        }
+      } catch (fallbackError) {
+        console.error('❌ Failed to load from localStorage fallback:', fallbackError);
+      }
     }
   }
 
@@ -745,5 +924,16 @@ export class HistoricalRouteLearner {
 
   getAverageAccuracy(): number {
     return this.learningMetrics.averageAccuracy;
+  }
+  
+  // Helper method to parse location strings
+  private parseLocation(locationString: string): {lat: number, lng: number} {
+    try {
+      const [lat, lng] = locationString.split(',').map(coord => parseFloat(coord.trim()));
+      return { lat, lng };
+    } catch {
+      // Return Brussels as default
+      return { lat: 50.8503, lng: 4.3517 };
+    }
   }
 } 

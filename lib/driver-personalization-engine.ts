@@ -807,42 +807,230 @@ export class DriverPersonalizationEngine {
 
   async saveDriverProfiles(): Promise<void> {
     try {
-      const profilesToSave: any = {};
-      this.driverProfiles.forEach((profile, driverId) => {
-        profilesToSave[driverId] = profile;
-      });
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
       
-      const dataToSave = {
-        driverProfiles: profilesToSave,
-        lastUpdate: new Date(),
-        totalDrivers: this.driverProfiles.size
-      };
-      
-      if (typeof localStorage !== 'undefined') {
-        localStorage.setItem('routeoptimizer-driver-profiles', JSON.stringify(dataToSave));
-        console.log('💾 Driver profiles saved successfully');
+      // Save driver profiles to database
+      for (const [driverId, profile] of this.driverProfiles) {
+        try {
+          // Save to User table with extended profile data
+          await prisma.user.upsert({
+            where: { id: driverId },
+            update: {
+              name: profile.driverName,
+              driverProfile: {
+                basicInfo: profile.basicInfo,
+                drivingBehavior: profile.drivingBehavior,
+                performanceMetrics: profile.performanceMetrics,
+                personalizationConfig: profile.personalizationConfig,
+                vehicleHistory: profile.vehicleHistory,
+                learningStats: profile.learningStats,
+                totalRoutesCompleted: profile.totalRoutesCompleted
+              } as any,
+              updatedAt: new Date()
+            },
+            create: {
+              id: driverId,
+              name: profile.driverName,
+              email: `${driverId}@fleetopia.co`,
+              driverProfile: {
+                basicInfo: profile.basicInfo,
+                drivingBehavior: profile.drivingBehavior,
+                performanceMetrics: profile.performanceMetrics,
+                personalizationConfig: profile.personalizationConfig,
+                vehicleHistory: profile.vehicleHistory,
+                learningStats: profile.learningStats,
+                totalRoutesCompleted: profile.totalRoutesCompleted
+              } as any,
+              createdAt: profile.createdAt,
+              updatedAt: new Date()
+            }
+          });
+          
+          // Save driver metrics to RealTimeMetric table
+          await prisma.realTimeMetric.create({
+            data: {
+              type: 'driver_personalization_profile',
+              value: profile.learningStats.profileCompleteness,
+              metadata: {
+                driverId: driverId,
+                totalRoutes: profile.totalRoutesCompleted,
+                fuelEfficiency: profile.drivingBehavior.fuelBehavior.actualVsPredictedEfficiency,
+                routeAdherence: profile.performanceMetrics.routeAdherence.followsRecommendedRoute,
+                satisfaction: profile.performanceMetrics.satisfaction.averageRating,
+                confidenceLevel: profile.learningStats.confidenceLevel
+              } as any
+            }
+          });
+        } catch (profileError) {
+          console.error(`Failed to save driver profile ${driverId}:`, profileError);
+        }
       }
+      
+      await prisma.$disconnect();
+      console.log('💾 Driver profiles saved to PostgreSQL successfully');
     } catch (error) {
-      console.error('❌ Failed to save driver profiles:', error);
+      console.error('❌ Failed to save driver profiles to database:', error);
+      // Fallback to localStorage
+      try {
+        const profilesToSave: any = {};
+        this.driverProfiles.forEach((profile, driverId) => {
+          profilesToSave[driverId] = profile;
+        });
+        
+        const dataToSave = {
+          driverProfiles: profilesToSave,
+          lastUpdate: new Date(),
+          totalDrivers: this.driverProfiles.size
+        };
+        
+        if (typeof localStorage !== 'undefined') {
+          localStorage.setItem('routeoptimizer-driver-profiles', JSON.stringify(dataToSave));
+          console.log('💾 Driver profiles saved to localStorage as fallback');
+        }
+      } catch (fallbackError) {
+        console.error('❌ Failed to save to localStorage fallback:', fallbackError);
+      }
     }
   }
 
   async loadDriverProfiles(): Promise<void> {
     try {
-      if (typeof localStorage !== 'undefined') {
-        const savedData = localStorage.getItem('routeoptimizer-driver-profiles');
-        if (savedData) {
-          const parsed = JSON.parse(savedData);
-          
-          Object.entries(parsed.driverProfiles || {}).forEach(([driverId, profile]) => {
-            this.driverProfiles.set(driverId, profile as DriverProfile);
-          });
-          
-          console.log(`📂 Loaded ${this.driverProfiles.size} driver profiles`);
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
+      
+      // Load driver profiles from database
+      const users = await prisma.user.findMany({
+        where: {
+          driverProfile: {
+            not: null
+          }
+        },
+        select: {
+          id: true,
+          name: true,
+          driverProfile: true,
+          createdAt: true,
+          updatedAt: true
         }
-      }
+      });
+      
+      // Convert database records to DriverProfile format
+      users.forEach(user => {
+        if (user.driverProfile) {
+          const profileData = user.driverProfile as any;
+          const profile: DriverProfile = {
+            driverId: user.id,
+            driverName: user.name || user.id,
+            createdAt: user.createdAt,
+            lastUpdated: user.updatedAt,
+            totalRoutesCompleted: profileData.totalRoutesCompleted || 0,
+            basicInfo: profileData.basicInfo || {
+              experienceYears: 5,
+              licenseType: 'B',
+              ageGroup: 'middle',
+              preferredLanguage: 'ro'
+            },
+            drivingBehavior: profileData.drivingBehavior || {
+              speedProfile: {
+                citySpeedTendency: 0,
+                highwaySpeedTendency: 0,
+                averageSpeedDeviation: 0,
+                speedConsistency: 0.7
+              },
+              routePreferences: {
+                prefersHighways: 0.5,
+                toleratesTraffic: 0.5,
+                acceptsLongerButCheaper: 0.5,
+                prefersScenic: 0.3,
+                avoidsTollRoads: 0.7
+              },
+              restPatterns: {
+                breaksFrequency: 1.5,
+                averageBreakDuration: 15,
+                prefersLongBreaks: false,
+                breakLocationPreference: 'gas_station'
+              },
+              fuelBehavior: {
+                actualVsPredictedEfficiency: 1.0,
+                improvesThroughGuidance: true,
+                consistentFuelTracking: true
+              },
+              timeManagement: {
+                punctualityScore: 0.8,
+                averageDelayMinutes: 5,
+                respondsToUrgency: true,
+                planningHorizon: 1
+              }
+            },
+            performanceMetrics: profileData.performanceMetrics || {
+              routeAdherence: {
+                followsRecommendedRoute: 0.8,
+                deviationReasons: [],
+                improvementOverTime: 0
+              },
+              efficiencyRatings: {
+                fuelEfficiencyRating: 3,
+                timeEfficiencyRating: 3,
+                costEfficiencyRating: 3,
+                overallEfficiencyTrend: 0
+              },
+              satisfaction: {
+                averageRating: 4.0,
+                commonComplaints: [],
+                preferredFeatures: [],
+                suggestionHistory: []
+              }
+            },
+            personalizationConfig: profileData.personalizationConfig || {
+              optimizationWeights: { ...this.defaultPersonalization },
+              riskProfile: {
+                acceptsAggressiveOptimization: false,
+                toleratesExperimentalRoutes: true,
+                prefersProvenRoutes: true
+              },
+              communicationStyle: {
+                detailLevel: 'standard',
+                warningThreshold: 0.7,
+                coachingReceptivity: 0.6
+              }
+            },
+            vehicleHistory: profileData.vehicleHistory || [],
+            learningStats: profileData.learningStats || {
+              profileCompleteness: 0.1,
+              confidenceLevel: 0.3,
+              lastLearningUpdate: new Date(),
+              learningVelocity: 0.1,
+              dataQuality: 0.5
+            }
+          };
+          
+          this.driverProfiles.set(user.id, profile);
+        }
+      });
+      
+      await prisma.$disconnect();
+      console.log(`📂 Loaded ${this.driverProfiles.size} driver profiles from PostgreSQL`);
+      
     } catch (error) {
-      console.error('❌ Failed to load driver profiles:', error);
+      console.error('❌ Failed to load driver profiles from database:', error);
+      // Fallback to localStorage
+      try {
+        if (typeof localStorage !== 'undefined') {
+          const savedData = localStorage.getItem('routeoptimizer-driver-profiles');
+          if (savedData) {
+            const parsed = JSON.parse(savedData);
+            
+            Object.entries(parsed.driverProfiles || {}).forEach(([driverId, profile]) => {
+              this.driverProfiles.set(driverId, profile as DriverProfile);
+            });
+            
+            console.log(`📂 Loaded ${this.driverProfiles.size} driver profiles from localStorage fallback`);
+          }
+        }
+      } catch (fallbackError) {
+        console.error('❌ Failed to load from localStorage fallback:', fallbackError);
+      }
     }
   }
 

@@ -762,6 +762,42 @@ export class VehicleSpecificOptimizer {
 
   async saveVehicleProfiles(): Promise<void> {
     try {
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
+      
+      for (const [vehicleId, profile] of this.vehicleProfiles) {
+        // Check if vehicle exists in database
+        const existingVehicle = await prisma.vehicle.findUnique({
+          where: { id: vehicleId }
+        });
+        
+        if (existingVehicle) {
+          // Update existing vehicle with profile data
+          await prisma.vehicle.update({
+            where: { id: vehicleId },
+            data: {
+              specifications: profile.technicalSpecs as any,
+              currentState: profile.currentState as any,
+              restrictions: profile.restrictions as any,
+              historicalPerformance: profile.historicalPerformance as any,
+              associations: {
+                primaryDriver: profile.associations.primaryDriver,
+                secondaryDrivers: profile.associations.secondaryDrivers,
+                usageFrequency: Object.fromEntries(profile.associations.usageFrequency),
+                performanceByDriver: Object.fromEntries(profile.associations.performanceByDriver)
+              } as any,
+              optimizationData: profile.optimizationData as any,
+              updatedAt: new Date()
+            }
+          });
+        }
+      }
+      
+      await prisma.$disconnect();
+      console.log('💾 Vehicle profiles saved to PostgreSQL successfully');
+    } catch (error) {
+      console.error('❌ Failed to save vehicle profiles to database:', error);
+      // Fallback to localStorage
       const profilesToSave: { [key: string]: VehicleProfile } = {};
       this.vehicleProfiles.forEach((profile, vehicleId) => {
         profilesToSave[vehicleId] = profile;
@@ -774,26 +810,84 @@ export class VehicleSpecificOptimizer {
       };
       
       localStorage.setItem('routeoptimizer-vehicle-profiles', JSON.stringify(dataToSave));
-      console.log('💾 Vehicle profiles saved successfully');
-    } catch (error) {
-      console.error('❌ Failed to save vehicle profiles:', error);
+      console.log('💾 Vehicle profiles saved to localStorage as fallback');
     }
   }
 
   async loadVehicleProfiles(): Promise<void> {
     try {
-      const savedData = localStorage.getItem('routeoptimizer-vehicle-profiles');
-      if (savedData) {
-        const parsed = JSON.parse(savedData);
-        
-        Object.entries(parsed.vehicleProfiles || {}).forEach(([vehicleId, profile]) => {
-          this.vehicleProfiles.set(vehicleId, profile as VehicleProfile);
-        });
-        
-        console.log(`📂 Loaded ${this.vehicleProfiles.size} vehicle profiles`);
-      }
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
+      
+      // Load vehicles from PostgreSQL
+      const vehicles = await prisma.vehicle.findMany({
+        select: {
+          id: true,
+          name: true,
+          licensePlate: true,
+          specifications: true,
+          currentState: true,
+          restrictions: true,
+          historicalPerformance: true,
+          associations: true,
+          optimizationData: true,
+          updatedAt: true,
+          createdAt: true
+        }
+      });
+      
+      // Convert database records to VehicleProfile format
+      vehicles.forEach(vehicle => {
+        if (vehicle.specifications) {
+          const profile: VehicleProfile = {
+            vehicleId: vehicle.id,
+            plateNumber: vehicle.licensePlate || vehicle.id,
+            vehicleName: vehicle.name || `Vehicle ${vehicle.id}`,
+            createdAt: vehicle.createdAt,
+            lastUpdated: vehicle.updatedAt,
+            technicalSpecs: vehicle.specifications as any,
+            currentState: vehicle.currentState as any || this.initializeCurrentState({}),
+            restrictions: vehicle.restrictions as any || this.setupVehicleRestrictions({}),
+            historicalPerformance: vehicle.historicalPerformance as any || this.initializeHistoricalPerformance(),
+            associations: {
+              primaryDriver: (vehicle.associations as any)?.primaryDriver || null,
+              secondaryDrivers: (vehicle.associations as any)?.secondaryDrivers || [],
+              usageFrequency: new Map(Object.entries((vehicle.associations as any)?.usageFrequency || {})),
+              performanceByDriver: new Map(Object.entries((vehicle.associations as any)?.performanceByDriver || {}))
+            },
+            optimizationData: vehicle.optimizationData as any || {
+              profileCompleteness: 0.3,
+              dataQuality: 0.5,
+              optimizationPotential: 0.6,
+              lastOptimizationUpdate: new Date(),
+              specialOptimizations: []
+            }
+          };
+          
+          this.vehicleProfiles.set(vehicle.id, profile);
+        }
+      });
+      
+      await prisma.$disconnect();
+      console.log(`📂 Loaded ${this.vehicleProfiles.size} vehicle profiles from PostgreSQL`);
+      
     } catch (error) {
-      console.error('❌ Failed to load vehicle profiles:', error);
+      console.error('❌ Failed to load vehicle profiles from database:', error);
+      // Fallback to localStorage
+      try {
+        const savedData = localStorage.getItem('routeoptimizer-vehicle-profiles');
+        if (savedData) {
+          const parsed = JSON.parse(savedData);
+          
+          Object.entries(parsed.vehicleProfiles || {}).forEach(([vehicleId, profile]) => {
+            this.vehicleProfiles.set(vehicleId, profile as VehicleProfile);
+          });
+          
+          console.log(`📂 Loaded ${this.vehicleProfiles.size} vehicle profiles from localStorage fallback`);
+        }
+      } catch (fallbackError) {
+        console.error('❌ Failed to load vehicle profiles from localStorage fallback:', fallbackError);
+      }
     }
   }
 
