@@ -6,6 +6,8 @@ import { cargoQuerySchema, createCargoOfferSchema } from '@/lib/validations';
 import { dbUtils } from '@/lib/db-utils';
 import { dispatcherEvents } from '@/lib/dispatcher-events';
 
+export const dynamic = 'force-dynamic';
+
 // GET all cargo offers with optional filtering
 export async function GET(request: NextRequest) {
   try {

@@ -5,6 +5,8 @@ import { vehicleQuerySchema, createVehicleSchema } from '@/lib/validations';
 import { dbUtils } from '@/lib/db-utils';
 import { Prisma } from '@prisma/client';
 
+
+export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();

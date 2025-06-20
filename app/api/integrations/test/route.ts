@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
 
+
+export const dynamic = 'force-dynamic';
 const prisma = new PrismaClient();
 
 // POST - Test API Integration Connection

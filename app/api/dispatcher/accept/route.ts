@@ -5,6 +5,8 @@ import { acceptSuggestionSchema } from '@/lib/validations';
 import { prisma } from '@/lib/prisma';
 import { dbUtils } from '@/lib/db-utils';
 
+
+export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest, context: { params?: Record<string, string | string[]> }) {
   try {
     // Get session for authentication

@@ -3,6 +3,8 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 
 import { DispatcherAnalysis } from '@/lib/dispatcher-types';
 
+
+export const dynamic = 'force-dynamic';
 export async function POST(request: NextRequest) {
   try {
     const { userId } = auth();

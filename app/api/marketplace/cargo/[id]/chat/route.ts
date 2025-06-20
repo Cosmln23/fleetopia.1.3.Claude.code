@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@clerk/nextjs/server';
 
 
+
+export const dynamic = 'force-dynamic';
 // GET all chat messages for a specific cargo offer
 export async function GET(
   request: NextRequest,
