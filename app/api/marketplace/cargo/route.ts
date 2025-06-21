@@ -190,20 +190,20 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send real-time notification to all dispatchers
-    try {
-      await dispatcherEvents.emitToAll('new-cargo', {
-        id: newCargoOffer.id,
-        title: newCargoOffer.title,
-        fromCountry: newCargoOffer.fromCountry,
-        toCountry: newCargoOffer.toCountry,
-        urgency: newCargoOffer.urgency,
-        price: newCargoOffer.price,
-        timestamp: new Date().toISOString()
-      });
-    } catch (eventError) {
-      console.log('Real-time notification failed:', eventError);
-    }
+    // Send real-time notification to all dispatchers - TEMPORARILY DISABLED FOR DEBUGGING
+    // try {
+    //   await dispatcherEvents.emitToAll('new-cargo', {
+    //     id: newCargoOffer.id,
+    //     title: newCargoOffer.title,
+    //     fromCountry: newCargoOffer.fromCountry,
+    //     toCountry: newCargoOffer.toCountry,
+    //     urgency: newCargoOffer.urgency,
+    //     price: newCargoOffer.price,
+    //     timestamp: new Date().toISOString()
+    //   });
+    // } catch (eventError) {
+    //   console.log('Real-time notification failed:', eventError);
+    // }
 
     return new NextResponse(JSON.stringify({
       success: true,
