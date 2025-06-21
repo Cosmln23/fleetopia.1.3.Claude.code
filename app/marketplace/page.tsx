@@ -165,7 +165,7 @@ export default function MarketplacePage() {
       return;
     }
 
-    await refreshData();
+    await refreshData(listType);
   };
 
   // Add fetchTransportRequests function

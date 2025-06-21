@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
     const status = url.searchParams.get('status');
     const type = url.searchParams.get('type');
+    const listType = url.searchParams.get('listType') || 'all';
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '20');
     const offset = (page - 1) * limit;
@@ -28,6 +29,19 @@ export async function GET(request: NextRequest) {
     // Build where conditions
     const whereConditions: any = {};
     
+    // Filter by listType
+    if (listType === 'all') {
+      // Show only NEW offers (available for acceptance)
+      whereConditions.status = 'NEW';
+    } else if (listType === 'my_offers') {
+      // Show user's own offers (all statuses)
+      whereConditions.userId = userId;
+    } else if (listType === 'accepted_offers') {
+      // Show offers accepted by this user
+      whereConditions.acceptedByUserId = userId;
+    }
+    
+    // Override with explicit status if provided
     if (status && Object.values(CargoStatus).includes(status as CargoStatus)) {
       whereConditions.status = status as CargoStatus;
     }

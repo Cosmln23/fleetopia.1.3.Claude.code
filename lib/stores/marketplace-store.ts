@@ -124,16 +124,19 @@ const useMarketplaceStore = create<MarketplaceStore>()(
         return userPlan === 'PRO'
       },
 
-      refreshData: async () => {
+      refreshData: async (listType: string = 'all') => {
         const { setLoading, setError } = get()
         
         try {
           setLoading(true)
           setError(null)
           
+          // Build URL with listType parameter
+          const cargoUrl = `/api/marketplace/cargo?listType=${listType}`;
+          
           // Parallel fetch for better performance
           const [cargoResponse, alertsResponse] = await Promise.all([
-            fetch('/api/marketplace/cargo'),
+            fetch(cargoUrl),
             fetch('/api/dispatcher/alerts')
           ])
           
