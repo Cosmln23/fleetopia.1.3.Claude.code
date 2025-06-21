@@ -12,7 +12,12 @@ export async function GET() {
       version: '1.0.0',
       uptime: process.uptime(),
       memory: process.memoryUsage(),
-      environment: process.env.NODE_ENV || 'development'
+      environment: process.env.NODE_ENV || 'development',
+      envCheck: {
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ? 'Set' : 'MISSING',
+        CLERK_SECRET_KEY: process.env.CLERK_SECRET_KEY ? 'Set' : 'MISSING',
+        CLERK_WEBHOOK_SECRET: process.env.CLERK_WEBHOOK_SECRET ? 'Set' : 'MISSING',
+      }
     };
 
     return NextResponse.json(health, { status: 200 });
