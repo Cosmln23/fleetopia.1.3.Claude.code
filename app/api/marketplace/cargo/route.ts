@@ -108,6 +108,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Verify if user exists in database, create if missing
+    let user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      user = await prisma.user.create({
+        data: {
+          id: userId,
+          role: 'client',
+        }
+      });
+    }
+
     const body = await request.json();
     const validation = createCargoOfferSchema.safeParse(body);
     

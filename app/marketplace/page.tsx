@@ -282,6 +282,8 @@ export default function MarketplacePage() {
       return;
     }
 
+    console.log('Authentication check:', { isSignedIn, userId: user?.id });
+    
     if (!isSignedIn) {
       console.log('User not signed in');
       toast({ title: "Error", description: "You must be logged in to post an offer.", variant: "destructive" });
