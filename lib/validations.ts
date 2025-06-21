@@ -16,7 +16,7 @@ export const createVehicleSchema = z.object({
   type: z.string().min(1, 'Vehicle type is required').max(50, 'Type too long'),
   licensePlate: z.string().min(1, 'License plate is required').max(20, 'License plate too long'),
   driverName: z.string().min(1, 'Driver name is required').max(100, 'Driver name too long'),
-  status: z.enum(['active', 'idle', 'maintenance', 'en_route']).optional().default('idle'),
+  status: z.enum(['idle', 'in_transit', 'en_route', 'loading', 'unloading', 'maintenance', 'assigned', 'out_of_service']).optional().default('idle'),
   lat: z.number().min(-90).max(90).optional().default(0),
   lng: z.number().min(-180).max(180).optional().default(0),
   currentRoute: z.string().optional(),
@@ -26,7 +26,7 @@ export const createVehicleSchema = z.object({
 export const updateVehicleSchema = createVehicleSchema.partial();
 
 export const vehicleQuerySchema = z.object({
-  status: z.enum(['active', 'idle', 'maintenance', 'en_route']).optional(),
+  status: z.enum(['idle', 'in_transit', 'en_route', 'loading', 'unloading', 'maintenance', 'assigned', 'out_of_service']).optional(),
 }).merge(paginationSchema);
 
 // Cargo offer validation schemas - SMART & FLEXIBLE
