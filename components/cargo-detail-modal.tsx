@@ -140,14 +140,6 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                   </div>
                 </div>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-8 w-8 rounded-full text-white hover:bg-slate-600"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </DialogHeader>
 
