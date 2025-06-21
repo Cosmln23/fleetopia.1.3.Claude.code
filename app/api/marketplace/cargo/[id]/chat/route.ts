@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { auth } from '@clerk/nextjs/server';
 
 
@@ -29,10 +29,14 @@ export async function GET(
       return NextResponse.json({ message: 'Offer not found' }, { status: 404 });
     }
 
-    // Check if the current user is part of the conversation
-    if (userId !== cargoOffer.userId && userId !== cargoOffer.acceptedByUserId) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    // Allow the owner and anyone interested in the offer to chat
+    if (userId === cargoOffer.userId) {
+      // Owner can always chat
+    } else if (cargoOffer.acceptedByUserId && userId !== cargoOffer.acceptedByUserId) {
+      // If offer is already accepted by someone else, deny access
+      return NextResponse.json({ message: 'This offer is already in negotiation with another user' }, { status: 403 });
     }
+    // Otherwise, allow any authenticated user to start a conversation
 
     const messages = await prisma.chatMessage.findMany({
       where: { cargoOfferId: offerId },
@@ -82,10 +86,14 @@ export async function POST(
       return NextResponse.json({ message: 'Offer not found' }, { status: 404 });
     }
 
-    // Check if the current user is part of the conversation
-    if (userId !== cargoOffer.userId && userId !== cargoOffer.acceptedByUserId) {
-      return NextResponse.json({ message: 'Forbidden' }, { status: 403 });
+    // Allow the owner and anyone interested in the offer to chat
+    if (userId === cargoOffer.userId) {
+      // Owner can always chat
+    } else if (cargoOffer.acceptedByUserId && userId !== cargoOffer.acceptedByUserId) {
+      // If offer is already accepted by someone else, deny access
+      return NextResponse.json({ message: 'This offer is already in negotiation with another user' }, { status: 403 });
     }
+    // Otherwise, allow any authenticated user to start a conversation
 
     const newMessage = await prisma.chatMessage.create({
       data: {
