@@ -1,5 +1,19 @@
--- AlterTable
-ALTER TABLE "User" ADD COLUMN     "role" TEXT NOT NULL DEFAULT 'client';
+-- CreateTable
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "name" TEXT,
+    "email" TEXT,
+    "emailVerified" TIMESTAMP(3),
+    "image" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+    "role" TEXT NOT NULL DEFAULT 'client',
+
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
 -- CreateTable
 CREATE TABLE "ai_agents" (
