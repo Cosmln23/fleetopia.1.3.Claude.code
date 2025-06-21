@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { auth } from '@clerk/nextjs/server';
 import { vehicleQuerySchema, createVehicleSchema } from '@/lib/validations';
 import { dbUtils } from '@/lib/db-utils';
@@ -115,13 +115,16 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('=== VEHICLE POST START ===');
     const { userId } = await auth();
+    console.log('Auth userId:', userId);
     
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
+    console.log('Request body:', body);
     
     // Basic validation using zod schema
     const validation = createVehicleSchema.safeParse(body);

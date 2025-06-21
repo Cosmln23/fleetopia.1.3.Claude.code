@@ -127,7 +127,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                     {cargoOffer.title}
                   </DialogTitle>
                   <DialogDescription className="text-gray-400">
-                    Detalii complete despre transportul de marfă
+                    Complete details about cargo transport
                   </DialogDescription>
                   <div className="flex items-center space-x-2 mt-1">
                     <Badge variant={getUrgencyColor(cargoOffer.urgency)} className="flex items-center space-x-1">
@@ -135,7 +135,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                       <span className="capitalize">{cargoOffer.urgency}</span>
                     </Badge>
                     <Badge variant={isAccepted ? 'default' : 'secondary'}>
-                      {isAccepted ? 'Acceptat' : 'Disponibil'}
+                      {isAccepted ? 'Accepted' : 'Available'}
                     </Badge>
                   </div>
                 </div>
@@ -153,7 +153,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2 text-white">
                       <Navigation className="h-5 w-5 text-blue-400" />
-                      <span>Traseu Transport</span>
+                      <span>Transport Route</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -161,7 +161,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                       <div className="space-y-3">
                         <div className="flex items-center space-x-2 text-green-400">
                           <MapPin className="h-4 w-4" />
-                          <span className="font-medium text-white">Plecare</span>
+                          <span className="font-medium text-white">Departure</span>
                         </div>
                         <div className="pl-6 space-y-1">
                           <p className="font-semibold text-white">{cargoOffer.fromCity}, {cargoOffer.fromCountry}</p>
@@ -172,7 +172,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                       <div className="space-y-3">
                         <div className="flex items-center space-x-2 text-red-400">
                           <MapPin className="h-4 w-4" />
-                          <span className="font-medium text-white">Destinație</span>
+                          <span className="font-medium text-white">Destination</span>
                         </div>
                         <div className="pl-6 space-y-1">
                           <p className="font-semibold text-white">{cargoOffer.toCity}, {cargoOffer.toCountry}</p>
@@ -186,7 +186,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                       <div className="flex items-center justify-center pt-4 border-t border-slate-600">
                         <div className="flex items-center space-x-2 text-blue-400">
                           <ArrowRight className="h-4 w-4" />
-                          <span className="font-medium text-white">Distanță estimată: {cargoOffer.distance} km</span>
+                          <span className="font-medium text-white">Estimated distance: {cargoOffer.distance} km</span>
                         </div>
                       </div>
                     )}
@@ -199,7 +199,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                     <CardHeader>
                       <CardTitle className="flex items-center space-x-2 text-white">
                         <Package className="h-5 w-5 text-orange-400" />
-                        <span>Detalii Marfă</span>
+                        <span>Cargo Details</span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -207,14 +207,14 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                         <div>
                           <div className="flex items-center space-x-2 text-gray-400 mb-1">
                             <Weight className="h-4 w-4" />
-                            <span className="text-sm text-white">Greutate</span>
+                            <span className="text-sm text-white">Weight</span>
                           </div>
                           <p className="font-semibold text-white">{cargoOffer.weight} kg</p>
                         </div>
                         <div>
                           <div className="flex items-center space-x-2 text-gray-400 mb-1">
                             <Package className="h-4 w-4" />
-                            <span className="text-sm text-white">Tip marfă</span>
+                            <span className="text-sm text-white">Cargo Type</span>
                           </div>
                           <p className="font-semibold text-white">{cargoOffer.cargoType}</p>
                         </div>
@@ -222,7 +222,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                       
                       {cargoOffer.requirements && cargoOffer.requirements.length > 0 && (
                         <div>
-                          <p className="text-sm text-gray-400 mb-2">Cerințe speciale:</p>
+                          <p className="text-sm text-gray-400 mb-2">Special requirements:</p>
                           <div className="flex flex-wrap gap-2">
                             {cargoOffer.requirements.map((req, index) => (
                               <Badge key={index} variant="outline" className="text-xs">
@@ -239,16 +239,16 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                     <CardHeader>
                       <CardTitle className="flex items-center space-x-2 text-white">
                         <Calendar className="h-5 w-5 text-purple-400" />
-                        <span>Programare</span>
+                        <span>Schedule</span>
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
-                        <p className="text-sm text-gray-400 mb-1">Data încărcare</p>
+                        <p className="text-sm text-gray-400 mb-1">Loading date</p>
                         <p className="font-semibold text-white">{formatDate(cargoOffer.loadingDate)}</p>
                       </div>
                       <div>
-                        <p className="text-sm text-gray-400 mb-1">Data livrare</p>
+                        <p className="text-sm text-gray-400 mb-1">Delivery date</p>
                         <p className="font-semibold text-white">{formatDate(cargoOffer.deliveryDate)}</p>
                       </div>
                     </CardContent>
@@ -260,18 +260,18 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2 text-white">
                       <Euro className="h-5 w-5 text-green-400" />
-                      <span>Informații Preț</span>
+                      <span>Price Information</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-3xl font-bold text-green-400">€{cargoOffer.price}</p>
-                        <p className="text-sm text-gray-400">Preț solicitat</p>
+                        <p className="text-sm text-gray-400">Requested price</p>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-semibold">€{(cargoOffer.price / cargoOffer.weight).toFixed(2)}/kg</p>
-                        <p className="text-sm text-gray-400">Preț per kg</p>
+                        <p className="text-sm text-gray-400">Price per kg</p>
                       </div>
                     </div>
                   </CardContent>
@@ -287,7 +287,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2 text-white">
                       <Building className="h-5 w-5 text-blue-400" />
-                      <span>Informații Firmă</span>
+                      <span>Company Information</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -296,11 +296,11 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                         <Building className="h-6 w-6 text-blue-400" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-white">{cargoOffer.companyName || 'Companie Transport'}</h3>
+                        <h3 className="font-semibold text-white">{cargoOffer.companyName || 'Transport Company'}</h3>
                         <div className="flex items-center space-x-1">
                           <Star className="h-4 w-4 text-yellow-500 fill-current" />
                           <span className="text-sm font-medium text-white">4.8</span>
-                          <span className="text-sm text-gray-400">(127 review-uri)</span>
+                          <span className="text-sm text-gray-400">(127 reviews)</span>
                         </div>
                       </div>
                     </div>
@@ -308,11 +308,11 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                     <div className="space-y-2">
                       <div className="flex items-center space-x-2 text-sm text-white">
                         <Shield className="h-4 w-4 text-green-400" />
-                        <span>Companie verificată</span>
+                        <span>Verified company</span>
                       </div>
                       <div className="flex items-center space-x-2 text-sm text-white">
                         <Truck className="h-4 w-4 text-blue-400" />
-                        <span>15+ ani experiență</span>
+                        <span>15+ years experience</span>
                       </div>
                     </div>
 
@@ -347,7 +347,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                       variant="outline"
                     >
                       <MessageSquare className="h-4 w-4" />
-                      <span>Trimite Mesaj</span>
+                      <span>Send Message</span>
                     </Button>
                     
                     {!isAccepted && (
@@ -357,7 +357,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                         size="lg"
                       >
                         <CheckCircle className="h-5 w-5" />
-                        <span>Accept Oferta</span>
+                        <span>Accept Offer</span>
                       </Button>
                     )}
                   </div>
@@ -366,21 +366,21 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                 {/* Cargo Info Summary */}
                 <Card className="bg-slate-800/70 border-slate-700">
                   <CardHeader>
-                    <CardTitle className="text-sm text-white">Rezumat Rapid</CardTitle>
+                    <CardTitle className="text-sm text-white">Quick Summary</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm text-white">
                     <div className="flex justify-between">
-                      <span className="text-gray-400">ID Ofertă:</span>
+                      <span className="text-gray-400">Offer ID:</span>
                       <span className="font-medium text-white">#{cargoOffer.id.slice(-8)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-400">Postat:</span>
+                      <span className="text-gray-400">Posted:</span>
                       <span className="font-medium text-white">{formatDate(cargoOffer.createdAt)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Status:</span>
                       <Badge variant={isAccepted ? 'default' : 'secondary'} className="text-xs">
-                        {isAccepted ? 'Acceptat' : 'Disponibil'}
+                        {isAccepted ? 'Accepted' : 'Available'}
                       </Badge>
                     </div>
                   </CardContent>

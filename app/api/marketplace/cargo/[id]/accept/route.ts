@@ -10,7 +10,9 @@ export async function POST(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    console.log('=== ACCEPT POST START ===');
     const { userId } = await auth();
+    console.log('Auth userId:', userId);
 
     if (!userId) {
       return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
@@ -18,6 +20,7 @@ export async function POST(
 
     const params = await context.params;
     const offerId = params.id;
+    console.log('Offer ID:', offerId);
     
 
     const cargoOffer = await prisma.cargoOffer.findUnique({

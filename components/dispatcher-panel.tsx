@@ -189,7 +189,11 @@ const DispatcherPanel = React.memo(function DispatcherPanel({ className = '', co
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsExpanded(!isExpanded)}
+                onClick={() => {
+                  console.log('Expand button clicked, current isExpanded:', isExpanded);
+                  setIsExpanded(!isExpanded);
+                  console.log('New isExpanded value:', !isExpanded);
+                }}
               >
                 {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
               </Button>
@@ -285,7 +289,20 @@ const DispatcherPanel = React.memo(function DispatcherPanel({ className = '', co
             </Collapsible>
           )}
 
-          {/* Top Suggestions */}
+          {/* DEBUG: Test Expand Functionality */}
+          {isExpanded && (
+            <div className="bg-yellow-500/20 p-3 rounded-lg border border-yellow-400">
+              <p className="text-sm text-yellow-200">
+                ✅ Expand is working! This section appears when expanded.
+              </p>
+              <p className="text-xs text-yellow-300 mt-1">
+                Debug: isActive={isActive ? 'true' : 'false'}, suggestions={topSuggestions.length}
+              </p>
+            </div>
+          )}
+
+          {/* Top Suggestions - DEBUG */}
+          {console.log('Render check:', { isExpanded, isActive, suggestionsLength: topSuggestions.length })}
           {isExpanded && isActive && topSuggestions.length > 0 && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
