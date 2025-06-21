@@ -85,7 +85,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
 
   const fetchMessages = async () => {
     try {
-      const response = await fetch(`/api/marketplace/cargo/${offer.id}/chat`);
+      const url = new URL(`/api/marketplace/cargo/${offer.id}/chat`, window.location.origin);
+      url.searchParams.append('timestamp', new Date().getTime().toString());
+
+      const response = await fetch(url.toString());
       if (response.ok) {
         const data = await response.json();
         setMessages(data);

@@ -26,8 +26,8 @@ import { Truck, User, MapPin, Settings } from 'lucide-react';
 import type { Vehicle } from '../app/fleet-management/page';
 
 interface AddVehicleFormProps {
-  onVehicleAdded: () => void;
-  initialData?: Vehicle | null;
+  onFormSubmit: () => void;
+  vehicle?: Vehicle | null;
 }
 
 interface FormData extends Partial<Vehicle> {
@@ -35,7 +35,7 @@ interface FormData extends Partial<Vehicle> {
   manualLocationAddress?: string;
 }
 
-export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormProps) {
+export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     type: 'Truck',
@@ -50,14 +50,14 @@ export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormPr
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isEditMode = !!initialData;
+  const isEditMode = !!vehicle;
 
   useEffect(() => {
-    if (isEditMode && initialData) {
+    if (isEditMode && vehicle) {
       setFormData({
-        ...initialData,
-        lat: initialData.lat ?? 0,
-        lng: initialData.lng ?? 0,
+        ...vehicle,
+        lat: vehicle.lat ?? 0,
+        lng: vehicle.lng ?? 0,
         locationType: 'MANUAL_COORDS',
         manualLocationAddress: '',
       });
@@ -76,7 +76,7 @@ export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormPr
         lng: 0,
       });
     }
-  }, [initialData, isEditMode]);
+  }, [vehicle, isEditMode]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -119,7 +119,7 @@ export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormPr
       return;
     }
 
-    const apiEndpoint = isEditMode ? `/api/vehicles/${initialData.id}` : '/api/vehicles';
+    const apiEndpoint = isEditMode ? `/api/vehicles/${vehicle.id}` : '/api/vehicles';
     const httpMethod = isEditMode ? 'PUT' : 'POST';
     const successMessage = isEditMode ? 'Vehicle updated successfully!' : 'Vehicle added successfully!';
     const errorMessage = isEditMode ? 'Failed to update vehicle' : 'Failed to create vehicle';
@@ -148,7 +148,7 @@ export function AddVehicleForm({ onVehicleAdded, initialData }: AddVehicleFormPr
       }
 
       toast.success(successMessage);
-      onVehicleAdded();
+      onFormSubmit();
     } catch (error) {
       console.error(error);
       toast.error(error instanceof Error ? error.message : 'An unknown error occurred.');

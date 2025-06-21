@@ -523,7 +523,13 @@ export default function FleetManagementPage() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md max-h-[80vh] overflow-y-auto">
-                  <AddVehicleForm initialData={editingVehicle} onVehicleAdded={onFormSubmit} />
+                  <DialogHeader>
+                    <DialogTitle>{editingVehicle ? 'Edit Vehicle' : 'Add a New Vehicle'}</DialogTitle>
+                    <DialogDescription>
+                      {editingVehicle ? 'Update the details of your vehicle.' : 'Fill in the details to add a new vehicle to your fleet.'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <AddVehicleForm vehicle={editingVehicle} onFormSubmit={onFormSubmit} />
                 </DialogContent>
               </Dialog>
             </div>
