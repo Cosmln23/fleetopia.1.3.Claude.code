@@ -146,9 +146,15 @@ const useMarketplaceStore = create<MarketplaceStore>()(
             alertsResponse.json()
           ])
           
+          // Handle different API response structures
+          const offers = cargoData.offers || cargoData.data?.cargoOffers || cargoData || []
+          const alerts = alertsData.alerts || alertsData.data?.alerts || alertsData || []
+          
+          console.log('📦 Store update - offers:', offers.length, 'alerts:', alerts.length)
+          
           set({ 
-            cargoOffers: cargoData.offers || [],
-            systemAlerts: alertsData.alerts || []
+            cargoOffers: offers,
+            systemAlerts: alerts
           })
           
         } catch (error) {
@@ -162,7 +168,13 @@ const useMarketplaceStore = create<MarketplaceStore>()(
       // Optimistic Updates
       addCargoOffer: (offer) => {
         const { cargoOffers } = get()
-        set({ cargoOffers: [offer, ...cargoOffers] })
+        console.log('🎯 Adding new offer to store:', offer.id || 'no-id', offer.title)
+        console.log('📋 Current offers count:', cargoOffers.length)
+        
+        const newOffers = [offer, ...cargoOffers]
+        set({ cargoOffers: newOffers })
+        
+        console.log('✅ Store updated, new count:', newOffers.length)
       },
 
       removeCargoOffer: (offerId) => {

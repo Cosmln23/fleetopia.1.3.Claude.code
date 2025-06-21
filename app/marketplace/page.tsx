@@ -329,18 +329,8 @@ export default function MarketplacePage() {
     console.log('Starting API call...');
     console.log('Validation data being sent:', validation.data);
     
-    // TEST SIMPLE API FIRST
-    console.log('Testing simple API...');
-    try {
-      const testResponse = await fetch('/api/test-simple', { method: 'POST' });
-      console.log('Simple API test result:', testResponse.status);
-      if (testResponse.ok) {
-        const testData = await testResponse.json();
-        console.log('Simple API works:', testData);
-      }
-    } catch (testError) {
-      console.error('Simple API failed:', testError);
-    }
+    // API call direct - no more test needed
+    console.log('🚀 Posting cargo offer...');
     
     setSubmitting(true);
     try {
@@ -353,11 +343,20 @@ export default function MarketplacePage() {
       console.log('API response:', response.status);
 
       if (response.ok) {
-        const newOfferData = await response.json();
+        const apiResponse = await response.json();
         console.log('Success - offer posted');
+        console.log('API Response:', apiResponse);
+        
+        // Extract the actual cargo data from API response
+        const newOfferData = apiResponse.data || apiResponse;
         
         // Optimistic update - add to store immediately
         addCargoOffer(newOfferData);
+        
+        // Show magic info if available
+        if (apiResponse.magic?.suggestions?.length > 0) {
+          console.log('🪄 Magic suggestions:', apiResponse.magic.suggestions);
+        }
         
         toast({ 
           title: "✅ Succes", 
