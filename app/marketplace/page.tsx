@@ -120,7 +120,7 @@ export default function MarketplacePage() {
     toPostalCode: '',
     weight: '',
     volume: '',
-    cargoType: '',
+    cargoType: 'General',
     loadingDate: '',
     deliveryDate: '',
     price: '',
@@ -128,7 +128,11 @@ export default function MarketplacePage() {
     companyName: '',
     requirements: '',
     urgency: 'medium',
+    flexibleDate: false,
   });
+
+  // State for flexible date functionality
+  const [isFlexibleDate, setIsFlexibleDate] = useState(false);
 
   // Use centralized store instead of local state
   const {
@@ -256,9 +260,21 @@ export default function MarketplacePage() {
       weight: parseFloat(newCargo.weight) || 0,
       volume: newCargo.volume ? parseFloat(newCargo.volume) : undefined,
       price: parseFloat(newCargo.price) || 0,
+      cargoType: newCargo.cargoType || 'General', // Ensure cargoType is never empty
+      requirements: newCargo.requirements || '', // Ensure requirements is string, not undefined
+      flexibleDate: isFlexibleDate, // Include flexible date state
     };
 
     console.log('Parsed data:', parsedData);
+    console.log('Data types before validation:', {
+      weight: typeof parsedData.weight,
+      price: typeof parsedData.price,
+      volume: typeof parsedData.volume,
+      cargoType: typeof parsedData.cargoType,
+      requirements: typeof parsedData.requirements,
+      loadingDate: typeof parsedData.loadingDate,
+      deliveryDate: typeof parsedData.deliveryDate
+    });
 
     const validation = createCargoOfferSchema.safeParse(parsedData);
 
@@ -327,10 +343,14 @@ export default function MarketplacePage() {
           title: '',
           fromAddress: '', fromCountry: '', fromCity: '', fromPostalCode: '',
           toAddress: '', toCountry: '', toCity: '', toPostalCode: '',
-          weight: '', volume: '', cargoType: '',
+          weight: '', volume: '', cargoType: 'General',
           loadingDate: '', deliveryDate: '', price: '', priceType: 'fixed',
           companyName: '', requirements: '', urgency: 'medium',
+          flexibleDate: false,
         });
+        
+        // Reset flexible date state
+        setIsFlexibleDate(false);
         
         // Refresh data to ensure consistency
         await refreshData();
@@ -834,14 +854,55 @@ export default function MarketplacePage() {
                     <Input name="volume" type="number" placeholder="Volume (m³)" value={newCargo.volume} onChange={handleInputChange} />
                     <Input name="cargoType" placeholder="Cargo Type" value={newCargo.cargoType} onChange={handleInputChange} />
                 </div>
-                 <div className="grid grid-cols-2 gap-4">
+                 <div className="grid grid-cols-3 gap-4">
                     <div>
                         <label htmlFor="loadingDate" className="text-sm font-medium text-gray-500">Loading Date</label>
-                        <Input id="loadingDate" name="loadingDate" type="date" value={newCargo.loadingDate} onChange={handleInputChange} />
+                        <Input 
+                          id="loadingDate" 
+                          name="loadingDate" 
+                          type="date" 
+                          value={newCargo.loadingDate} 
+                          onChange={handleInputChange}
+                          disabled={isFlexibleDate}
+                          className={isFlexibleDate ? "opacity-50" : ""}
+                        />
                     </div>
                      <div>
                         <label htmlFor="deliveryDate" className="text-sm font-medium text-gray-500">Delivery Date</label>
-                        <Input id="deliveryDate" name="deliveryDate" type="date" value={newCargo.deliveryDate} onChange={handleInputChange} />
+                        <Input 
+                          id="deliveryDate" 
+                          name="deliveryDate" 
+                          type="date" 
+                          value={newCargo.deliveryDate} 
+                          onChange={handleInputChange}
+                          disabled={isFlexibleDate}
+                          className={isFlexibleDate ? "opacity-50" : ""}
+                        />
+                    </div>
+                    <div className="flex flex-col">
+                        <label className="text-sm font-medium text-gray-500 mb-2">Date Option</label>
+                        <Button
+                          type="button"
+                          variant={isFlexibleDate ? "default" : "outline"}
+                          onClick={() => {
+                            setIsFlexibleDate(!isFlexibleDate);
+                            setNewCargo(prev => ({ 
+                              ...prev, 
+                              flexibleDate: !isFlexibleDate,
+                              // Clear dates when flexible is enabled
+                              loadingDate: !isFlexibleDate ? '' : prev.loadingDate,
+                              deliveryDate: !isFlexibleDate ? '' : prev.deliveryDate
+                            }));
+                          }}
+                          className="h-9 text-sm"
+                        >
+                          📅 {isFlexibleDate ? 'Date Fixe' : 'Date Flexibile'}
+                        </Button>
+                        {isFlexibleDate && (
+                          <p className="text-xs text-blue-400 mt-1">
+                            Datele vor fi stabilite în funcție de disponibilitate
+                          </p>
+                        )}
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">

@@ -29,25 +29,44 @@ export const vehicleQuerySchema = z.object({
   status: z.enum(['active', 'idle', 'maintenance', 'en_route']).optional(),
 }).merge(paginationSchema);
 
-// Cargo offer validation schemas
+// Cargo offer validation schemas - SMART & FLEXIBLE
 export const createCargoOfferSchema = z.object({
-  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
-  fromAddress: z.string().min(1, 'From address is required').max(200, 'Address too long'),
-  fromCountry: z.string().min(1, 'From country is required').max(100, 'Country name too long'),
-  fromCity: z.string().min(1, 'From city is required').max(100, 'City name too long'),
-  fromPostalCode: z.string().max(20, 'Postal code too long').optional(),
-  toAddress: z.string().min(1, 'To address is required').max(200, 'Address too long'),
-  toCountry: z.string().min(1, 'To country is required').max(100, 'Country name too long'),
-  toCity: z.string().min(1, 'To city is required').max(100, 'City name too long'),
-  toPostalCode: z.string().max(20, 'Postal code too long').optional(),
-  weight: z.number().min(0.1, 'Weight must be positive').max(50000, 'Weight too large'),
+  // ===== OBLIGATORII (5 câmpuri critice) =====
+  fromCountry: z.string().min(1, 'Țara de plecare este obligatorie').max(100, 'Country name too long'),
+  toCountry: z.string().min(1, 'Țara de destinație este obligatorie').max(100, 'Country name too long'),
+  fromPostalCode: z.string().min(1, 'Codul poștal de plecare este obligatoriu').max(20, 'Postal code too long'),
+  toPostalCode: z.string().min(1, 'Codul poștal de destinație este obligatoriu').max(20, 'Postal code too long'),
+  weight: z.number().min(0.1, 'Greutatea este obligatorie (minim 0.1kg)').max(50000, 'Weight too large'),
+  price: z.number().min(0.1, 'Prețul de cerere este obligatoriu').max(1000000, 'Price too large'),
+  
+  // ===== DATA (obligatorie doar dacă nu e flexibilă) =====
+  flexibleDate: z.boolean().optional().default(false),
+  loadingDate: z.string().optional().refine((date, ctx) => {
+    // Obligatorie doar dacă nu e flexibilă
+    if (!ctx.parent.flexibleDate && !date) {
+      return false; // Va genera eroare
+    }
+    return !date || !isNaN(Date.parse(date));
+  }, 'Data de încărcare este obligatorie sau bifează "Data Flexibilă"'),
+  
+  deliveryDate: z.string().optional().refine((date, ctx) => {
+    // Obligatorie doar dacă nu e flexibilă și nu e loadingDate
+    if (!ctx.parent.flexibleDate && !ctx.parent.loadingDate && !date) {
+      return false;
+    }
+    return !date || !isNaN(Date.parse(date));
+  }, 'Data de livrare este obligatorie sau bifează "Data Flexibilă"'),
+
+  // ===== OPȚIONALE (cu defaults inteligente) =====
+  title: z.string().max(200, 'Title too long').optional().default(''),
+  fromAddress: z.string().max(200, 'Address too long').optional().default(''),
+  fromCity: z.string().max(100, 'City name too long').optional().default(''),
+  toAddress: z.string().max(200, 'Address too long').optional().default(''),
+  toCity: z.string().max(100, 'City name too long').optional().default(''),
   volume: z.number().min(0).max(1000, 'Volume too large').optional(),
   cargoType: z.string().max(50, 'Cargo type too long').optional().default('General'),
-  loadingDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid loading date'),
-  deliveryDate: z.string().refine((date) => !isNaN(Date.parse(date)), 'Invalid delivery date'),
-  price: z.number().min(0, 'Price must be positive').max(1000000, 'Price too large'),
   priceType: z.enum(['fixed', 'negotiable', 'per_km']).optional().default('fixed'),
-  companyName: z.string().max(100, "Company name is too long").optional(),
+  companyName: z.string().max(100, "Company name is too long").optional().default(''),
   requirements: z.union([
     z.string(),
     z.array(z.string())
@@ -55,7 +74,7 @@ export const createCargoOfferSchema = z.object({
     if (typeof val === 'string') {
       return val.split(',').map(req => req.trim()).filter(Boolean);
     }
-    return val;
+    return val || [];
   }).optional().default([]),
   urgency: z.enum(['low', 'medium', 'high']).optional().default('medium'),
 });
