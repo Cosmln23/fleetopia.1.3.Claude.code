@@ -2,14 +2,17 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
+import useMarketplaceStore from '@/lib/stores/marketplace-store';
 
 interface PollingEventHandler {
   [event: string]: (data: any) => void;
 }
 
-// Replace SSE with polling for better Vercel compatibility
+// DEPRECATED: This hook is being replaced by the centralized polling service
+// Use useMarketplaceStore and pollingService instead
 export function useSSE(url: string, eventHandlers: PollingEventHandler) {
   const { user, isSignedIn } = useUser();
+  const { agentMode } = useMarketplaceStore();
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountedRef = useRef(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -142,17 +145,15 @@ export function useSSE(url: string, eventHandlers: PollingEventHandler) {
   useEffect(() => {
     isUnmountedRef.current = false;
 
-    if (isSignedIn && user?.id && typeof window !== 'undefined') {
-      startPolling();
-    } else {
-      stopPolling();
-    }
+    // DEPRECATED: Auto-polling disabled - now controlled by centralized polling service
+    // Only enable if explicitly needed for backward compatibility
+    console.warn('useSSE hook is deprecated. Use centralized polling service instead.');
 
     return () => {
       isUnmountedRef.current = true;
       stopPolling();
     };
-  }, [startPolling, stopPolling, isSignedIn, user?.id]);
+  }, [stopPolling]);
 
   return {
     isConnected,

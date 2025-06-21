@@ -7,6 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import useMarketplaceStore from '@/lib/stores/marketplace-store';
+import pollingService from '@/lib/services/polling-service';
+import { AgentToggle } from '@/components/agent-toggle';
 import { 
   Truck, 
   Search, 
@@ -127,10 +130,19 @@ export default function MarketplacePage() {
     urgency: 'medium',
   });
 
-  const [cargoOffers, setCargoOffers] = useState<CargoOffer[]>([]);
+  // Use centralized store instead of local state
+  const {
+    cargoOffers,
+    isLoading: loading,
+    isSubmitting: posting,
+    refreshData,
+    addCargoOffer,
+    removeCargoOffer,
+    updateCargoOffer,
+    setSubmitting
+  } = useMarketplaceStore();
+  
   const [transportRequests, setTransportRequests] = useState<TransportRequest[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [posting, setPosting] = useState(false);
   const [activeList, setActiveList] = useState("all"); // 'all', 'my_offers', 'accepted_offers'
   const [offerToDelete, setOfferToDelete] = useState<string | null>(null);
   const [offerToEdit, setOfferToEdit] = useState<CargoOffer | null>(null);
@@ -139,40 +151,14 @@ export default function MarketplacePage() {
   const [isAddCargoOpen, setIsAddCargoOpen] = useState(false);
   const { openChat } = useChat();
 
+  // REPLACED: fetchCargoOffers now uses centralized store
   const fetchCargoOffers = async (listType: string = 'all') => {
     // Don't fetch protected lists if user is not authenticated
     if ((listType === 'my_offers' || listType === 'accepted_offers') && !isSignedIn) {
-      setCargoOffers([]);
-      setLoading(false);
       return;
     }
 
-    setLoading(true);
-
-    const params = new URLSearchParams();
-    params.append('listType', listType);
-    if (searchFilters.fromLocation) params.append('fromLocation', searchFilters.fromLocation);
-    if (searchFilters.toLocation) params.append('toLocation', searchFilters.toLocation);
-    if (searchFilters.maxWeight) params.append('maxWeight', searchFilters.maxWeight);
-    
-    const queryString = params.toString();
-
-    try {
-      const response = await fetch(`/api/marketplace/cargo?${queryString}`);
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        console.warn('API fetch failed:', errorData.error || 'Failed to fetch cargo offers');
-        setCargoOffers([]);
-        return;
-      }
-      const data = await response.json();
-      setCargoOffers(Array.isArray(data) ? data : []);
-    } catch (error) {
-      console.warn('Network error:', error);
-      setCargoOffers([]);
-    } finally {
-      setLoading(false);
-    }
+    await refreshData();
   };
 
   // Add fetchTransportRequests function
@@ -232,6 +218,14 @@ export default function MarketplacePage() {
   useEffect(() => {
     fetchCargoOffers(activeList);
     fetchTransportRequests();
+    
+    // Initialize polling service
+    pollingService.initialize();
+    
+    return () => {
+      // Cleanup polling service when component unmounts
+      pollingService.destroy();
+    };
   }, [activeList]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -241,7 +235,7 @@ export default function MarketplacePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchCargoOffers(activeList);
+    refreshData();
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -306,7 +300,7 @@ export default function MarketplacePage() {
       console.error('Simple API failed:', testError);
     }
     
-    setPosting(true);
+    setSubmitting(true);
     try {
       const response = await fetch('/api/marketplace/cargo', {
         method: 'POST',
@@ -317,8 +311,17 @@ export default function MarketplacePage() {
       console.log('API response:', response.status);
 
       if (response.ok) {
+        const newOfferData = await response.json();
         console.log('Success - offer posted');
-        toast({ title: "Success", description: "Cargo offer has been posted." });
+        
+        // Optimistic update - add to store immediately
+        addCargoOffer(newOfferData);
+        
+        toast({ 
+          title: "✅ Succes", 
+          description: "Oferta de marfă a fost postată cu succes!" 
+        });
+        
         setIsAddCargoOpen(false);
         setNewCargo({
           title: '',
@@ -328,7 +331,9 @@ export default function MarketplacePage() {
           loadingDate: '', deliveryDate: '', price: '', priceType: 'fixed',
           companyName: '', requirements: '', urgency: 'medium',
         });
-        fetchCargoOffers(activeList); // Refresh the list
+        
+        // Refresh data to ensure consistency
+        await refreshData();
       } else {
         const errorData = await response.json();
         toast({
@@ -344,7 +349,7 @@ export default function MarketplacePage() {
         variant: "destructive",
       });
     } finally {
-      setPosting(false);
+      setSubmitting(false);
     }
   };
 
@@ -363,11 +368,17 @@ export default function MarketplacePage() {
     }
 
     try {
+      // Optimistic update - remove from store immediately
+      removeCargoOffer(offerToDelete);
+      
       const response = await fetch(`/api/marketplace/cargo/${offerToDelete}`, {
         method: 'DELETE',
       });
 
       if (!response.ok) {
+        // Revert optimistic update on error by refreshing data
+        await refreshData();
+        
         const errorData = await response.json().catch(() => ({}));
         const errorMessage = errorData.error || errorData.message || `Failed to delete cargo offer (Status: ${response.status})`;
         console.error('Delete API Response:', {
@@ -380,13 +391,13 @@ export default function MarketplacePage() {
       }
       
       toast({
-        title: "Success",
-        description: "Cargo offer has been deleted.",
+        title: "✅ Șters cu succes",
+        description: "Oferta de marfă a fost eliminată.",
         className: "bg-green-500 text-white",
       });
 
-      // Refresh all lists to ensure consistency across all users
-      await fetchCargoOffers(activeList);
+      // Optional: refresh to ensure consistency with server
+      await refreshData();
       
     } catch (error) {
        console.error('Delete error:', error);
@@ -461,7 +472,7 @@ export default function MarketplacePage() {
       });
 
       setOfferToAssign(null); // Close the dialog
-      fetchCargoOffers(activeList); // Refresh the list of offers
+      await refreshData(); // Refresh the list of offers
 
     } catch (error) {
       console.error(error);
@@ -496,7 +507,7 @@ export default function MarketplacePage() {
       // Will auto-refresh list, chat can be opened manually
 
       // Refresh the list of offers
-      fetchCargoOffers(activeList);
+      await refreshData();
 
     } catch (error) {
       console.error(error);
@@ -537,7 +548,7 @@ export default function MarketplacePage() {
       });
 
       // Refresh the list of offers
-      fetchCargoOffers(activeList);
+      await refreshData();
 
     } catch (error) {
       console.error(error);
@@ -576,6 +587,11 @@ export default function MarketplacePage() {
       {/* Dispatcher Panel */}
       <div className="mb-6">
         <DispatcherPanel />
+      </div>
+
+      {/* Agent AI Toggle */}
+      <div className="mb-6">
+        <AgentToggle />
       </div>
       
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "find-cargo" | "find-transport")} className="w-full">

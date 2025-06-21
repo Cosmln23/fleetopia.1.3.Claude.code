@@ -267,19 +267,14 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
     }
   }, [user?.id, toast]);
 
-  // Auto-refresh analysis periodically
+  // DISABLED: Auto-refresh moved to centralized polling service
   useEffect(() => {
     if (!isSignedIn || !user?.id) return;
 
+    // Initial load only - no more auto-refresh intervals
     refreshAnalysis();
     
-    const interval = setInterval(() => {
-      if (state.isDispatcherActive) {
-        refreshAnalysis();
-      }
-    }, 30000); // Refresh every 30 seconds
-
-    return () => clearInterval(interval);
+    console.log('Dispatcher Context: Auto-refresh disabled - using centralized polling service');
   }, [user?.id, refreshAnalysis]);
 
   // Load alerts on mount

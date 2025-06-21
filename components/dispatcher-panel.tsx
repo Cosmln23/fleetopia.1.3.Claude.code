@@ -122,16 +122,12 @@ const DispatcherPanel = React.memo(function DispatcherPanel({ className = '', co
     setIsMounted(true);
   }, []);
 
-  // Fetch initial data and set up auto-refresh only when this panel is mounted/visible
+  // DISABLED: Auto-refresh moved to centralized polling service
   useEffect(() => {
-    // Initial fetch
+    // Initial fetch only - no more auto-refresh intervals
     refresh();
-
-    // Set up auto-refresh timer
-    const interval = setInterval(refresh, 5 * 60 * 1000); // Refresh every 5 minutes
-
-    // Clean up the timer when the component unmounts
-    return () => clearInterval(interval);
+    
+    console.log('Dispatcher Panel: Auto-refresh disabled - using centralized polling service');
   }, [refresh]);
 
   // Don't render until mounted to prevent hydration issues
