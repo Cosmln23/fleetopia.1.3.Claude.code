@@ -73,6 +73,7 @@ import { useChat } from '@/contexts/chat-provider';
 import { DispatcherPanel } from '@/components/dispatcher-panel';
 import { createCargoOfferSchema } from '@/lib/validations';
 import { CargoDetailModal } from '@/components/cargo-detail-modal';
+import { SendOfferDialog } from '@/components/send-offer-dialog';
 
 interface TransportRequest {
   id: string;
@@ -157,6 +158,7 @@ export default function MarketplacePage() {
   const [selectedCargoOffer, setSelectedCargoOffer] = useState<CargoOffer | null>(null);
   const [isCargoModalOpen, setIsCargoModalOpen] = useState(false);
   const { openChat } = useChat();
+  const [offerToSend, setOfferToSend] = useState<CargoOffer | null>(null);
 
   // REPLACED: fetchCargoOffers now uses centralized store
   const fetchCargoOffers = async (listType: string = 'all') => {
@@ -619,6 +621,44 @@ export default function MarketplacePage() {
     }
   };
 
+  const handleSendOffer = async (offerId: string, price: number) => {
+    if (!user) {
+      toast({ title: 'Authentication Error', description: 'You must be logged in to send an offer.', variant: 'destructive' });
+      return false;
+    }
+
+    try {
+      const response = await fetch(`/api/marketplace/cargo/${offerId}/offer-requests`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ price }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to send offer.');
+      }
+
+      const { chatOffer } = await response.json();
+      
+      toast({ title: "Offer Sent!", description: `Your offer of ${price}€ has been sent. You can now chat with the owner.` });
+      
+      // Open chat with the offer details returned from the API
+      openChat(chatOffer);
+
+      return true;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast({ title: 'Error Sending Offer', description: errorMessage, variant: 'destructive' });
+      return false;
+    }
+  };
+
+  // Function to open the send offer dialog
+  const handleOpenSendOfferDialog = (offer: CargoOffer) => {
+    setOfferToSend(offer);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
@@ -676,6 +716,7 @@ export default function MarketplacePage() {
                   setOfferToDelete={setOfferToDelete}
                   setOfferToAssign={(offer) => setOfferToAssign(offer as any)}
                   onCardClick={handleOpenCargoModal}
+                  handleOpenSendOfferDialog={handleOpenSendOfferDialog}
               />
             </TabsContent>
             <TabsContent value="my_offers">
@@ -690,6 +731,7 @@ export default function MarketplacePage() {
                   setOfferToDelete={setOfferToDelete}
                   setOfferToAssign={(offer) => setOfferToAssign(offer as any)}
                   onCardClick={handleOpenCargoModal}
+                  handleOpenSendOfferDialog={handleOpenSendOfferDialog}
               />
             </TabsContent>
             <TabsContent value="accepted_offers">
@@ -704,6 +746,7 @@ export default function MarketplacePage() {
                   setOfferToDelete={setOfferToDelete}
                   setOfferToAssign={(offer) => setOfferToAssign(offer as any)}
                   onCardClick={handleOpenCargoModal}
+                  handleOpenSendOfferDialog={handleOpenSendOfferDialog}
               />
             </TabsContent>
           </Tabs>
@@ -975,6 +1018,14 @@ export default function MarketplacePage() {
       isOpen={isCargoModalOpen}
       onClose={handleCloseCargoModal}
       cargoOffer={selectedCargoOffer}
+    />
+
+    {/* Render the new Send Offer Dialog */}
+    <SendOfferDialog
+      isOpen={!!offerToSend}
+      onClose={() => setOfferToSend(null)}
+      offer={offerToSend}
+      onSubmit={handleSendOffer}
     />
     </div>
   );

@@ -27,8 +27,6 @@ model User {
   aiAgents       AIAgent[]            @relation("CreatedAIAgents")
 }
 
-
-
 model AIAgent {
   id                   String    @id @default(cuid())
   name                 String
@@ -344,13 +342,15 @@ model RealTimeMetric {
 }
 
 model OfferRequest {
-  id            String             @id
+  id            String             @id @default(cuid())
   cargoOfferId  String
   transporterId String
+  price         Float
   status        OfferRequestStatus @default(PENDING)
   createdAt     DateTime           @default(now())
-  CargoOffer    CargoOffer         @relation(fields: [cargoOfferId], references: [id])
-  User          User               @relation(fields: [transporterId], references: [id])
+  
+  cargoOffer    CargoOffer         @relation(fields: [cargoOfferId], references: [id], onDelete: Cascade)
+  transporter   User               @relation(fields: [transporterId], references: [id], onDelete: Cascade)
 
   @@unique([cargoOfferId, transporterId])
   @@index([cargoOfferId])

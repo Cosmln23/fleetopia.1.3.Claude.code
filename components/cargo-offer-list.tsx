@@ -22,6 +22,7 @@ interface CargoOfferListProps {
   setOfferToDelete: (id: string) => void;
   setOfferToAssign: (offer: any) => void;
   onCardClick?: (offer: CargoOffer) => void;
+  handleOpenSendOfferDialog: (offer: CargoOffer) => void;
 }
 
 const CargoOfferList = React.memo(function CargoOfferList({
@@ -34,7 +35,8 @@ const CargoOfferList = React.memo(function CargoOfferList({
   setOfferToEdit,
   setOfferToDelete,
   setOfferToAssign,
-  onCardClick
+  onCardClick,
+  handleOpenSendOfferDialog
 }: CargoOfferListProps) {
   const { user } = useUser();
 
@@ -53,7 +55,8 @@ const CargoOfferList = React.memo(function CargoOfferList({
     setOfferToEdit,
     setOfferToDelete,
     setOfferToAssign,
-    onCardClick
+    onCardClick,
+    handleOpenSendOfferDialog
   }: {
     offer: CargoOffer;
     userId?: string;
@@ -66,6 +69,7 @@ const CargoOfferList = React.memo(function CargoOfferList({
     setOfferToDelete: (id: string) => void;
     setOfferToAssign: (offer: any) => void;
     onCardClick?: (offer: CargoOffer) => void;
+    handleOpenSendOfferDialog: (offer: CargoOffer) => void;
   }) {
     return (
       <motion.div
@@ -131,11 +135,11 @@ const CargoOfferList = React.memo(function CargoOfferList({
                        variant="default"
                        size="sm"
                        className="h-8 bg-blue-600 hover:bg-blue-700"
-                       title="Accept & Open Chat to Negotiate"
-                       onClick={() => handleAcceptOffer(offer.id)}
+                       title="Send an offer and open chat"
+                       onClick={() => handleOpenSendOfferDialog(offer)}
                      >
                        <MessageSquare className="h-4 w-4 mr-2" />
-                       Accept & Chat
+                       Send Offer & Chat
                      </Button>
                    )}
                    {userId && userId === offer.acceptedByUserId && offer.status === 'TAKEN' && (
@@ -224,6 +228,7 @@ const CargoOfferList = React.memo(function CargoOfferList({
           setOfferToDelete={setOfferToDelete}
           setOfferToAssign={setOfferToAssign}
           onCardClick={onCardClick}
+          handleOpenSendOfferDialog={handleOpenSendOfferDialog}
         />
       ))}
     </div>
