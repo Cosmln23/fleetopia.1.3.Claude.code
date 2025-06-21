@@ -52,7 +52,7 @@ interface DispatcherPanelProps {
 
 const DispatcherPanel = React.memo(function DispatcherPanel({ className = '', compact = false }: DispatcherPanelProps) {
   const [isMounted, setIsMounted] = React.useState(false);
-  const [isExpanded, setIsExpanded] = useState(!compact);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
   
   // ALWAYS call hooks in the same order - before any returns
