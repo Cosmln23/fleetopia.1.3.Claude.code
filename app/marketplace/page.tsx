@@ -72,6 +72,7 @@ import { CargoOfferList } from "@/components/cargo-offer-list";
 import { useChat } from '@/contexts/chat-provider';
 import { DispatcherPanel } from '@/components/dispatcher-panel';
 import { createCargoOfferSchema } from '@/lib/validations';
+import { CargoDetailModal } from '@/components/cargo-detail-modal';
 
 interface TransportRequest {
   id: string;
@@ -153,6 +154,8 @@ export default function MarketplacePage() {
   const [offerToAssign, setOfferToAssign] = useState<CargoOffer | null>(null);
   const [editing, setEditing] = useState(false);
   const [isAddCargoOpen, setIsAddCargoOpen] = useState(false);
+  const [selectedCargoOffer, setSelectedCargoOffer] = useState<CargoOffer | null>(null);
+  const [isCargoModalOpen, setIsCargoModalOpen] = useState(false);
   const { openChat } = useChat();
 
   // REPLACED: fetchCargoOffers now uses centralized store
@@ -529,6 +532,16 @@ export default function MarketplacePage() {
     }
   };
 
+  const handleOpenCargoModal = (offer: any) => {
+    setSelectedCargoOffer(offer);
+    setIsCargoModalOpen(true);
+  };
+
+  const handleCloseCargoModal = () => {
+    setIsCargoModalOpen(false);
+    setSelectedCargoOffer(null);
+  };
+
   const handleAcceptOffer = async (offerId: string) => {
     try {
       const response = await fetch(`/api/marketplace/cargo/${offerId}/accept`, {
@@ -662,6 +675,7 @@ export default function MarketplacePage() {
                   setOfferToEdit={setOfferToEdit}
                   setOfferToDelete={setOfferToDelete}
                   setOfferToAssign={(offer) => setOfferToAssign(offer as any)}
+                  onCardClick={handleOpenCargoModal}
               />
             </TabsContent>
             <TabsContent value="my_offers">
@@ -675,6 +689,7 @@ export default function MarketplacePage() {
                   setOfferToEdit={setOfferToEdit}
                   setOfferToDelete={setOfferToDelete}
                   setOfferToAssign={(offer) => setOfferToAssign(offer as any)}
+                  onCardClick={handleOpenCargoModal}
               />
             </TabsContent>
             <TabsContent value="accepted_offers">
@@ -688,6 +703,7 @@ export default function MarketplacePage() {
                   setOfferToEdit={setOfferToEdit}
                   setOfferToDelete={setOfferToDelete}
                   setOfferToAssign={(offer) => setOfferToAssign(offer as any)}
+                  onCardClick={handleOpenCargoModal}
               />
             </TabsContent>
           </Tabs>
@@ -953,6 +969,13 @@ export default function MarketplacePage() {
             </form>
         </DialogContent>
     </Dialog>
+
+    {/* Cargo Detail Modal */}
+    <CargoDetailModal
+      isOpen={isCargoModalOpen}
+      onClose={handleCloseCargoModal}
+      cargoOffer={selectedCargoOffer}
+    />
     </div>
   );
 }

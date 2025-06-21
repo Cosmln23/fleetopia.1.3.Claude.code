@@ -21,6 +21,7 @@ interface CargoOfferListProps {
   setOfferToEdit: (offer: CargoOffer) => void;
   setOfferToDelete: (id: string) => void;
   setOfferToAssign: (offer: any) => void;
+  onCardClick?: (offer: CargoOffer) => void;
 }
 
 const CargoOfferList = React.memo(function CargoOfferList({
@@ -32,7 +33,8 @@ const CargoOfferList = React.memo(function CargoOfferList({
   setChatOffer,
   setOfferToEdit,
   setOfferToDelete,
-  setOfferToAssign
+  setOfferToAssign,
+  onCardClick
 }: CargoOfferListProps) {
   const { user } = useUser();
 
@@ -50,7 +52,8 @@ const CargoOfferList = React.memo(function CargoOfferList({
     setChatOffer,
     setOfferToEdit,
     setOfferToDelete,
-    setOfferToAssign
+    setOfferToAssign,
+    onCardClick
   }: {
     offer: CargoOffer;
     userId?: string;
@@ -62,6 +65,7 @@ const CargoOfferList = React.memo(function CargoOfferList({
     setOfferToEdit: (offer: CargoOffer) => void;
     setOfferToDelete: (id: string) => void;
     setOfferToAssign: (offer: any) => void;
+    onCardClick?: (offer: CargoOffer) => void;
   }) {
     return (
       <motion.div
@@ -70,7 +74,10 @@ const CargoOfferList = React.memo(function CargoOfferList({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <Card className="bg-slate-800/70 border-slate-700 hover:border-blue-500 transition-all duration-300 flex flex-col h-full">
+        <Card 
+          className="bg-slate-800/70 border-slate-700 hover:border-blue-500 transition-all duration-300 flex flex-col h-full cursor-pointer"
+          onClick={() => onCardClick?.(offer)}
+        >
           <CardHeader>
             <div className="flex justify-between items-start">
               <CardTitle className="text-lg font-bold text-white mb-2">{offer.title}</CardTitle>
@@ -216,6 +223,7 @@ const CargoOfferList = React.memo(function CargoOfferList({
           setOfferToEdit={setOfferToEdit}
           setOfferToDelete={setOfferToDelete}
           setOfferToAssign={setOfferToAssign}
+          onCardClick={onCardClick}
         />
       ))}
     </div>
