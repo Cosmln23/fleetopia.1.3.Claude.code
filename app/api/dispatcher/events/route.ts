@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
+import { prisma } from '@/lib/prisma';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -16,14 +17,49 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Simple, clean response to avoid Content-Length issues
+    // Check if there's any cargo in the system
+    const cargoCount = await prisma.cargoOffer.count({
+      where: {
+        status: {
+          in: ['NEW', 'TAKEN']
+        }
+      }
+    });
+
+    // Get recent cargo if any exists
+    let recentCargo = [];
+    if (cargoCount > 0) {
+      recentCargo = await prisma.cargoOffer.findMany({
+        where: {
+          status: 'NEW',
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        },
+        take: 5,
+        select: {
+          id: true,
+          title: true,
+          fromCountry: true,
+          toCountry: true,
+          price: true,
+          createdAt: true
+        }
+      });
+    }
+
+    // Smart response based on cargo availability
     const response = {
       success: true,
       timestamp: new Date().toISOString(),
       data: {
         connected: true,
+        cargoCount,
         alerts: [],
-        recentCargo: []
+        recentCargo: recentCargo
       }
     };
 
