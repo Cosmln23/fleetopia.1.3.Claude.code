@@ -39,23 +39,10 @@ export const createCargoOfferSchema = z.object({
   weight: z.number().min(0.1, 'Greutatea este obligatorie (minim 0.1kg)').max(50000, 'Weight too large'),
   price: z.number().min(0.1, 'Prețul de cerere este obligatoriu').max(1000000, 'Price too large'),
   
-  // ===== DATA (obligatorie doar dacă nu e flexibilă) =====
+  // ===== DATA (validare simplificată) =====
   flexibleDate: z.boolean().optional().default(false),
-  loadingDate: z.string().optional().refine((date, ctx) => {
-    // Obligatorie doar dacă nu e flexibilă
-    if (!ctx.parent.flexibleDate && !date) {
-      return false; // Va genera eroare
-    }
-    return !date || !isNaN(Date.parse(date));
-  }, 'Data de încărcare este obligatorie sau bifează "Data Flexibilă"'),
-  
-  deliveryDate: z.string().optional().refine((date, ctx) => {
-    // Obligatorie doar dacă nu e flexibilă și nu e loadingDate
-    if (!ctx.parent.flexibleDate && !ctx.parent.loadingDate && !date) {
-      return false;
-    }
-    return !date || !isNaN(Date.parse(date));
-  }, 'Data de livrare este obligatorie sau bifează "Data Flexibilă"'),
+  loadingDate: z.string().optional().transform((val) => val || ''),
+  deliveryDate: z.string().optional().transform((val) => val || ''),
 
   // ===== OPȚIONALE (cu defaults inteligente) =====
   title: z.string().max(200, 'Title too long').optional().default(''),

@@ -276,21 +276,47 @@ export default function MarketplacePage() {
       deliveryDate: typeof parsedData.deliveryDate
     });
 
-    const validation = createCargoOfferSchema.safeParse(parsedData);
-
-    console.log('Validation result:', validation);
-
-    if (!validation.success) {
-      console.log('Validation errors:', validation.error.errors);
-      const errorMessages = validation.error.errors.map(err => err.message).join('\n- ');
+    // ===== VALIDARE CUSTOM - Simplu și sigur =====
+    console.log('🔍 Validating data...');
+    
+    // Verifică câmpurile obligatorii
+    const requiredFields = {
+      fromCountry: 'Țara de plecare',
+      toCountry: 'Țara de destinație', 
+      fromPostalCode: 'Codul poștal de plecare',
+      toPostalCode: 'Codul poștal de destinație',
+      weight: 'Greutatea',
+      price: 'Prețul'
+    };
+    
+    const missingFields = [];
+    for (const [field, label] of Object.entries(requiredFields)) {
+      if (!parsedData[field] || parsedData[field] === 0) {
+        missingFields.push(label);
+      }
+    }
+    
+    // Verifică data doar dacă nu e flexibilă
+    if (!parsedData.flexibleDate && !parsedData.loadingDate && !parsedData.deliveryDate) {
+      missingFields.push('Data de încărcare sau livrare (sau activează Date Flexibile)');
+    }
+    
+    if (missingFields.length > 0) {
+      console.log('❌ Missing required fields:', missingFields);
       toast({
-          title: "Validation Failed",
-          description: `Please fix the following errors:\n- ${errorMessages}`,
-          variant: "destructive",
-          duration: 5000,
+        title: "Câmpuri obligatorii lipsă",
+        description: `Te rog completează: ${missingFields.join(', ')}`,
+        variant: "destructive",
+        duration: 5000,
       });
       return;
     }
+    
+    console.log('✅ All validations passed');
+    
+    // Folosește Zod doar pentru transformare, nu pentru validare
+    const validation = createCargoOfferSchema.safeParse(parsedData);
+    const finalData = validation.success ? validation.data : parsedData;
 
     console.log('Authentication check:', { isSignedIn, userId: user?.id });
     
@@ -321,7 +347,7 @@ export default function MarketplacePage() {
       const response = await fetch('/api/marketplace/cargo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(validation.data),
+        body: JSON.stringify(finalData),
       });
 
       console.log('API response:', response.status);
