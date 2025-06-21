@@ -99,7 +99,10 @@ export async function GET(request: NextRequest) {
 // POST a new cargo offer
 export async function POST(request: NextRequest) {
   try {
+    console.log('=== CARGO POST START ===');
+    
     const { userId } = await auth();
+    console.log('Auth userId:', userId);
     
     if (!userId) {
       return new NextResponse(JSON.stringify({ error: 'Unauthorized' }), {
@@ -108,15 +111,31 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    console.log('Testing Prisma connection...');
+    
+    // Test basic Prisma query first
+    try {
+      const testCount = await prisma.user.count();
+      console.log('Prisma connection OK, user count:', testCount);
+    } catch (prismaError) {
+      console.error('Prisma connection failed:', prismaError);
+      throw new Error(`Database connection failed: ${prismaError.message}`);
+    }
+
     // Verify if user exists in database, create if missing
+    console.log('Checking if user exists...');
     let user = await prisma.user.findUnique({ where: { id: userId } });
+    console.log('User found:', !!user);
+    
     if (!user) {
+      console.log('Creating new user...');
       user = await prisma.user.create({
         data: {
           id: userId,
           role: 'client',
         }
       });
+      console.log('User created:', user.id);
     }
 
     const body = await request.json();
