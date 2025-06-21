@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -45,7 +46,6 @@ interface CargoDetailModalProps {
 export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailModalProps) {
   const { user } = useUser();
   const { openChat } = useChat();
-  const [showChat, setShowChat] = useState(false);
 
   if (!cargoOffer) return null;
 
@@ -54,8 +54,10 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
 
   const handleChatClick = () => {
     if (!isOwnOffer) {
-      setShowChat(true);
-      openChat(cargoOffer.id, cargoOffer.userId);
+      // Deschidem chat-ul prin useChat cu cargoOffer-ul complet
+      openChat(cargoOffer);
+      // Închidem modal-ul pentru a evita conflictele
+      onClose();
     }
   };
 
@@ -124,6 +126,9 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                   <DialogTitle className="text-2xl font-bold text-white">
                     {cargoOffer.title}
                   </DialogTitle>
+                  <DialogDescription className="text-gray-400">
+                    Detalii complete despre transportul de marfă
+                  </DialogDescription>
                   <div className="flex items-center space-x-2 mt-1">
                     <Badge variant={getUrgencyColor(cargoOffer.urgency)} className="flex items-center space-x-1">
                       {getUrgencyIcon(cargoOffer.urgency)}
@@ -393,61 +398,6 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
           </div>
         </motion.div>
       </DialogContent>
-
-      {/* Facebook-style Chat - Bottom Right */}
-      <AnimatePresence>
-        {showChat && (
-          <motion.div
-            initial={{ opacity: 0, y: 100, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 100, scale: 0.8 }}
-            transition={{ duration: 0.3, type: "spring" }}
-            className="fixed bottom-4 right-4 w-80 h-96 bg-slate-800 rounded-lg shadow-2xl border border-slate-600 z-[60]"
-          >
-            <div className="flex items-center justify-between p-4 border-b bg-blue-600 text-white rounded-t-lg">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 bg-blue-600/20 rounded-full flex items-center justify-center">
-                  <MessageSquare className="h-4 w-4 text-blue-400" />
-                </div>
-                <div>
-                  <p className="font-medium">{cargoOffer.companyName || 'Transport Chat'}</p>
-                  <p className="text-xs opacity-90">Online acum</p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowChat(false)}
-                className="h-6 w-6 text-white hover:bg-blue-700"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            </div>
-            
-            <div className="p-4 h-64 overflow-y-auto bg-slate-700">
-              <div className="space-y-3">
-                <div className="bg-slate-600 p-3 rounded-lg shadow-sm">
-                  <p className="text-sm text-white">Salut! Sunt interesat de oferta ta de transport.</p>
-                  <p className="text-xs text-gray-400 mt-1">Acum</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-4 border-t border-slate-600 bg-slate-800">
-              <div className="flex space-x-2">
-                <input
-                  type="text"
-                  placeholder="Scrie un mesaj..."
-                  className="flex-1 px-3 py-2 border border-slate-600 bg-slate-700 text-white rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <Button size="sm" className="px-3">
-                  <span className="text-xs">Trimite</span>
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </Dialog>
   );
 }
