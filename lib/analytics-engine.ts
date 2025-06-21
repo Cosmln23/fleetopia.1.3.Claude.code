@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from './prisma';
+import { cache } from './cache';
+import { startOfDay, endOfDay, subDays } from 'date-fns';
 
 export interface AnalyticsData {
   period: 'daily' | 'weekly' | 'monthly' | 'yearly';

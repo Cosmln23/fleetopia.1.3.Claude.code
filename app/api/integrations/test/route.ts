@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 import { auth } from '@clerk/nextjs/server';
 
 
 export const dynamic = 'force-dynamic';
-const prisma = new PrismaClient();
 
 // POST - Test API Integration Connection
 export async function POST(request: NextRequest) {

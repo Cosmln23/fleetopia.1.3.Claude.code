@@ -1,9 +1,10 @@
-import { PrismaClient } from '@prisma/client';
+import prisma from './prisma';
 import { Server as SocketIOServer } from 'socket.io';
 import { Server } from 'http';
 import { MLRouteOptimizer, MLOptimizationResult } from './ml-route-optimizer';
+import { Vehicle, GpsLog, VehicleStatus } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const FLEET_TRACKING_CACHE_TTL = 60 * 1000; // 1 minut
 
 export interface VehicleLocation {
   vehicleId: string;

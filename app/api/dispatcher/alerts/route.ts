@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { NextRequest, NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
+import { auth } from '@clerk/nextjs/server';
 
-const prisma = new PrismaClient();
+export const dynamic = 'force-dynamic';
 
 // GET all unread system alerts
 export async function GET() {
