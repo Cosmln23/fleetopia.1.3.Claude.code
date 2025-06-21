@@ -80,15 +80,18 @@ export async function POST(
     
 
     const body = await request.json();
+    console.log('Request body:', body);
     const content = body.content || body.message;
     if (!content) {
       return NextResponse.json({ message: 'Message content cannot be empty' }, { status: 400 });
     }
 
+    console.log('Finding cargo offer...');
     const cargoOffer = await prisma.cargoOffer.findUnique({
       where: { id: offerId },
       select: { userId: true, acceptedByUserId: true }
     });
+    console.log('Cargo offer found:', cargoOffer);
 
     if (!cargoOffer) {
       return NextResponse.json({ message: 'Offer not found' }, { status: 404 });
