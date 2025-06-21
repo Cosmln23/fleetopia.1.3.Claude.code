@@ -139,9 +139,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('Received request body:', body);
     const validation = createCargoOfferSchema.safeParse(body);
     
     if (!validation.success) {
+      console.error('Validation failed:', validation.error.errors);
       return new NextResponse(JSON.stringify({
         error: 'Validation failed',
         message: 'Invalid request body',
@@ -174,8 +176,11 @@ export async function POST(request: NextRequest) {
       companyName
     } = validation.data;
 
+    console.log('Creating cargo offer with data:', validation.data);
+
     const newCargoOffer = await prisma.cargoOffer.create({
       data: {
+        userId: userId,
         title,
         fromAddress,
         fromCountry,
@@ -195,12 +200,14 @@ export async function POST(request: NextRequest) {
         requirements,
         urgency,
         companyName,
-        status: CargoStatus.NEW,
-        userId: userId,
+        status: CargoStatus.NEW
       },
     });
 
+    console.log('Successfully created cargo offer:', newCargoOffer.id);
+
     // Create a system alert
+    console.log('Creating system alert...');
     await prisma.systemAlert.create({
       data: {
         message: `New cargo offer: ${newCargoOffer.title} from ${newCargoOffer.fromCountry} to ${newCargoOffer.toCountry}`,
@@ -235,9 +242,26 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('=== CARGO CREATE ERROR ===');
     console.error('Error details:', error);
-    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-    console.error('Request body was:', body);
-    console.error('Validation data was:', validation.success ? validation.data : 'Validation failed');
+    if (error instanceof Error) {
+        console.error('Error name:', error.name);
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+    }
+    // The next two lines might fail if 'body' or 'validation' are not defined,
+    // so we wrap them in a try-catch block for safety.
+    try {
+      const parsedBody = await (request as any)._body;
+      console.error('Request body was:', parsedBody);
+      // Also log validation data if it exists
+      const validationResult = createCargoOfferSchema.safeParse(parsedBody);
+      if (validationResult.success) {
+        console.error('Validation data was:', validationResult.data);
+      } else {
+        console.error('Validation failed, errors:', validationResult.error.errors);
+      }
+    } catch (e) {
+      console.error('Could not log request body or validation data.');
+    }
     
     return new NextResponse(JSON.stringify({
       error: 'Internal server error',
