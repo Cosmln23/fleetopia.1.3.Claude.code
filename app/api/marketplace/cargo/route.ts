@@ -203,11 +203,16 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Failed to create cargo offer:', error);
+    console.error('=== CARGO CREATE ERROR ===');
+    console.error('Error details:', error);
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Request body was:', body);
+    console.error('Validation data was:', validation.success ? validation.data : 'Validation failed');
     
     return new NextResponse(JSON.stringify({
       error: 'Internal server error',
-      message: error instanceof Error ? error.message : 'Unknown error'
+      message: error instanceof Error ? error.message : 'Unknown error',
+      details: error instanceof Error ? error.stack : 'No stack trace'
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
