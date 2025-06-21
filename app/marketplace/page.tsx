@@ -291,6 +291,21 @@ export default function MarketplacePage() {
     }
     
     console.log('Starting API call...');
+    console.log('Validation data being sent:', validation.data);
+    
+    // TEST SIMPLE API FIRST
+    console.log('Testing simple API...');
+    try {
+      const testResponse = await fetch('/api/test-simple', { method: 'POST' });
+      console.log('Simple API test result:', testResponse.status);
+      if (testResponse.ok) {
+        const testData = await testResponse.json();
+        console.log('Simple API works:', testData);
+      }
+    } catch (testError) {
+      console.error('Simple API failed:', testError);
+    }
+    
     setPosting(true);
     try {
       const response = await fetch('/api/marketplace/cargo', {
