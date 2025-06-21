@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic';
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Get recent cargo if any exists
-    let recentCargo = [];
+    let recentCargo: { id: string; title: string; fromCountry: string; toCountry: string; price: number; createdAt: Date; }[] = [];
     if (cargoCount > 0) {
       recentCargo = await prisma.cargoOffer.findMany({
         where: {

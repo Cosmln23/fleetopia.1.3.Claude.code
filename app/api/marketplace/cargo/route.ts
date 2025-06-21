@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { CargoOffer, CargoStatus } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
 import { cargoQuerySchema, createCargoOfferSchema } from '@/lib/validations';
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
     try {
       const testCount = await prisma.user.count();
       console.log('Prisma connection OK, user count:', testCount);
-    } catch (prismaError) {
+    } catch (prismaError: any) {
       console.error('Prisma connection failed:', prismaError);
       throw new Error(`Database connection failed: ${prismaError.message}`);
     }
