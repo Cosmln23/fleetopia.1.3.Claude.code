@@ -122,7 +122,7 @@ const useMarketplaceStore = create<MarketplaceStore>()(
           ])
           
           // Handle different API response structures
-          const offers = cargoData.offers || cargoData.data?.cargoOffers || cargoData || []
+          const offers = Array.isArray(cargoData.data) ? cargoData.data : (cargoData.data?.cargoOffers || cargoData.offers || []);
           const alerts = alertsData.alerts || alertsData.data?.alerts || alertsData || []
           
           console.log('📦 Store update - offers:', offers.length, 'alerts:', alerts.length)
