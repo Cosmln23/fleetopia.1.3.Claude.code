@@ -47,6 +47,16 @@ export async function POST(
       },
     });
 
+    // Create notification for cargo acceptance
+    await prisma.systemAlert.create({
+      data: {
+        message: `✅ Cargo offer accepted: ${cargoOffer.fromCity} → ${cargoOffer.toCity} (${cargoOffer.weight}t)`,
+        type: 'cargo',
+        read: false,
+        relatedId: offerId
+      }
+    });
+
     return NextResponse.json(updatedOffer);
   } catch (error) {
     console.error('[API_CARGO_ACCEPT_POST] Error accepting cargo offer:', error);
