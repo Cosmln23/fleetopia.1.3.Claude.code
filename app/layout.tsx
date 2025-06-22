@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { ChatProvider } from '@/contexts/chat-provider';
 import { ChatManager } from '@/components/chat-manager';
 import { DispatcherProvider } from '@/contexts/dispatcher-context';
+import { NotificationProvider } from '@/contexts/notification-provider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -36,19 +37,21 @@ export default function RootLayout({
         <ClerkProvider>
           <DispatcherProvider>
             <ChatProvider>
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-              >
-                <Navigation />
-                <main className="min-h-screen text-white">
-                  {children}
-                </main>
-                <Toaster />
-                <ChatManager />
-              </ThemeProvider>
+              <NotificationProvider>
+                <ThemeProvider
+                  attribute="class"
+                  defaultTheme="system"
+                  enableSystem
+                  disableTransitionOnChange
+                >
+                  <Navigation />
+                  <main className="min-h-screen text-white">
+                    {children}
+                  </main>
+                  <Toaster />
+                  <ChatManager />
+                </ThemeProvider>
+              </NotificationProvider>
             </ChatProvider>
           </DispatcherProvider>
         </ClerkProvider>

@@ -102,9 +102,10 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
   };
 
   useEffect(() => {
+    // Fetch messages only when the component mounts (chat window is opened)
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000);
-    return () => clearInterval(interval);
+    // The global notification system will handle new message alerts.
+    // No need for polling here anymore.
   }, [offer.id]);
 
   // Scroll to bottom when messages change

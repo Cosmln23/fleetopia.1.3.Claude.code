@@ -1,28 +1,22 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
-import { 
-  Home, 
-  Bot, 
-  Users, 
-  ShoppingCart, 
+import { Button } from '@/components/ui/button';
+import {
+  Home,
+  ShoppingCart,
   Truck,
   Zap,
   Activity,
-  Settings,
-  BarChart3,
   MessageSquare,
-  Bell
+  Settings,
 } from 'lucide-react';
-import { AuthButton } from './AuthButton';
-import { Button } from './ui/button';
+import { cn } from '@/lib/utils';
+import { useNotificationSystem } from '@/hooks/use-notification-system';
 import { ChatPopover } from './chat-popover';
-import { Badge } from './ui/badge';
-import { toast } from 'sonner';
-import useMarketplaceStore from '@/lib/stores/marketplace-store';
+import { AuthButton } from './AuthButton';
 import { NotificationDropdown } from './notifications-dropdown';
 
 const navigation = [
@@ -32,7 +26,6 @@ const navigation = [
     icon: Home,
     description: 'Transport Paradise Overview'
   },
-
   {
     name: 'Marketplace',
     href: '/marketplace',
@@ -61,23 +54,7 @@ const navigation = [
 
 export function Navigation() {
   const pathname = usePathname();
-  const { systemAlerts } = useMarketplaceStore();
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  // Calculate unread notifications
-  useEffect(() => {
-    const unread = systemAlerts.filter(alert => !alert.read).length;
-    setUnreadCount(unread);
-  }, [systemAlerts]);
-
-  // Handle notification click
-  const handleNotificationClick = () => {
-    if (unreadCount > 0) {
-      toast.info(`📢 You have ${unreadCount} new notification${unreadCount > 1 ? 's' : ''}`);
-    } else {
-      toast.info("📢 No new notifications");
-    }
-  };
+  const { totalNotifications } = useNotificationSystem();
 
   return (
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
@@ -118,7 +95,7 @@ export function Navigation() {
 
           {/* Settings & Auth */}
           <div className="flex items-center space-x-2">
-            <NotificationDropdown unreadCount={unreadCount} />
+            <NotificationDropdown unreadCount={totalNotifications} />
             <ChatPopover>
               <Button variant="ghost" size="icon" title="Chat">
                 <MessageSquare className="h-5 w-5" />
