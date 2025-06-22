@@ -23,6 +23,7 @@ import { ChatPopover } from './chat-popover';
 import { Badge } from './ui/badge';
 import { toast } from 'sonner';
 import useMarketplaceStore from '@/lib/stores/marketplace-store';
+import { NotificationDropdown } from './notifications-dropdown';
 
 const navigation = [
   {
@@ -117,23 +118,7 @@ export function Navigation() {
 
           {/* Settings & Auth */}
           <div className="flex items-center space-x-2">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              title="Notifications"
-              onClick={handleNotificationClick}
-              className="relative"
-            >
-              <Bell className="h-5 w-5" />
-              {unreadCount > 0 && (
-                <Badge 
-                  variant="destructive" 
-                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
-                >
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </Badge>
-              )}
-            </Button>
+            <NotificationDropdown unreadCount={unreadCount} />
             <ChatPopover>
               <Button variant="ghost" size="icon" title="Chat">
                 <MessageSquare className="h-5 w-5" />

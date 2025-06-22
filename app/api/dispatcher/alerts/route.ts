@@ -4,13 +4,10 @@ import { auth } from '@clerk/nextjs/server';
 
 export const dynamic = 'force-dynamic';
 
-// GET all unread system alerts
+// GET all system alerts (both read and unread)
 export async function GET() {
   try {
     const alerts = await prisma.systemAlert.findMany({
-      where: {
-        read: false,
-      },
       orderBy: {
         createdAt: 'desc',
       },
