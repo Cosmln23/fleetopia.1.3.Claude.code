@@ -1,36 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { CargoOffer } from '@prisma/client';
 
-export interface CargoOffer {
-  id: string
-  title: string
-  weight: number
-  price: number
-  urgency: string
-  fromAddress: string
-  toAddress: string
-  fromCountry: string
-  toCountry: string
-  fromCity: string
-  toCity: string
-  deliveryDate: string
-  loadingDate: string
-  cargoType: string
-  status: string
-  userId: string
-  acceptedByUserId?: string
-  createdAt: string
-  companyName?: string
-  distance?: number
-  user?: {
-    name: string
-    email: string
-  }
-  acceptedBy?: {
-    name: string
-    email: string
-  }
-}
+export type { CargoOffer };
 
 export interface SystemAlert {
   id: string

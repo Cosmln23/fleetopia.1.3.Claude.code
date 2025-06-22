@@ -244,7 +244,8 @@ export default function MarketplacePage() {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    refreshData();
+    // Pass the filters to the refreshData function
+    refreshData(activeList, searchFilters);
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -544,7 +545,12 @@ export default function MarketplacePage() {
     setSelectedCargoOffer(null);
   };
 
+  const handleOpenSendOfferDialog = (offer: CargoOffer) => {
+    setOfferToSend(offer);
+  };
+
   const handleAcceptOffer = async (offerId: string) => {
+    setSubmitting(true);
     try {
       const response = await fetch(`/api/marketplace/cargo/${offerId}/accept`, {
         method: 'POST',
@@ -577,6 +583,8 @@ export default function MarketplacePage() {
         description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -652,11 +660,6 @@ export default function MarketplacePage() {
       toast({ title: 'Error Sending Offer', description: errorMessage, variant: 'destructive' });
       return false;
     }
-  };
-
-  // Function to open the send offer dialog
-  const handleOpenSendOfferDialog = (offer: CargoOffer) => {
-    setOfferToSend(offer);
   };
 
   if (loading) {
@@ -1018,6 +1021,7 @@ export default function MarketplacePage() {
       isOpen={isCargoModalOpen}
       onClose={handleCloseCargoModal}
       cargoOffer={selectedCargoOffer}
+      onSendOffer={handleOpenSendOfferDialog}
     />
 
     {/* Render the new Send Offer Dialog */}

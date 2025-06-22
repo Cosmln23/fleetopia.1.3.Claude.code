@@ -135,11 +135,11 @@ const CargoOfferList = React.memo(function CargoOfferList({
                        variant="default"
                        size="sm"
                        className="h-8 bg-blue-600 hover:bg-blue-700"
-                       title="Send an offer and open chat"
-                       onClick={() => handleOpenSendOfferDialog(offer)}
+                       title="View Details and Send Offer"
+                       onClick={() => onCardClick?.(offer)}
                      >
-                       <MessageSquare className="h-4 w-4 mr-2" />
-                       Send Offer & Chat
+                       <FileText className="h-4 w-4 mr-2" />
+                       View Details
                      </Button>
                    )}
                    {userId && userId === offer.acceptedByUserId && offer.status === 'TAKEN' && (

@@ -33,7 +33,7 @@ import {
   Navigation,
   Shield
 } from 'lucide-react';
-import { CargoOffer } from '@/lib/stores/marketplace-store';
+import { CargoOffer } from '@prisma/client';
 import { useUser } from '@clerk/nextjs';
 import { useChat } from '@/contexts/chat-provider';
 
@@ -41,16 +41,17 @@ interface CargoDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
   cargoOffer: CargoOffer | null;
+  onSendOffer: (offer: CargoOffer) => void;
 }
 
-export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailModalProps) {
+export function CargoDetailModal({ isOpen, onClose, cargoOffer, onSendOffer }: CargoDetailModalProps) {
   const { user } = useUser();
   const { openChat } = useChat();
 
   if (!cargoOffer) return null;
 
   const isOwnOffer = cargoOffer.userId === user?.id;
-  const isAccepted = cargoOffer.status === 'accepted';
+  const isAccepted = cargoOffer.status === 'TAKEN';
 
   const handleChatClick = () => {
     if (!isOwnOffer) {
@@ -79,8 +80,10 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ro-RO', {
+  const formatDate = (date: Date | string) => {
+    if (!date) return 'N/A';
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('ro-RO', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
@@ -286,55 +289,23 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                 <Card className="bg-slate-800/70 border-slate-700">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2 text-white">
-                      <Building className="h-5 w-5 text-blue-400" />
-                      <span>Company Information</span>
+                      <Building className="h-5 w-5 text-teal-400" />
+                      <span>Provider Information</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-blue-600/20 rounded-full flex items-center justify-center">
-                        <Building className="h-6 w-6 text-blue-400" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-white">{cargoOffer.companyName || 'Transport Company'}</h3>
-                        <div className="flex items-center space-x-1">
-                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                          <span className="text-sm font-medium text-white">4.8</span>
-                          <span className="text-sm text-gray-400">(127 reviews)</span>
-                        </div>
-                      </div>
+                    <div>
+                      <p className="text-sm text-gray-400 mb-1">Company Name</p>
+                      <p className="font-semibold text-white">{cargoOffer.companyName || 'N/A'}</p>
                     </div>
-
-                    <div className="space-y-2">
-                      <div className="flex items-center space-x-2 text-sm text-white">
-                        <Shield className="h-4 w-4 text-green-400" />
-                        <span>Verified company</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm text-white">
-                        <Truck className="h-4 w-4 text-blue-400" />
-                        <span>15+ years experience</span>
-                      </div>
+                    <div className="flex items-center space-x-2">
+                      <Star className="h-4 w-4 text-yellow-400" />
+                      <span className="font-semibold text-white">{cargoOffer.companyRating || 'New'}</span>
+                      <Badge variant="secondary" className="flex items-center space-x-1">
+                        <Shield className="h-3 w-3 text-green-400"/>
+                        <span>Verified</span>
+                      </Badge>
                     </div>
-
-                    {cargoOffer.user && (
-                      <Separator />
-                    )}
-
-                    {cargoOffer.user && (
-                      <div className="space-y-2">
-                        <p className="text-sm font-medium text-white">Contact:</p>
-                        <div className="space-y-1">
-                          <div className="flex items-center space-x-2 text-sm text-white">
-                            <Mail className="h-4 w-4 text-gray-400" />
-                            <span>{cargoOffer.user.email}</span>
-                          </div>
-                          <div className="flex items-center space-x-2 text-sm text-white">
-                            <Phone className="h-4 w-4 text-gray-400" />
-                            <span>+40 XXX XXX XXX</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
 
@@ -387,6 +358,32 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer }: CargoDetailMod
                 </Card>
               </div>
             </div>
+          </div>
+          
+          <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-slate-700 bg-slate-900/80 backdrop-blur-sm">
+             <div className="flex justify-end items-center">
+                 {!isOwnOffer && cargoOffer.status === 'NEW' && (
+                    <Button 
+                      className="h-11 text-base px-6 bg-blue-600 hover:bg-blue-700"
+                      onClick={() => {
+                        onClose(); // Close this modal first
+                        setTimeout(() => onSendOffer(cargoOffer), 150); // Open the send offer dialog
+                      }}
+                    >
+                      <MessageSquare className="h-5 w-5 mr-2" />
+                      Send Offer & Chat
+                    </Button>
+                 )}
+                 
+                 {isOwnOffer && (
+                    <p className="text-sm text-center text-slate-400">This is your own offer. You can manage it from the marketplace list.</p>
+                 )}
+                 
+                 {cargoOffer.status !== 'NEW' && !isOwnOffer && (
+                    <p className="text-sm text-center text-slate-400">This offer is no longer available for new bids.</p>
+                 )}
+                <Button variant="outline" onClick={onClose} className="ml-4">Close</Button>
+             </div>
           </div>
         </motion.div>
       </DialogContent>
