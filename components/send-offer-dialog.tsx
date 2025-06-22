@@ -38,12 +38,34 @@ export function SendOfferDialog({ isOpen, onClose, offer, onSubmit }: SendOfferD
     
     setIsSubmitting(true);
     const success = await onSubmit(offer.id, numericPrice);
-    setIsSubmitting(false);
-
+    
     if (success) {
-      setPrice('');
-      onClose();
+      try {
+        // Automatically send the initial message to start the chat
+        const messageResponse = await fetch(`/api/marketplace/cargo/${offer.id}/chat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: `I have sent an offer of €${numericPrice}. Let's discuss.`
+          }),
+        });
+
+        if (!messageResponse.ok) {
+          throw new Error('Offer was sent, but failed to start chat session.');
+        }
+
+        toast.success("Offer sent and chat started!");
+
+      } catch (chatError) {
+        console.error(chatError);
+        toast.error(chatError instanceof Error ? chatError.message : 'An unknown chat error occurred.');
+      } finally {
+        setPrice('');
+        onClose();
+      }
     }
+    
+    setIsSubmitting(false);
   };
 
   return (

@@ -184,7 +184,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const newVehicle = await dbUtils.createVehicle({
+    const vehicleData = {
       name,
       type,
       licensePlate,
@@ -195,7 +195,15 @@ export async function POST(request: NextRequest) {
       currentRoute,
       fuelConsumption,
       fleetId: fleet.id,
-    }, userId);
+    };
+
+    const newVehicle = await prisma.vehicle.create({
+      data: vehicleData,
+    });
+    
+    if (!newVehicle) {
+      throw new Error('Vehicle creation failed in database.');
+    }
 
     return NextResponse.json({ 
       success: true, 

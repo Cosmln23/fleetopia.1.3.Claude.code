@@ -137,12 +137,26 @@ export default function FleetManagementPage() {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/vehicles');
+      // Add a cache-busting timestamp
+      const url = new URL('/api/vehicles', window.location.origin);
+      url.searchParams.append('timestamp', new Date().getTime().toString());
+      
+      const response = await fetch(url.toString());
       if (!response.ok) {
-        throw new Error('Server responded with an error.');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Server responded with an error.');
       }
       const data = await response.json();
-      setVehicles(data.vehicles || []);
+      
+      // Check if data has the expected structure
+      if (data && data.data && Array.isArray(data.data.vehicles)) {
+        setVehicles(data.data.vehicles);
+      } else {
+        // Handle unexpected data structure
+        console.warn("Received unexpected data structure from /api/vehicles:", data);
+        setVehicles([]);
+      }
+      
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
       setError(errorMessage);
@@ -151,6 +165,13 @@ export default function FleetManagementPage() {
       setIsLoading(false);
     }
   }, [isSignedIn, user?.id, toast]);
+
+  // Initial data fetch when user is loaded
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      fetchVehicleData();
+    }
+  }, [isLoaded, isSignedIn, fetchVehicleData]);
 
   // This useEffect ONLY reacts to changes in the vehicles list to update stats.
   // It does NOT fetch data.
@@ -513,10 +534,12 @@ export default function FleetManagementPage() {
                 {isLoading ? 'Loading...' : 'Refresh Data'}
               </Button>
               <Dialog open={isAddVehicleOpen || !!editingVehicle} onOpenChange={(isOpen) => {
-                  if (!isOpen) {
-                      setAddVehicleOpen(false);
-                      setEditingVehicle(null);
-                  }
+                if (!isOpen) {
+                  setAddVehicleOpen(false);
+                  setEditingVehicle(null);
+                } else {
+                  setAddVehicleOpen(true);
+                }
               }}>
                 <DialogTrigger asChild>
                   <Button onClick={() => setAddVehicleOpen(true)}>
@@ -527,10 +550,13 @@ export default function FleetManagementPage() {
                   <DialogHeader>
                     <DialogTitle>{editingVehicle ? 'Edit Vehicle' : 'Add a New Vehicle'}</DialogTitle>
                     <DialogDescription>
-                      {editingVehicle ? 'Update the details of your vehicle.' : 'Fill in the details to add a new vehicle to your fleet.'}
+                      {editingVehicle ? 'Update vehicle details.' : 'Add a new vehicle to your fleet.'}
                     </DialogDescription>
                   </DialogHeader>
-                  <AddVehicleForm vehicle={editingVehicle} onFormSubmit={onFormSubmit} />
+                  <AddVehicleForm
+                    onFormSubmit={onFormSubmit}
+                    vehicle={editingVehicle}
+                  />
                 </DialogContent>
               </Dialog>
             </div>
@@ -731,8 +757,8 @@ export default function FleetManagementPage() {
         <Dialog open={!!editingVehicle} onOpenChange={(isOpen) => !isOpen && handleCloseEdit()}>
           <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md max-h-[80vh] overflow-y-auto">
             <AddVehicleForm 
-              onVehicleAdded={onFormSubmit}
-              initialData={editingVehicle}
+              onFormSubmit={onFormSubmit}
+              vehicle={editingVehicle}
             />
           </DialogContent>
         </Dialog>
