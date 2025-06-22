@@ -57,9 +57,14 @@ export async function GET() {
     // Get unread alerts count
     const unreadAlerts = await prisma.systemAlert.count({
         where: {
-            userId: userId,
-            read: false
-        }
+            // Filter alerts linked to the user's conversations
+            cargoOffer: {
+                id: {
+                    in: conversationIds,
+                }
+            },
+            read: false,
+        },
     });
 
     return NextResponse.json({
