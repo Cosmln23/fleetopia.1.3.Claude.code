@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { DispatcherAnalysis, DispatcherSuggestion } from '@/lib/dispatcher-types';
-import { useSSE } from '@/hooks/use-sse';
 import { useToast } from '@/components/ui/use-toast';
 import { SystemAlert } from '@prisma/client';
 
@@ -21,7 +20,7 @@ interface DispatcherState {
 
 type DispatcherAction =
   | { type: 'SET_LOADING'; payload: boolean }
-  | { type: 'SET_ANALYSIS'; payload: DispatcherAnalysis }
+  | { type: 'SET_ANALYSIS'; payload: DispatcherAnalysis | null }
   | { type: 'SET_ERROR'; payload: string | null }
   | { type: 'TOGGLE_DISPATCHER'; payload: boolean }
   | { type: 'SET_MESSAGE'; payload: string }
@@ -151,32 +150,6 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
   const { user, isSignedIn } = useUser();
   const { toast } = useToast();
 
-  // Real-time notifications via SSE
-  const sseEventHandlers = {
-    'new-cargo': (data: any) => {
-      if (state.liveNotificationsEnabled && state.isDispatcherActive) {
-        dispatch({ type: 'NEW_OPPORTUNITY' });
-        
-        toast({
-          title: "🚨 New Opportunity!",
-          description: `${data.title} (${data.fromCountry} → ${data.toCountry}) - €${data.price}`,
-          className: "bg-blue-500 text-white",
-        });
-        
-        // Auto-refresh analysis to include new cargo
-        setTimeout(() => refreshAnalysis(), 1000);
-      }
-    },
-    'connected': (data: any) => {
-      console.log('Dispatcher notifications connected:', data.message);
-    },
-    'ping': () => {
-      // Keep-alive, no action needed
-    }
-  };
-
-  useSSE('/api/dispatcher/events', sseEventHandlers);
-
   const refreshAnalysis = useCallback(async () => {
     if (!isSignedIn || !user?.id || !state.isDispatcherActive) return;
 
@@ -189,50 +162,43 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
         const errorData = await response.json().catch(() => ({}));
         console.warn('Dispatcher API failed:', errorData.details || 'No details available');
         // Set default empty analysis instead of error
-        dispatch({ type: 'SET_ANALYSIS', payload: {
-          availableVehicles: 0,
-          newOffers: 0,
-          todayProfit: 0,
-          suggestions: [],
-          alerts: ['Dispatcher data not available. Add vehicles to activate.']
-        }});
+        dispatch({ type: 'SET_ANALYSIS', payload: null });
         return;
       }
       
       const analysis = await response.json();
       dispatch({ type: 'SET_ANALYSIS', payload: analysis });
 
-      // Generate personalized message - skip if first call fails
-      try {
-        const messageResponse = await fetch('/api/dispatcher/message', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ analysis })
-        });
-        
-        if (messageResponse.ok) {
-          const { message } = await messageResponse.json();
-          dispatch({ type: 'SET_MESSAGE', payload: message });
-        } else {
+      // Only attempt to generate message if analysis was successful
+      if (analysis) {
+        try {
+          const messageResponse = await fetch('/api/dispatcher/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ analysis })
+          });
+          
+          if (messageResponse.ok) {
+            const { message } = await messageResponse.json();
+            dispatch({ type: 'SET_MESSAGE', payload: message });
+          } else {
+            dispatch({ type: 'SET_MESSAGE', payload: 'Dispatcher ready for analysis.' });
+          }
+        } catch (msgError) {
           dispatch({ type: 'SET_MESSAGE', payload: 'Dispatcher ready for analysis.' });
         }
-      } catch (msgError) {
-        dispatch({ type: 'SET_MESSAGE', payload: 'Dispatcher ready for analysis.' });
       }
 
     } catch (error) {
       console.warn('Network error in dispatcher:', error);
       // Set default state instead of error
-      dispatch({ type: 'SET_ANALYSIS', payload: {
-        availableVehicles: 0,
-        newOffers: 0,
-        todayProfit: 0,
-        suggestions: [],
-        alerts: ['Dispatcher offline. Check connection.']
-      }});
+      dispatch({
+        type: 'SET_ANALYSIS',
+        payload: null
+      });
       dispatch({ type: 'SET_MESSAGE', payload: 'Dispatcher temporarily offline.' });
     }
-  }, [user?.id, state.isDispatcherActive]);
+  }, [user?.id, isSignedIn, state.isDispatcherActive]);
 
   const acceptSuggestion = useCallback(async (suggestionId: string): Promise<boolean> => {
     if (!isSignedIn || !user?.id) return false;
@@ -312,11 +278,7 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
   }, [isSignedIn, user?.id, refreshAnalysis]);
 
   const getTopSuggestions = (count: number = 3): DispatcherSuggestion[] => {
-    if (!state.analysis?.suggestions) return [];
-    
-    return state.analysis.suggestions
-      .sort((a, b) => b.priority - a.priority)
-      .slice(0, count);
+    return state.analysis?.suggestions?.slice(0, count) || [];
   };
 
   const markOpportunitiesSeen = useCallback(() => {
