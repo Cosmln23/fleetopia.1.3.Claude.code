@@ -33,6 +33,7 @@ interface AddVehicleFormProps {
 interface FormData extends Partial<Vehicle> {
   locationType?: string;
   manualLocationAddress?: string;
+  fuelConsumption?: number;
 }
 
 export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
@@ -47,6 +48,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
     manualLocationAddress: '',
     lat: 0,
     lng: 0,
+    fuelConsumption: 30.0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,6 +62,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
         lng: vehicle.lng ?? 0,
         locationType: 'MANUAL_COORDS',
         manualLocationAddress: '',
+        fuelConsumption: vehicle.fuelConsumption ?? 30.0,
       });
     } else {
       // Reset to default for a new vehicle form
@@ -74,6 +77,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
         manualLocationAddress: '',
         lat: 0,
         lng: 0,
+        fuelConsumption: 30.0,
       });
     }
   }, [vehicle, isEditMode]);
@@ -81,7 +85,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
 
-    if (name === 'lat' || name === 'lng') {
+    if (name === 'lat' || name === 'lng' || name === 'fuelConsumption') {
       const numericValue = parseFloat(value);
       if (value === '' || !isNaN(numericValue)) {
         setFormData((prev: FormData) => ({ ...prev, [name]: value === '' ? '' : numericValue }));
@@ -125,15 +129,16 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
     const errorMessage = isEditMode ? 'Failed to update vehicle' : 'Failed to create vehicle';
 
     try {
-      // Filter out extra fields that aren't in the Vehicle schema
+      // Sanitize data before sending
       const vehicleData = {
         name: formData.name,
         type: formData.type,
         licensePlate: formData.licensePlate,
         driverName: formData.driverName,
         status: formData.status,
-        lat: formData.lat || 0,
-        lng: formData.lng || 0,
+        lat: parseFloat(String(formData.lat)) || 0,
+        lng: parseFloat(String(formData.lng)) || 0,
+        fuelConsumption: parseFloat(String(formData.fuelConsumption)) || 30.0,
       };
 
       const response = await fetch(apiEndpoint, {
@@ -228,11 +233,27 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
                 </SelectTrigger>
                 <SelectContent className="bg-slate-800 border-slate-600 text-white">
                   <SelectItem value="idle">Idle</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="in_transit">In Transit</SelectItem>
+                  <SelectItem value="loading">Loading</SelectItem>
+                  <SelectItem value="unloading">Unloading</SelectItem>
                   <SelectItem value="maintenance">Maintenance</SelectItem>
-                  <SelectItem value="offline">Offline</SelectItem>
+                  <SelectItem value="assigned">Assigned</SelectItem>
+                  <SelectItem value="out_of_service">Out of Service</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="fuelConsumption" className="text-sm font-medium text-slate-300">Fuel Consumption (L/100km)</Label>
+              <Input 
+                id="fuelConsumption" 
+                name="fuelConsumption" 
+                type="number"
+                value={formData.fuelConsumption || ''} 
+                onChange={handleChange} 
+                className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                placeholder="e.g., 30"
+              />
             </div>
           </div>
         </div>

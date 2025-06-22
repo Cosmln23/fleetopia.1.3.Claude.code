@@ -96,6 +96,7 @@ export interface Vehicle {
   lat?: number | '';
   lng?: number | '';
   manualLocationAddress?: string;
+  fuelConsumption?: number;
 }
 
 interface CargoDetails extends CargoOffer {
