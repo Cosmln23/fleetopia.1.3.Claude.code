@@ -13,9 +13,12 @@ type CargoOffer = PrismaCargoOffer & {
 
 interface CargoOfferListProps {
   offers: CargoOffer[];
+  listType?: 'all' | 'my_offers' | 'accepted_offers';
   getUrgencyColor: (urgency: string) => string;
   getPriceDisplay: (offer: CargoOffer) => string;
   handleAcceptOffer: (id: string) => void;
+  handleOwnerAcceptOffer?: (id: string) => void;
+  handleRepostOffer?: (id: string) => void;
   handleMarkDelivered: (id: string) => void;
   setChatOffer: (offer: CargoOffer) => void;
   setOfferToEdit: (offer: CargoOffer) => void;
@@ -27,9 +30,12 @@ interface CargoOfferListProps {
 
 const CargoOfferList = React.memo(function CargoOfferList({
   offers,
+  listType = 'all',
   getUrgencyColor,
   getPriceDisplay,
   handleAcceptOffer,
+  handleOwnerAcceptOffer,
+  handleRepostOffer,
   handleMarkDelivered,
   setChatOffer,
   setOfferToEdit,
@@ -212,6 +218,121 @@ const CargoOfferList = React.memo(function CargoOfferList({
     );
   });
 
+  // LIST MODE for My Offers and Accepted Offers
+  if (listType === 'my_offers' || listType === 'accepted_offers') {
+    return (
+      <div className="space-y-4 mt-6">
+        {offers.map((offer) => (
+          <motion.div
+            key={offer.id}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3 }}
+            className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-blue-500 transition-colors"
+          >
+            <div className="flex items-center justify-between">
+              {/* LEFT SIDE - Basic Info */}
+              <div className="flex-1">
+                <div className="flex items-center gap-4 mb-2">
+                  <h3 className="text-lg font-semibold text-white">{offer.title}</h3>
+                  <Badge className={getUrgencyColor(offer.urgency) + ' text-xs'}>{offer.urgency.toUpperCase()}</Badge>
+                  <Badge variant="outline" className="text-slate-300">{offer.status}</Badge>
+                </div>
+                
+                <div className="flex items-center gap-6 text-sm text-slate-300">
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-1 text-blue-400" />
+                    <span>{offer.fromCountry} → {offer.toCountry}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Weight className="h-4 w-4 mr-1 text-blue-400" />
+                    <span>{offer.weight.toLocaleString()} kg</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Calendar className="h-4 w-4 mr-1 text-blue-400" />
+                    <span>{new Date(offer.loadingDate).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* RIGHT SIDE - Price and Actions */}
+              <div className="flex items-center gap-4">
+                <div className="text-right">
+                  <p className="text-xl font-bold text-green-400">{getPriceDisplay(offer)}</p>
+                  <p className="text-xs text-slate-400">{offer.companyName}</p>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  {/* OWNER ACTIONS FOR MY OFFERS */}
+                  {listType === 'my_offers' && userId === offer.userId && (
+                    <>
+                                             {/* TAKEN OFFERS - Only Repost */}
+                       {offer.status === 'TAKEN' && handleRepostOffer && (
+                         <Button
+                           variant="outline"
+                           size="sm"
+                           className="bg-blue-600 hover:bg-blue-700 text-white"
+                           onClick={() => handleRepostOffer(offer.id)}
+                         >
+                           <Package className="h-4 w-4 mr-2" />
+                           Repost on Market
+                         </Button>
+                       )}
+                      
+                      {/* NEW OFFERS - Edit/Delete + Manual Accept */}
+                      {offer.status === 'NEW' && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={() => handleOwnerAcceptOffer?.(offer.id)}
+                          >
+                            <Check className="h-4 w-4 mr-2" />
+                            Accept Offer
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="bg-slate-700 hover:bg-slate-600"
+                            onClick={() => setOfferToEdit(offer)}
+                          >
+                            <FileEdit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => setOfferToDelete(offer.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </>
+                  )}
+                  
+                  {/* TRANSPORTER ACTIONS FOR ACCEPTED OFFERS */}
+                  {listType === 'accepted_offers' && userId === offer.acceptedByUserId && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
+                      onClick={() => setChatOffer(offer)}
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Open Chat
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    );
+  }
+
+  // CARD MODE for All Offers (default)
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
       {offers.map((offer) => (

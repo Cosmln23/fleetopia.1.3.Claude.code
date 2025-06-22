@@ -46,25 +46,8 @@ export function SendOfferDialog({ isOpen, onClose, offer, onSubmit }: SendOfferD
         setPrice('');
         onClose();
         
-        // Then try to start chat in background
-        try {
-          const messageResponse = await fetch(`/api/marketplace/cargo/${offer.id}/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: `I have sent an offer of €${numericPrice}. Let's discuss.`
-            }),
-          });
-
-          if (messageResponse.ok) {
-            toast.success("Offer sent and chat started!");
-          } else {
-            toast.success("Offer sent! Chat will be available once owner responds.");
-          }
-        } catch (chatError) {
-          console.error('Chat initialization failed:', chatError);
-          toast.success("Offer sent! Chat will be available once owner responds.");
-        }
+        // No need to send separate chat message - API already handles it
+        toast.success("Offer sent successfully! You can now chat with the owner.");
       }
     } catch (error) {
       console.error('Failed to send offer:', error);

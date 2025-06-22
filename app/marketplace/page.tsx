@@ -512,6 +512,76 @@ export default function MarketplacePage() {
     }
   };
 
+  // NEW: Owner manually accepts after negotiation
+  const handleOwnerAcceptOffer = async (offerId: string) => {
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/marketplace/cargo/${offerId}/owner-accept`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to accept as owner');
+      }
+
+      toast({
+        title: "Offer Accepted!",
+        description: "Your cargo offer has been accepted and moved to My Offers.",
+        className: "bg-green-500 text-white",
+      });
+
+      // Refresh the list of offers
+      await refreshData();
+
+    } catch (error) {
+      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // NEW: Repost offer back to marketplace
+  const handleRepostOffer = async (offerId: string) => {
+    setSubmitting(true);
+    try {
+      const response = await fetch(`/api/marketplace/cargo/${offerId}/repost`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to repost offer');
+      }
+
+      toast({
+        title: "Offer Reposted!",
+        description: "Your offer is now back on the marketplace.",
+        className: "bg-blue-500 text-white",
+      });
+
+      // Refresh the list of offers
+      await refreshData();
+
+    } catch (error) {
+      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleMarkDelivered = async (offerId: string) => {
     // Check if user is still authenticated
     if (!isSignedIn || !user?.id) {
@@ -649,9 +719,12 @@ export default function MarketplacePage() {
             <TabsContent value="my_offers">
               <CargoOfferList
                   offers={cargoOffers}
+                  listType="my_offers"
                   getUrgencyColor={getUrgencyColor}
                   getPriceDisplay={getPriceDisplay}
                   handleAcceptOffer={handleAcceptOffer}
+                  handleOwnerAcceptOffer={handleOwnerAcceptOffer}
+                  handleRepostOffer={handleRepostOffer}
                   handleMarkDelivered={handleMarkDelivered}
                   setChatOffer={openChat}
                   setOfferToEdit={setOfferToEdit}
@@ -664,9 +737,12 @@ export default function MarketplacePage() {
             <TabsContent value="accepted_offers">
               <CargoOfferList
                   offers={cargoOffers}
+                  listType="accepted_offers"
                   getUrgencyColor={getUrgencyColor}
                   getPriceDisplay={getPriceDisplay}
                   handleAcceptOffer={handleAcceptOffer}
+                  handleOwnerAcceptOffer={handleOwnerAcceptOffer}
+                  handleRepostOffer={handleRepostOffer}
                   handleMarkDelivered={handleMarkDelivered}
                   setChatOffer={openChat}
                   setOfferToEdit={setOfferToEdit}
