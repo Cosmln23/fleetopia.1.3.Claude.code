@@ -285,54 +285,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer, onSendOffer }: C
             {/* Right Side - Company Info & Actions */}
             <div className="w-96 border-l border-slate-700 bg-slate-800">
               <div className="p-6 space-y-6">
-                {/* Company Information */}
-                <Card className="bg-slate-800/70 border-slate-700">
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2 text-white">
-                      <Building className="h-5 w-5 text-teal-400" />
-                      <span>Provider Information</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm text-gray-400 mb-1">Company Name</p>
-                      <p className="font-semibold text-white">{cargoOffer.companyName || 'N/A'}</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Star className="h-4 w-4 text-yellow-400" />
-                      <span className="font-semibold text-white">{cargoOffer.companyRating || 'New'}</span>
-                      <Badge variant="secondary" className="flex items-center space-x-1">
-                        <Shield className="h-3 w-3 text-green-400"/>
-                        <span>Verified</span>
-                      </Badge>
-                    </div>
-                  </CardContent>
-                </Card>
 
-                {/* Action Buttons */}
-                {!isOwnOffer && (
-                  <div className="space-y-3">
-                    <Button
-                      onClick={handleChatClick}
-                      className="w-full flex items-center justify-center space-x-2"
-                      variant="outline"
-                    >
-                      <MessageSquare className="h-4 w-4" />
-                      <span>Send Message</span>
-                    </Button>
-                    
-                    {!isAccepted && (
-                      <Button
-                        onClick={handleAcceptOffer}
-                        className="w-full flex items-center justify-center space-x-2"
-                        size="lg"
-                      >
-                        <CheckCircle className="h-5 w-5" />
-                        <span>Accept Offer</span>
-                      </Button>
-                    )}
-                  </div>
-                )}
 
                 {/* Cargo Info Summary */}
                 <Card className="bg-slate-800/70 border-slate-700">
