@@ -67,8 +67,6 @@ export async function POST(request: NextRequest) {
         ...data,
         userId: userId,
         status: CargoStatus.NEW,
-        loadingDate: new Date(data.loadingDate),
-        deliveryDate: new Date(data.deliveryDate),
       },
     });
 

@@ -41,8 +41,12 @@ export const createCargoOfferSchema = z.object({
   
   // ===== DATA (validare simplificată) =====
   flexibleDate: z.boolean().optional().default(false),
-  loadingDate: z.string().optional().transform((val) => val || ''),
-  deliveryDate: z.string().optional().transform((val) => val || ''),
+  loadingDate: z.coerce.date({
+    errorMap: () => ({ message: 'Vă rugăm introduceți o dată de încărcare validă.' }),
+  }),
+  deliveryDate: z.coerce.date({
+    errorMap: () => ({ message: 'Vă rugăm introduceți o dată de livrare validă.' }),
+  }),
 
   // ===== OPȚIONALE (cu defaults inteligente) =====
   title: z.string().max(200, 'Title too long').optional().default(''),
