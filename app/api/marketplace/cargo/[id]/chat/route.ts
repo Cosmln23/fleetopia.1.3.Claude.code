@@ -33,14 +33,17 @@ export async function GET(
       return NextResponse.json({ message: 'Offer not found' }, { status: 404 });
     }
 
-    // Allow the owner and anyone interested in the offer to chat
-    if (userId === cargoOffer.userId) {
-      // Owner can always chat
-    } else if (cargoOffer.acceptedByUserId && userId !== cargoOffer.acceptedByUserId) {
-      // If offer is already accepted by someone else, deny access
-      return NextResponse.json({ message: 'This offer is already in negotiation with another user' }, { status: 403 });
+    // Security check: Only allow chat between the offer owner and someone who has sent an offer request
+    const hasSentOffer = await prisma.offerRequest.findFirst({
+      where: {
+        cargoOfferId: offerId,
+        transporterId: userId,
+      },
+    });
+
+    if (userId !== cargoOffer.userId && !hasSentOffer) {
+      return NextResponse.json({ message: 'You do not have permission to view this chat.' }, { status: 403 });
     }
-    // Otherwise, allow any authenticated user to start a conversation
 
     const messages = await prisma.chatMessage.findMany({
       where: { cargoOfferId: offerId },
@@ -97,14 +100,17 @@ export async function POST(
       return NextResponse.json({ message: 'Offer not found' }, { status: 404 });
     }
 
-    // Allow the owner and anyone interested in the offer to chat
-    if (userId === cargoOffer.userId) {
-      // Owner can always chat
-    } else if (cargoOffer.acceptedByUserId && userId !== cargoOffer.acceptedByUserId) {
-      // If offer is already accepted by someone else, deny access
-      return NextResponse.json({ message: 'This offer is already in negotiation with another user' }, { status: 403 });
+    // Security check: Only allow chat between the offer owner and someone who has sent an offer request
+    const canChat = await prisma.offerRequest.findFirst({
+      where: {
+        cargoOfferId: offerId,
+        transporterId: userId,
+      },
+    });
+
+    if (userId !== cargoOffer.userId && !canChat) {
+      return NextResponse.json({ message: 'You must send an offer to start chatting.' }, { status: 403 });
     }
-    // Otherwise, allow any authenticated user to start a conversation
 
     const newMessage = await prisma.chatMessage.create({
       data: {
