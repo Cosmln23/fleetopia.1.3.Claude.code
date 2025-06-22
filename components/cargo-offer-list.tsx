@@ -158,7 +158,10 @@ const CargoOfferList = React.memo(function CargoOfferList({
                        size="sm"
                        className="h-8 bg-purple-600 hover:bg-purple-700"
                        title="Open Chat"
-                       onClick={() => setChatOffer(offer)}
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         setChatOffer(offer);
+                       }}
                      >
                        <MessageSquare className="h-4 w-4 mr-2" />
                        Chat
@@ -170,7 +173,10 @@ const CargoOfferList = React.memo(function CargoOfferList({
                        size="sm"
                        className="h-8 bg-green-600 hover:bg-green-700"
                        title="Mark as Delivered"
-                       onClick={() => handleMarkDelivered(offer.id)}
+                       onClick={(e) => {
+                         e.stopPropagation();
+                         handleMarkDelivered(offer.id);
+                       }}
                      >
                        <Check className="h-4 w-4 mr-2" />
                        Delivered
@@ -183,7 +189,10 @@ const CargoOfferList = React.memo(function CargoOfferList({
                           size="sm"
                           className="h-8 bg-green-600 hover:bg-green-700 text-white"
                           title="Accept Offer (after agreement)"
-                          onClick={() => handleOwnerAcceptOffer?.(offer.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOwnerAcceptOffer?.(offer.id);
+                          }}
                       >
                         <Check className="h-4 w-4 mr-2" />
                         Accept Offer
@@ -193,7 +202,10 @@ const CargoOfferList = React.memo(function CargoOfferList({
                           size="icon"
                           className="h-8 w-8 bg-slate-800/70 hover:bg-slate-700 border-slate-600"
                           title="Edit Offer"
-                          onClick={() => setOfferToEdit(offer)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOfferToEdit(offer);
+                          }}
                       >
                         <FileEdit className="h-4 w-4" />
                       </Button>
@@ -202,7 +214,10 @@ const CargoOfferList = React.memo(function CargoOfferList({
                           size="icon" 
                           className="h-8 w-8 bg-red-800/70 hover:bg-red-700"
                           title="Delete Offer"
-                          onClick={() => setOfferToDelete(offer.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOfferToDelete(offer.id);
+                          }}
                         >
                         <Trash2 className="h-4 w-4"/>
                       </Button>
@@ -228,7 +243,10 @@ const CargoOfferList = React.memo(function CargoOfferList({
                            size="sm"
                            className="h-7 text-xs bg-blue-800/70 hover:bg-blue-700 border-blue-600"
                            title="Assign to Vehicle"
-                           onClick={() => setOfferToAssign(offer)}
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             setOfferToAssign(offer);
+                           }}
                        >
                          <Hand className="h-3 w-3 mr-1" />
                          Assign to Vehicle
