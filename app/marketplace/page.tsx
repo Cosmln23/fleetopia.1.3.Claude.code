@@ -259,145 +259,66 @@ export default function MarketplacePage() {
 
   const handlePostCargo = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('handlePostCargo called');
+    console.log("🚀 Posting cargo offer...");
+    setSubmitting(true);
 
-    const parsedData = {
+    const dataToValidate = {
       ...newCargo,
       weight: parseFloat(newCargo.weight) || 0,
-      volume: newCargo.volume ? parseFloat(newCargo.volume) : undefined,
       price: parseFloat(newCargo.price) || 0,
-      cargoType: newCargo.cargoType || 'General', // Ensure cargoType is never empty
-      requirements: newCargo.requirements || '', // Ensure requirements is string, not undefined
-      flexibleDate: isFlexibleDate, // Include flexible date state
-    };
-
-    console.log('Parsed data:', parsedData);
-    console.log('Data types before validation:', {
-      weight: typeof parsedData.weight,
-      price: typeof parsedData.price,
-      volume: typeof parsedData.volume,
-      cargoType: typeof parsedData.cargoType,
-      requirements: typeof parsedData.requirements,
-      loadingDate: typeof parsedData.loadingDate,
-      deliveryDate: typeof parsedData.deliveryDate
-    });
-
-    // ===== VALIDARE CUSTOM - Simplu și sigur =====
-    console.log('🔍 Validating data...');
-    
-    // Verifică câmpurile obligatorii
-    const requiredFields = {
-      fromCountry: 'Țara de plecare',
-      toCountry: 'Țara de destinație', 
-      fromPostalCode: 'Codul poștal de plecare',
-      toPostalCode: 'Codul poștal de destinație',
-      weight: 'Greutatea',
-      price: 'Prețul'
+      volume: newCargo.volume ? parseFloat(newCargo.volume) : undefined,
     };
     
-    const missingFields = [];
-    for (const [field, label] of Object.entries(requiredFields)) {
-      if (!parsedData[field] || parsedData[field] === 0) {
-        missingFields.push(label);
-      }
-    }
-    
-    // Verifică data doar dacă nu e flexibilă
-    if (!parsedData.flexibleDate && !parsedData.loadingDate && !parsedData.deliveryDate) {
-      missingFields.push('Data de încărcare sau livrare (sau activează Date Flexibile)');
-    }
-    
-    if (missingFields.length > 0) {
-      console.log('❌ Missing required fields:', missingFields);
-      toast({
-        title: "Câmpuri obligatorii lipsă",
-        description: `Te rog completează: ${missingFields.join(', ')}`,
-        variant: "destructive",
-        duration: 5000,
-      });
-      return;
-    }
-    
-    console.log('✅ All validations passed');
-    
-    // Folosește Zod doar pentru transformare, nu pentru validare
-    const validation = createCargoOfferSchema.safeParse(parsedData);
-    const finalData = validation.success ? validation.data : parsedData;
-
-    console.log('Authentication check:', { isSignedIn, userId: user?.id });
-    
-    if (!isSignedIn) {
-      console.log('User not signed in');
-      toast({ title: "Error", description: "You must be logged in to post an offer.", variant: "destructive" });
-      return;
-    }
-    
-    console.log('Starting API call...');
-    console.log('Validation data being sent:', validation.data);
-    
-    // API call direct - no more test needed
-    console.log('🚀 Posting cargo offer...');
-    
-    setSubmitting(true);
     try {
+      const validation = createCargoOfferSchema.safeParse(dataToValidate);
+
+      if (!validation.success) {
+        console.error("Validation errors:", validation.error.errors);
+        toast({
+          variant: "destructive",
+          title: "Validation Error",
+          description: validation.error.errors.map(e => e.message).join(', '),
+        });
+        return;
+      }
+      
       const response = await fetch('/api/marketplace/cargo', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(finalData),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(validation.data),
       });
 
-      console.log('API response:', response.status);
-
       if (response.ok) {
-        const apiResponse = await response.json();
-        console.log('Success - offer posted');
-        console.log('API Response:', apiResponse);
-        
-        // Extract the actual cargo data from API response
-        const newOfferData = apiResponse.data || apiResponse;
-        
-        // Optimistic update - add to store immediately
-        addCargoOffer(newOfferData);
-        
-        // Show magic info if available
-        if (apiResponse.magic?.suggestions?.length > 0) {
-          console.log('🪄 Magic suggestions:', apiResponse.magic.suggestions);
-        }
-        
-        toast({ 
-          title: "✅ Succes", 
-          description: "Oferta de marfă a fost postată cu succes!" 
+        toast({
+          title: "Success",
+          description: "Your cargo offer has been posted.",
         });
-        
         setIsAddCargoOpen(false);
+        // Clear the form
         setNewCargo({
-          title: '',
-          fromAddress: '', fromCountry: '', fromCity: '', fromPostalCode: '',
+          title: '', fromAddress: '', fromCountry: '', fromCity: '', fromPostalCode: '',
           toAddress: '', toCountry: '', toCity: '', toPostalCode: '',
-          weight: '', volume: '', cargoType: 'General',
-          loadingDate: '', deliveryDate: '', price: '', priceType: 'fixed',
-          companyName: '', requirements: '', urgency: 'medium',
+          weight: '', volume: '', cargoType: 'General', loadingDate: '', deliveryDate: '',
+          price: '', priceType: 'fixed', companyName: '', requirements: '', urgency: 'medium',
           flexibleDate: false,
         });
-        
-        // Reset flexible date state
-        setIsFlexibleDate(false);
-        
-        // Refresh data to ensure consistency
-        await refreshData();
+        await refreshData(activeList); // <-- REFRESH THE DATA
       } else {
         const errorData = await response.json();
         toast({
-          title: "Eroare la postare",
-          description: errorData.error || "A apărut o problemă la postarea ofertei.",
           variant: "destructive",
+          title: "Error posting offer",
+          description: errorData.error || "An unknown error occurred.",
         });
       }
     } catch (error) {
+      console.error("Failed to post cargo offer:", error);
       toast({
-        title: "Eroare de rețea",
-        description: "Nu s-a putut conecta la server.",
         variant: "destructive",
+        title: "Network Error",
+        description: "Could not connect to the server.",
       });
     } finally {
       setSubmitting(false);
