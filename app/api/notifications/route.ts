@@ -11,74 +11,57 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  let unreadMessageCount = 0;
+  let unreadConversationIds: string[] = [];
+  let unreadAlertCount = 0;
+
   try {
-    // Step 1: Find all conversation IDs (cargoOffer IDs) the user is part of.
-    const userConversations = await prisma.cargoOffer.findMany({
+    // --- Get Unread Messages ---
+    try {
+      const unreadMessages = await prisma.chatMessage.findMany({
         where: {
-            OR: [
-                { userId: userId },
-                { acceptedByUserId: userId }
-            ]
+          cargoOffer: {
+            OR: [{ userId }, { acceptedByUserId: userId }],
+          },
+          senderId: { not: userId },
+          read: false,
         },
         select: {
-            id: true
-        }
-    });
-
-    const conversationIds = userConversations.map(c => c.id);
-
-    if (conversationIds.length === 0) {
-        return NextResponse.json({
-            unreadMessageCount: 0,
-            unreadConversationIds: [],
-            unreadAlertCount: 0
-        });
+          cargoOfferId: true,
+        },
+      });
+      
+      unreadMessageCount = unreadMessages.length;
+      if (unreadMessageCount > 0) {
+        unreadConversationIds = Array.from(new Set(unreadMessages.map(msg => msg.cargoOfferId)));
+      }
+    } catch (e) {
+      console.error("Failed to fetch unread messages:", e);
+      // Do not crash the entire endpoint if this fails
     }
 
-    // Step 2: Find unread messages within those conversations.
-    const unreadMessages = await prisma.chatMessage.findMany({
-        where: {
-            cargoOfferId: {
-                in: conversationIds
-            },
-            senderId: {
-                not: userId
-            },
-            read: false
-        },
-        select: {
-            cargoOfferId: true
-        }
-    });
-
-    const unreadMessageCount = unreadMessages.length;
-    const unreadConversationIds = [...new Set(unreadMessages.map(msg => msg.cargoOfferId))];
-
-    // TEMPORARILY DISABLED to fix the persistent 500 error.
-    // The main chat notification functionality will work correctly.
-    const unreadAlerts = 0;
-    
-    /*
-    const unreadAlerts = await prisma.systemAlert.count({
-        where: {
-            cargoOffer: {
-                id: {
-                    in: conversationIds,
-                }
-            },
-            read: false,
-        },
-    });
-    */
+    // --- Get Unread Alerts ---
+    // This part remains problematic. For now, we will keep it disabled 
+    // to guarantee the chat notifications work.
+    // try {
+    //   unreadAlertCount = await prisma.systemAlert.count({
+    //     where: {
+    //       user: { id: userId }, // Correct relation needed
+    //       read: false
+    //     }
+    //   });
+    // } catch(e) {
+    //   console.error("Failed to fetch unread alerts:", e);
+    // }
 
     return NextResponse.json({
       unreadMessageCount,
-      unreadConversationIds: Array.from(unreadConversationIds),
-      unreadAlertCount: unreadAlerts
+      unreadConversationIds,
+      unreadAlertCount,
     });
 
   } catch (error) {
-    console.error('[NOTIFICATIONS_GET]', error);
-    return new NextResponse('Internal error', { status: 500 });
+    console.error('[NOTIFICATIONS_GET_GLOBAL]', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 } 

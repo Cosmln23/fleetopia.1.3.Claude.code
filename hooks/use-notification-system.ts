@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
 
@@ -16,6 +16,7 @@ interface NotificationData {
 export function useNotificationSystem() {
   const { isSignedIn } = useUser();
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
+  const previousUnreadConversationIds = useRef<string[]>([]);
 
   // State for messages
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
@@ -46,15 +47,21 @@ export function useNotificationSystem() {
 
       const data: NotificationData = await response.json();
 
-      // Check for new messages
-      if (data.unreadMessageCount > unreadMessageCount) {
-        toast.info('You have a new message!');
+      // --- Handle message notifications ---
+      const newConversationIds = data.unreadConversationIds.filter(
+        id => !previousUnreadConversationIds.current.includes(id)
+      );
+
+      if (newConversationIds.length > 0) {
+        toast.info(`You have new messages in ${newConversationIds.length} conversation(s)!`);
         playNotificationSound();
       }
+      
       setUnreadMessageCount(data.unreadMessageCount);
       setUnreadConversationIds(data.unreadConversationIds);
+      previousUnreadConversationIds.current = data.unreadConversationIds;
       
-      // Check for new system alerts
+      // --- Handle alert notifications (currently disabled in API) ---
       if (data.unreadAlertCount > unreadAlertCount) {
         toast.warning('New system alert received.');
         playNotificationSound();
@@ -64,7 +71,7 @@ export function useNotificationSystem() {
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  }, [isSignedIn, unreadMessageCount, unreadAlertCount, playNotificationSound]);
+  }, [isSignedIn, unreadAlertCount, playNotificationSound]);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -76,8 +83,9 @@ export function useNotificationSystem() {
   
   const markConversationAsRead = async (conversationId: string) => {
     // Optimistically update the UI
-    setUnreadMessageCount(prev => Math.max(0, prev - 1));
     setUnreadConversationIds(prev => prev.filter(id => id !== conversationId));
+    // Refetch to get the accurate new count
+    await fetchNotifications();
 
     try {
         await fetch(`/api/chat/mark-as-read`, {
@@ -85,11 +93,10 @@ export function useNotificationSystem() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ conversationId })
         });
-        // Optionally, re-fetch to confirm, but optimistic is usually enough for UI
+        // Final confirmation fetch
         await fetchNotifications();
     } catch (error) {
         console.error("Failed to mark conversation as read:", error);
-        // Revert optimistic update on failure if needed
     }
   };
 
