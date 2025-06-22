@@ -3,25 +3,28 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
-import useMarketplaceStore from '@/lib/stores/marketplace-store';
 
 const NOTIFICATION_SOUND_URL = '/sounds/notification.mp3';
 const POLLING_INTERVAL = 3000; // 3 seconds
 
 interface NotificationData {
-  unreadMessages: number;
-  newAlerts: number;
+  unreadMessageCount: number;
+  unreadConversationIds: string[];
+  unreadAlertCount: number;
 }
 
 export function useNotificationSystem() {
   const { isSignedIn } = useUser();
-  const { systemAlerts } = useMarketplaceStore();
-  const [unreadMessages, setUnreadMessages] = useState(0);
-  const [totalNotifications, setTotalNotifications] = useState(0);
   const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
 
+  // State for messages
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const [unreadConversationIds, setUnreadConversationIds] = useState<string[]>([]);
+  
+  // State for alerts
+  const [unreadAlertCount, setUnreadAlertCount] = useState(0);
+
   useEffect(() => {
-    // We can only create the Audio object on the client side.
     const notificationAudio = new Audio(NOTIFICATION_SOUND_URL);
     notificationAudio.preload = 'auto';
     setAudio(notificationAudio);
@@ -37,7 +40,6 @@ export function useNotificationSystem() {
     try {
       const response = await fetch('/api/notifications');
       if (!response.ok) {
-        // Silently fail, do not bother user with errors for a background task
         console.warn('Failed to fetch notifications');
         return;
       }
@@ -45,39 +47,56 @@ export function useNotificationSystem() {
       const data: NotificationData = await response.json();
 
       // Check for new messages
-      if (data.unreadMessages > unreadMessages) {
+      if (data.unreadMessageCount > unreadMessageCount) {
         toast.info('You have a new message!');
         playNotificationSound();
       }
-      setUnreadMessages(data.unreadMessages);
-
-      // Check for new system alerts from the zustand store
-      const unreadAlertsCount = systemAlerts.filter(a => !a.read).length;
-      const prevUnreadAlertsCount = totalNotifications - unreadMessages;
-
-      if (unreadAlertsCount > prevUnreadAlertsCount) {
+      setUnreadMessageCount(data.unreadMessageCount);
+      setUnreadConversationIds(data.unreadConversationIds);
+      
+      // Check for new system alerts
+      if (data.unreadAlertCount > unreadAlertCount) {
         toast.warning('New system alert received.');
         playNotificationSound();
       }
+      setUnreadAlertCount(data.unreadAlertCount);
 
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  }, [isSignedIn, unreadMessages, systemAlerts, playNotificationSound, totalNotifications]);
-
-  useEffect(() => {
-    const unreadAlertsCount = systemAlerts.filter(a => !a.read).length;
-    setTotalNotifications(unreadMessages + unreadAlertsCount);
-  }, [unreadMessages, systemAlerts]);
+  }, [isSignedIn, unreadMessageCount, unreadAlertCount, playNotificationSound]);
 
   useEffect(() => {
     if (isSignedIn) {
       const intervalId = setInterval(fetchNotifications, POLLING_INTERVAL);
-      // initial fetch
-      fetchNotifications(); 
+      fetchNotifications(); // Initial fetch
       return () => clearInterval(intervalId);
     }
   }, [isSignedIn, fetchNotifications]);
+  
+  const markConversationAsRead = async (conversationId: string) => {
+    // Optimistically update the UI
+    setUnreadMessageCount(prev => Math.max(0, prev - 1));
+    setUnreadConversationIds(prev => prev.filter(id => id !== conversationId));
 
-  return { totalNotifications, unreadMessages };
+    try {
+        await fetch(`/api/chat/mark-as-read`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ conversationId })
+        });
+        // Optionally, re-fetch to confirm, but optimistic is usually enough for UI
+        await fetchNotifications();
+    } catch (error) {
+        console.error("Failed to mark conversation as read:", error);
+        // Revert optimistic update on failure if needed
+    }
+  };
+
+  return { 
+    unreadMessageCount,
+    unreadConversationIds,
+    unreadAlertCount,
+    markConversationAsRead
+  };
 } 

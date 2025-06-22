@@ -8,6 +8,7 @@ import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from './ui/scroll-area';
 import { MessageSquare, BadgeCheck } from 'lucide-react';
 import { Badge } from './ui/badge';
+import { useNotificationSystem } from '@/hooks/use-notification-system';
 
 // Extend the type to include the acceptedByUserId which might be on the object
 type CargoOffer = PrismaCargoOffer & {
@@ -19,6 +20,7 @@ export function ChatPopover({ children }: { children: React.ReactNode }) {
     const [conversations, setConversations] = useState<CargoOffer[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const { openChat, openChats } = useChat();
+    const { unreadConversationIds } = useNotificationSystem();
 
     // Fetch conversations when the popover is opened
     useEffect(() => {
@@ -60,19 +62,24 @@ export function ChatPopover({ children }: { children: React.ReactNode }) {
                     </div>
                     <ScrollArea className="h-64">
                         <div className="grid gap-2">
-                            {conversations.length > 0 ? conversations.map(conv => (
+                            {conversations.length > 0 ? conversations.map(conv => {
+                                const isUnread = unreadConversationIds.includes(conv.id);
+                                return (
                                 <div key={conv.id} onClick={() => handleOpenConversation(conv)} className="cursor-pointer p-2 hover:bg-slate-800 rounded-md flex items-center gap-3">
                                     <div className="p-2 bg-slate-800 rounded-full">
                                       <MessageSquare className="h-4 w-4 text-blue-400"/>
                                     </div>
                                     <div className="flex-1">
-                                      <p className="font-semibold text-sm truncate">{conv.title}</p>
+                                      <p className={`font-semibold text-sm truncate ${isUnread ? 'text-blue-400' : ''}`}>{conv.title}</p>
                                       <p className="text-xs text-slate-400">
                                         {conv.acceptedByUserId === user?.id ? 'You accepted' : 'Offer pending'}
                                       </p>
                                     </div>
+                                    {isUnread && (
+                                        <div className="w-2.5 h-2.5 bg-blue-500 rounded-full animate-pulse"></div>
+                                    )}
                                 </div>
-                            )) : (
+                            )}) : (
                                 <p className="text-sm text-muted-foreground p-4 text-center">No active conversations.</p>
                             )}
                         </div>

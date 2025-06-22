@@ -262,8 +262,9 @@ model ChatMessage {
   createdAt    DateTime   @default(now())
   cargoOfferId String
   senderId     String
-  cargoOffer   CargoOffer @relation(fields: [cargoOfferId], references: [id], onDelete: Cascade)
+  read         Boolean    @default(false)
   sender       User       @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  cargoOffer   CargoOffer @relation(fields: [cargoOfferId], references: [id], onDelete: Cascade)
 
   @@index([cargoOfferId])
   @@index([senderId])

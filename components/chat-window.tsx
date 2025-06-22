@@ -11,6 +11,7 @@ import { Send, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { CargoOffer, ChatMessage as PrismaChatMessage, User } from '@prisma/client';
 import { useChat } from '@/contexts/chat-provider';
+import { useNotificationSystem } from '@/hooks/use-notification-system';
 
 type MessageWithSender = PrismaChatMessage & {
   sender: Partial<User>;
@@ -22,6 +23,7 @@ interface ChatWindowProps {
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
   const { user, isSignedIn } = useUser();
+  const { markConversationAsRead } = useNotificationSystem();
 
   const { closeChat } = useChat();
   const [messages, setMessages] = useState<MessageWithSender[]>([]);
@@ -104,8 +106,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
   useEffect(() => {
     // Fetch messages only when the component mounts (chat window is opened)
     fetchMessages();
-    // The global notification system will handle new message alerts.
-    // No need for polling here anymore.
+    // Mark the conversation as read
+    markConversationAsRead(offer.id);
   }, [offer.id]);
 
   // Scroll to bottom when messages change
