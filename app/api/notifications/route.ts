@@ -4,6 +4,15 @@ import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+interface Notification {
+    id: string;
+    type: 'message' | 'alert';
+    text: string;
+    relatedId: string;
+    createdAt: Date;
+    read: boolean;
+}
+
 export async function GET() {
   const { userId } = auth();
 
@@ -11,57 +20,75 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  let unreadMessageCount = 0;
-  let unreadConversationIds: string[] = [];
-  let unreadAlertCount = 0;
+  const notifications: Notification[] = [];
 
   try {
     // --- Get Unread Messages ---
-    try {
-      const unreadMessages = await prisma.chatMessage.findMany({
+    const unreadMessages = await prisma.chatMessage.findMany({
+      where: {
+        cargoOffer: {
+          OR: [{ userId }, { acceptedByUserId: userId }],
+        },
+        senderId: { not: userId },
+      },
+      include: {
+        sender: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 25,
+    });
+
+    unreadMessages.forEach(msg => {
+        notifications.push({
+            id: msg.id,
+            type: 'message',
+            text: `New message from ${msg.sender?.name || 'a user'}`,
+            relatedId: msg.cargoOfferId,
+            createdAt: msg.createdAt,
+            read: false // Assume all are unread for now
+        });
+    });
+
+    // --- Get Unread System Alerts ---
+    // Since SystemAlert doesn't have userId, we need to filter by cargoOffer relation
+    const unreadAlerts = await prisma.systemAlert.findMany({
         where: {
-          cargoOffer: {
-            OR: [{ userId }, { acceptedByUserId: userId }],
-          },
-          senderId: { not: userId },
-          read: false,
+            read: false,
+            cargoOffer: {
+                OR: [{ userId }, { acceptedByUserId: userId }],
+            },
         },
         select: {
-          cargoOfferId: true,
+            id: true,
+            message: true,
+            relatedId: true,
+            createdAt: true,
+            read: true,
         },
-      });
-      
-      unreadMessageCount = unreadMessages.length;
-      if (unreadMessageCount > 0) {
-        unreadConversationIds = Array.from(new Set(unreadMessages.map(msg => msg.cargoOfferId)));
-      }
-    } catch (e) {
-      console.error("Failed to fetch unread messages:", e);
-      // Do not crash the entire endpoint if this fails
-    }
+        orderBy: { createdAt: 'desc' },
+        take: 25,
+    });
 
-    // --- Get Unread Alerts ---
-    // This part remains problematic. For now, we will keep it disabled 
-    // to guarantee the chat notifications work.
-    // try {
-    //   unreadAlertCount = await prisma.systemAlert.count({
-    //     where: {
-    //       user: { id: userId }, // Correct relation needed
-    //       read: false
-    //     }
-    //   });
-    // } catch(e) {
-    //   console.error("Failed to fetch unread alerts:", e);
-    // }
+    unreadAlerts.forEach(alert => {
+        notifications.push({
+            id: alert.id,
+            type: 'alert',
+            text: alert.message,
+            relatedId: alert.relatedId || '',
+            createdAt: alert.createdAt,
+            read: alert.read
+        });
+    });
+    
+    // Sort all notifications by date
+    notifications.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     return NextResponse.json({
-      unreadMessageCount,
-      unreadConversationIds,
-      unreadAlertCount,
+        notifications: notifications.slice(0, 50) // Final limit
     });
 
   } catch (error) {
-    console.error('[NOTIFICATIONS_GET_GLOBAL]', error);
+    console.error('[NOTIFICATIONS_GET]', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 } 

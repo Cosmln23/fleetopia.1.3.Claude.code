@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -14,8 +13,6 @@ import {
   Settings,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useNotificationSystem } from '@/hooks/use-notification-system';
-import { ChatPopover } from './chat-popover';
 import { AuthButton } from './AuthButton';
 import { NotificationDropdown } from './notifications-dropdown';
 
@@ -54,7 +51,6 @@ const navigation = [
 
 export function Navigation() {
   const pathname = usePathname();
-  const { unreadAlertCount, unreadMessageCount } = useNotificationSystem();
 
   return (
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
@@ -95,17 +91,7 @@ export function Navigation() {
 
           {/* Settings & Auth */}
           <div className="flex items-center space-x-2">
-            <NotificationDropdown unreadCount={unreadAlertCount} />
-            <ChatPopover>
-              <Button variant="ghost" size="icon" title="Chat" className="relative">
-                <MessageSquare className="h-5 w-5" />
-                {unreadMessageCount > 0 && (
-                  <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
-                    {unreadMessageCount}
-                  </span>
-                )}
-              </Button>
-            </ChatPopover>
+            <NotificationDropdown />
             <AuthButton />
             <Link
               href="/settings"

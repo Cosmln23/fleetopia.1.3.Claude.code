@@ -1,77 +1,44 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { toast } from 'sonner';
 
-const NOTIFICATION_SOUND_URL = '/sounds/notification.mp3';
-const POLLING_INTERVAL = 3000; // 3 seconds
+const POLLING_INTERVAL = 5000; // Increased interval to 5s as it's less critical now
 
-interface NotificationData {
-  unreadMessageCount: number;
-  unreadConversationIds: string[];
-  unreadAlertCount: number;
+export interface Notification {
+    id: string;
+    type: 'message' | 'alert';
+    text: string;
+    relatedId: string;
+    createdAt: Date;
+    read: boolean;
 }
 
 export function useNotificationSystem() {
   const { isSignedIn } = useUser();
-  const [audio, setAudio] = useState<HTMLAudioElement | null>(null);
-  const previousUnreadConversationIds = useRef<string[]>([]);
-
-  // State for messages
-  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
-  const [unreadConversationIds, setUnreadConversationIds] = useState<string[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   
-  // State for alerts
-  const [unreadAlertCount, setUnreadAlertCount] = useState(0);
-
-  useEffect(() => {
-    const notificationAudio = new Audio(NOTIFICATION_SOUND_URL);
-    notificationAudio.preload = 'auto';
-    setAudio(notificationAudio);
-  }, []);
-
-  const playNotificationSound = useCallback(() => {
-    audio?.play().catch(err => console.error("Failed to play notification sound:", err));
-  }, [audio]);
-
   const fetchNotifications = useCallback(async () => {
     if (!isSignedIn) return;
 
     try {
       const response = await fetch('/api/notifications');
       if (!response.ok) {
-        console.warn('Failed to fetch notifications');
+        // Silently fail on server error
+        console.warn('Failed to fetch notifications, server returned error.');
         return;
       }
 
-      const data: NotificationData = await response.json();
-
-      // --- Handle message notifications ---
-      const newConversationIds = data.unreadConversationIds.filter(
-        id => !previousUnreadConversationIds.current.includes(id)
-      );
-
-      if (newConversationIds.length > 0) {
-        toast.info(`You have new messages in ${newConversationIds.length} conversation(s)!`);
-        playNotificationSound();
-      }
+      const data: { notifications: Notification[] } = await response.json();
       
-      setUnreadMessageCount(data.unreadMessageCount);
-      setUnreadConversationIds(data.unreadConversationIds);
-      previousUnreadConversationIds.current = data.unreadConversationIds;
-      
-      // --- Handle alert notifications (currently disabled in API) ---
-      if (data.unreadAlertCount > unreadAlertCount) {
-        toast.warning('New system alert received.');
-        playNotificationSound();
-      }
-      setUnreadAlertCount(data.unreadAlertCount);
+      setNotifications(data.notifications || []);
+      setUnreadCount(data.notifications?.filter(n => !n.read).length || 0);
 
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
-  }, [isSignedIn, unreadAlertCount, playNotificationSound]);
+  }, [isSignedIn]);
 
   useEffect(() => {
     if (isSignedIn) {
@@ -81,29 +48,52 @@ export function useNotificationSystem() {
     }
   }, [isSignedIn, fetchNotifications]);
   
-  const markConversationAsRead = async (conversationId: string) => {
-    // Optimistically update the UI
-    setUnreadConversationIds(prev => prev.filter(id => id !== conversationId));
-    // Refetch to get the accurate new count
-    await fetchNotifications();
+  const markAsRead = async (notificationId: string, type: 'message' | 'alert') => {
+    // Optimistically update the UI by removing the notification from the list
+    const originalNotifications = notifications;
+    setNotifications(prev => prev.filter(n => n.id !== notificationId));
+    setUnreadCount(prev => Math.max(0, prev - 1));
+
+    let endpoint = '';
+    let options: RequestInit = {};
+
+    if (type === 'message') {
+      endpoint = '/api/chat/mark-as-read';
+      options = {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ conversationId: notificationId }) // Use conversationId
+      };
+    } else { // type === 'alert'
+      endpoint = `/api/dispatcher/alerts/${notificationId}`;
+      options = {
+        method: 'DELETE'
+      };
+    }
 
     try {
-        await fetch(`/api/chat/mark-as-read`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ conversationId })
-        });
-        // Final confirmation fetch
-        await fetchNotifications();
+        const response = await fetch(endpoint, options);
+        if (!response.ok) {
+          // If the API call fails, revert the optimistic update
+          console.error(`Failed to mark ${type} as read, response not OK.`);
+          setNotifications(originalNotifications);
+          // Re-fetch to get the true state
+          fetchNotifications();
+        }
+        // On success, we don't need to do anything since the UI was already updated.
+        // Maybe a re-fetch to ensure consistency? For now, we'll trust the optimistic update.
+
     } catch (error) {
-        console.error("Failed to mark conversation as read:", error);
+        console.error(`Failed to mark ${type} as read:`, error);
+        // Revert optimistic update on failure
+        setNotifications(originalNotifications);
+        fetchNotifications();
     }
   };
 
   return { 
-    unreadMessageCount,
-    unreadConversationIds,
-    unreadAlertCount,
-    markConversationAsRead
+    notifications,
+    unreadCount,
+    markAsRead
   };
 } 
