@@ -40,7 +40,6 @@ export const createCargoOfferSchema = z.object({
   price: z.number().min(0.1, 'Prețul de cerere este obligatoriu').max(1000000, 'Price too large'),
   
   // ===== DATA (validare simplificată) =====
-  flexibleDate: z.boolean().optional().default(false),
   loadingDate: z.coerce.date({
     errorMap: () => ({ message: 'Vă rugăm introduceți o dată de încărcare validă.' }),
   }),

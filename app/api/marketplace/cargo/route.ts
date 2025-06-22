@@ -47,33 +47,52 @@ export async function GET(request: NextRequest) {
 // POST a new cargo offer
 export async function POST(request: NextRequest) {
   try {
+    console.log('=== CARGO POST API START ===');
     const { userId } = await auth();
+    console.log('Auth userId:', userId);
+    
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const body = await request.json();
+    console.log('Request body received:', JSON.stringify(body, null, 2));
 
     const validation = createCargoOfferSchema.safeParse(body);
 
     if (!validation.success) {
+      console.error('Validation failed:', validation.error.errors);
       return NextResponse.json({ error: 'Validation failed', details: validation.error.errors }, { status: 400 });
     }
     
     const data = validation.data;
+    console.log('Validated data:', JSON.stringify(data, null, 2));
+
+    // Check if all required fields are present for Prisma
+    const prismaData = {
+      ...data,
+      userId: userId,
+      status: CargoStatus.NEW,
+    };
+    
+    console.log('Prisma data to create:', JSON.stringify(prismaData, null, 2));
 
     const newCargoOffer = await prisma.cargoOffer.create({
-      data: {
-        ...data,
-        userId: userId,
-        status: CargoStatus.NEW,
-      },
+      data: prismaData,
     });
 
+    console.log('Cargo offer created successfully:', newCargoOffer.id);
     return NextResponse.json({ success: true, data: newCargoOffer }, { status: 201 });
 
   } catch (error) {
-    console.error('Failed to create cargo offer:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    console.error('Failed to create cargo offer - DETAILED ERROR:', error);
+    console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    return NextResponse.json({ 
+      error: 'Internal server error', 
+      details: error instanceof Error ? error.message : 'Unknown error occurred' 
+    }, { status: 500 });
   }
 } 

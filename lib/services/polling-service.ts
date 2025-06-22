@@ -13,8 +13,8 @@ class PollingService {
     }
   }
 
-  private handleAgentModeChange = (event: CustomEvent) => {
-    const { mode } = event.detail
+  private handleAgentModeChange = (event: Event) => {
+    const { mode } = (event as CustomEvent).detail
     this.currentMode = mode
     
     if (mode === 'ACTIVE') {
@@ -57,8 +57,18 @@ class PollingService {
     try {
       const store = useMarketplaceStore.getState()
       
-      // Don't fetch if already loading to prevent multiple concurrent requests
-      if (store.isLoading) return
+      // Don't fetch if already loading or submitting to prevent multiple concurrent requests
+      if (store.isLoading || store.isSubmitting) return
+
+      // Check if user is currently typing in a form (prevent refreshing during input)
+      if (document.activeElement && (
+        document.activeElement.tagName === 'INPUT' || 
+        document.activeElement.tagName === 'TEXTAREA' ||
+        document.activeElement.tagName === 'SELECT'
+      )) {
+        console.log('🤖 Agent AI: Amânat - utilizatorul scrie în formular...')
+        return
+      }
 
       console.log('🔄 Agent AI: Sincronizare date...')
       await store.refreshData()

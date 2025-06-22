@@ -43,7 +43,7 @@ interface MarketplaceStore {
   // Business Logic
   toggleAgent: () => void
   canUseAgent: () => boolean
-  refreshData: () => Promise<void>
+  refreshData: (listType?: string, searchFilters?: any) => Promise<void>
   addCargoOffer: (offer: CargoOffer) => void
   removeCargoOffer: (offerId: string) => void
   updateCargoOffer: (offerId: string, updates: Partial<CargoOffer>) => void
@@ -96,7 +96,7 @@ const useMarketplaceStore = create<MarketplaceStore>()(
         return userPlan === 'PRO'
       },
 
-      refreshData: async (listType: string = 'all') => {
+      refreshData: async (listType: string = 'all', searchFilters?: any) => {
         const { setLoading, setError } = get()
         
         try {

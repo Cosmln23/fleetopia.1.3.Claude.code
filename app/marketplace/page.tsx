@@ -130,11 +130,9 @@ export default function MarketplacePage() {
     companyName: '',
     requirements: '',
     urgency: 'medium',
-    flexibleDate: false,
   });
 
-  // State for flexible date functionality
-  const [isFlexibleDate, setIsFlexibleDate] = useState(false);
+
 
   // Use centralized store instead of local state
   const {
@@ -260,6 +258,7 @@ export default function MarketplacePage() {
   const handlePostCargo = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("🚀 Posting cargo offer...");
+    console.log("Frontend cargo data:", newCargo);
     setSubmitting(true);
 
     const dataToValidate = {
@@ -268,6 +267,8 @@ export default function MarketplacePage() {
       price: parseFloat(newCargo.price) || 0,
       volume: newCargo.volume ? parseFloat(newCargo.volume) : undefined,
     };
+    
+    console.log("Data to validate:", dataToValidate);
     
     try {
       const validation = createCargoOfferSchema.safeParse(dataToValidate);
@@ -281,6 +282,8 @@ export default function MarketplacePage() {
         });
         return;
       }
+      
+      console.log("Validation passed, sending to API:", validation.data);
       
       const response = await fetch('/api/marketplace/cargo', {
         method: 'POST',
@@ -302,15 +305,15 @@ export default function MarketplacePage() {
           toAddress: '', toCountry: '', toCity: '', toPostalCode: '',
           weight: '', volume: '', cargoType: 'General', loadingDate: '', deliveryDate: '',
           price: '', priceType: 'fixed', companyName: '', requirements: '', urgency: 'medium',
-          flexibleDate: false,
         });
         await refreshData(activeList); // <-- REFRESH THE DATA
       } else {
         const errorData = await response.json();
+        console.error("API Error Response:", errorData);
         toast({
           variant: "destructive",
           title: "Error posting offer",
-          description: errorData.error || "An unknown error occurred.",
+          description: errorData.error || errorData.details || "An unknown error occurred.",
         });
       }
     } catch (error) {
