@@ -1,12 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Separator } from "@/components/ui/separator";
 import useMarketplaceStore from '@/lib/stores/marketplace-store';
 import pollingService from '@/lib/services/polling-service';
 import { AgentToggle } from '@/components/agent-toggle';
@@ -25,6 +28,7 @@ import {
   Shield,
   Users,
   ChevronDown,
+  ChevronUp,
   FileText,
   Phone,
   Mail,
@@ -36,6 +40,12 @@ import {
   Hand,
   Check,
   MessageSquare,
+  Bot,
+  Maximize2,
+  Minimize2,
+  SortAsc,
+  SortDesc,
+  FilterX
 } from 'lucide-react';
 import { useToast } from "@/components/ui/use-toast"
 import { Textarea } from '@/components/ui/textarea';
@@ -58,13 +68,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { europeanCountries } from '@/lib/countries';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { AssignOfferDialog } from '@/components/assign-offer-dialog';
 import { useUser } from '@clerk/nextjs';
 import { CargoOffer } from '@prisma/client';
@@ -98,16 +101,38 @@ interface TransportRequest {
   licensePlate?: string;
 }
 
+interface SearchFilters {
+  searchQuery: string;
+  country: string;
+  sortBy: 'newest' | 'oldest' | 'price_high' | 'price_low' | 'weight_high' | 'weight_low' | 'distance';
+  cargoType: string;
+  urgency: string;
+  minPrice: string;
+  maxPrice: string;
+}
+
 export default function MarketplacePage() {
   const [activeTab, setActiveTab] = useState<'post-cargo' | 'find-cargo' | 'find-transport'>('find-cargo');
   const { toast } = useToast();
   const { user, isSignedIn } = useUser();
   
-  const [searchFilters, setSearchFilters] = useState({
-    fromLocation: '',
-    toLocation: '',
-    maxWeight: '',
+  // NEW: Expand/Collapse State
+  const [isMarketplaceExpanded, setIsMarketplaceExpanded] = useState(true);
+  
+  // NEW: Search and Filter State
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    searchQuery: '',
+    country: '',
+    sortBy: 'newest',
+    cargoType: '',
+    urgency: '',
+    minPrice: '',
+    maxPrice: ''
   });
+
+  // NEW: Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15; // 3 per row × 5 rows
 
   // State for the Post Cargo form
   const [newCargo, setNewCargo] = useState({
@@ -132,8 +157,6 @@ export default function MarketplacePage() {
     urgency: 'medium',
   });
 
-
-
   // Use centralized store instead of local state
   const {
     cargoOffers,
@@ -157,6 +180,106 @@ export default function MarketplacePage() {
   const [isCargoModalOpen, setIsCargoModalOpen] = useState(false);
   const { openChat } = useChat();
   const [offerToSend, setOfferToSend] = useState<CargoOffer | null>(null);
+
+  // NEW: Filter and Search Functions
+  const handleFilterChange = (key: keyof SearchFilters, value: string) => {
+    setSearchFilters(prev => ({ ...prev, [key]: value }));
+    setCurrentPage(1); // Reset to first page when filters change
+  };
+
+  const clearFilters = () => {
+    setSearchFilters({
+      searchQuery: '',
+      country: '',
+      sortBy: 'newest',
+      cargoType: '',
+      urgency: '',
+      minPrice: '',
+      maxPrice: ''
+    });
+    setCurrentPage(1);
+  };
+
+  // NEW: Filter and Sort Logic
+  const filteredAndSortedOffers = React.useMemo(() => {
+    let filtered = [...cargoOffers];
+
+    // Text search
+    if (searchFilters.searchQuery) {
+      const query = searchFilters.searchQuery.toLowerCase();
+      filtered = filtered.filter(offer => 
+        offer.title.toLowerCase().includes(query) ||
+        offer.fromCountry.toLowerCase().includes(query) ||
+        offer.toCountry.toLowerCase().includes(query) ||
+        offer.fromCity.toLowerCase().includes(query) ||
+        offer.toCity.toLowerCase().includes(query) ||
+        offer.cargoType.toLowerCase().includes(query) ||
+        offer.companyName?.toLowerCase().includes(query)
+      );
+    }
+
+    // Country filter
+    if (searchFilters.country) {
+      filtered = filtered.filter(offer => 
+        offer.fromCountry.toLowerCase().includes(searchFilters.country.toLowerCase()) ||
+        offer.toCountry.toLowerCase().includes(searchFilters.country.toLowerCase())
+      );
+    }
+
+    // Cargo type filter
+    if (searchFilters.cargoType) {
+      filtered = filtered.filter(offer => offer.cargoType === searchFilters.cargoType);
+    }
+
+    // Urgency filter
+    if (searchFilters.urgency) {
+      filtered = filtered.filter(offer => offer.urgency === searchFilters.urgency);
+    }
+
+    // Price range filter
+    if (searchFilters.minPrice) {
+      filtered = filtered.filter(offer => offer.price >= parseFloat(searchFilters.minPrice));
+    }
+    if (searchFilters.maxPrice) {
+      filtered = filtered.filter(offer => offer.price <= parseFloat(searchFilters.maxPrice));
+    }
+
+    // Sorting
+    switch (searchFilters.sortBy) {
+      case 'newest':
+        filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+      case 'oldest':
+        filtered.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        break;
+      case 'price_high':
+        filtered.sort((a, b) => b.price - a.price);
+        break;
+      case 'price_low':
+        filtered.sort((a, b) => a.price - b.price);
+        break;
+      case 'weight_high':
+        filtered.sort((a, b) => b.weight - a.weight);
+        break;
+      case 'weight_low':
+        filtered.sort((a, b) => a.weight - b.weight);
+        break;
+      case 'distance':
+        filtered.sort((a, b) => (b.distance || 0) - (a.distance || 0));
+        break;
+      default:
+        break;
+    }
+
+    return filtered;
+  }, [cargoOffers, searchFilters]);
+
+  // NEW: Pagination Logic
+  const totalPages = Math.ceil(filteredAndSortedOffers.length / itemsPerPage);
+  const paginatedOffers = filteredAndSortedOffers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // REPLACED: fetchCargoOffers now uses centralized store
   const fetchCargoOffers = async (listType: string = 'all') => {
@@ -200,15 +323,15 @@ export default function MarketplacePage() {
           to: vehicle.availableRoute || 'Available for any destination',
           truckType: vehicle.type || 'Standard Truck',
           availableFrom: new Date().toISOString().split('T')[0],
-          availableTo: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days from now
-          priceRange: { min: 800, max: 2500 },
+          availableTo: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          priceRange: { min: 500, max: 2000 },
           company: {
-            name: `${vehicle.ownerName || 'Fleet'} - ${vehicle.name}`,
+            name: vehicle.fleetName || 'Independent Operator',
             rating: 4.5,
             verified: true,
             fleetSize: 1
           },
-          capabilities: ['Standard Transport'],
+          capabilities: ['Standard Transport', 'Regional Coverage'],
           status: 'available' as const,
           driverName: vehicle.driverName,
           licensePlate: vehicle.licensePlate
@@ -216,8 +339,7 @@ export default function MarketplacePage() {
 
       setTransportRequests(availableTransports);
     } catch (error) {
-      console.warn('Network error fetching transport requests:', error);
-      // If API fails, show empty list instead of error to avoid confusion
+      console.error('Error fetching transport requests:', error);
       setTransportRequests([]);
     }
   };
@@ -235,17 +357,6 @@ export default function MarketplacePage() {
     };
   }, [activeList]);
 
-  const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setSearchFilters(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Pass the filters to the refreshData function
-    refreshData(activeList, searchFilters);
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setNewCargo(prev => ({ ...prev, [name]: value }));
@@ -257,71 +368,91 @@ export default function MarketplacePage() {
 
   const handlePostCargo = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("🚀 Posting cargo offer...");
-    console.log("Frontend cargo data:", newCargo);
-    setSubmitting(true);
+    if (!isSignedIn) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to post cargo offers.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    const dataToValidate = {
-      ...newCargo,
-      weight: parseFloat(newCargo.weight) || 0,
-      price: parseFloat(newCargo.price) || 0,
-      volume: newCargo.volume ? parseFloat(newCargo.volume) : undefined,
-    };
-    
-    console.log("Data to validate:", dataToValidate);
-    
     try {
-      const validation = createCargoOfferSchema.safeParse(dataToValidate);
+      setSubmitting(true);
 
+      // Validate form data
+      const formData = {
+        ...newCargo,
+        weight: parseFloat(newCargo.weight),
+        volume: newCargo.volume ? parseFloat(newCargo.volume) : undefined,
+        price: parseFloat(newCargo.price),
+        loadingDate: new Date(newCargo.loadingDate),
+        deliveryDate: new Date(newCargo.deliveryDate),
+        requirements: newCargo.requirements.split(',').map(req => req.trim()).filter(Boolean),
+      };
+
+      const validation = createCargoOfferSchema.safeParse(formData);
       if (!validation.success) {
-        console.error("Validation errors:", validation.error.errors);
         toast({
-          variant: "destructive",
           title: "Validation Error",
           description: validation.error.errors.map(e => e.message).join(', '),
+          variant: "destructive",
         });
         return;
       }
-      
-      console.log("Validation passed, sending to API:", validation.data);
-      
+
       const response = await fetch('/api/marketplace/cargo', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(validation.data),
       });
 
-      if (response.ok) {
-        toast({
-          title: "Success",
-          description: "Your cargo offer has been posted.",
-        });
-        setIsAddCargoOpen(false);
-        // Clear the form
-        setNewCargo({
-          title: '', fromAddress: '', fromCountry: '', fromCity: '', fromPostalCode: '',
-          toAddress: '', toCountry: '', toCity: '', toPostalCode: '',
-          weight: '', volume: '', cargoType: 'General', loadingDate: '', deliveryDate: '',
-          price: '', priceType: 'fixed', companyName: '', requirements: '', urgency: 'medium',
-        });
-        await refreshData(activeList); // <-- REFRESH THE DATA
-      } else {
-        const errorData = await response.json();
-        console.error("API Error Response:", errorData);
-        toast({
-          variant: "destructive",
-          title: "Error posting offer",
-          description: errorData.error || errorData.details || "An unknown error occurred.",
-        });
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || result.error || 'Failed to create cargo offer');
       }
-    } catch (error) {
-      console.error("Failed to post cargo offer:", error);
+
+      // Add to store for immediate UI update
+      addCargoOffer(result.data);
+
       toast({
+        title: "Success!",
+        description: "Your cargo offer has been posted successfully.",
+        className: "bg-green-500 text-white",
+      });
+
+      // Reset form
+      setNewCargo({
+        title: '',
+        fromAddress: '',
+        fromCountry: '',
+        fromCity: '',
+        fromPostalCode: '',
+        toAddress: '',
+        toCountry: '',
+        toCity: '',
+        toPostalCode: '',
+        weight: '',
+        volume: '',
+        cargoType: 'General',
+        loadingDate: '',
+        deliveryDate: '',
+        price: '',
+        priceType: 'fixed',
+        companyName: '',
+        requirements: '',
+        urgency: 'medium',
+      });
+
+      setIsAddCargoOpen(false);
+
+    } catch (error) {
+      console.error('Error posting cargo:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to post cargo offer",
         variant: "destructive",
-        title: "Network Error",
-        description: "Could not connect to the server.",
       });
     } finally {
       setSubmitting(false);
@@ -331,59 +462,43 @@ export default function MarketplacePage() {
   const handleDeleteCargo = async () => {
     if (!offerToDelete) return;
 
-    // Check if user is still authenticated
-    if (!isSignedIn || !user?.id) {
-      toast({
-        title: "Authentication Required",
-        description: "Please refresh the page and log in again.",
-        variant: "destructive",
-      });
-      setOfferToDelete(null);
-      return;
-    }
-
     try {
-      // Optimistic update - remove from store immediately
-      removeCargoOffer(offerToDelete);
+      console.log('FRONTEND: Starting delete process for:', offerToDelete);
       
       const response = await fetch(`/api/marketplace/cargo/${offerToDelete}`, {
         method: 'DELETE',
       });
 
-      if (!response.ok) {
-        // Revert optimistic update on error by refreshing data
-        await refreshData();
+      console.log('FRONTEND: Delete response status:', response.status);
+      
+      if (response.status === 204) {
+        // Successfully deleted
+        console.log('FRONTEND: Delete successful');
         
-        const errorData = await response.json().catch(() => ({}));
-        const errorMessage = errorData.error || errorData.message || `Failed to delete cargo offer (Status: ${response.status})`;
-        console.error('Delete API Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          errorData,
-          offerId: offerToDelete
+        // Remove from store
+        removeCargoOffer(offerToDelete);
+        
+        toast({
+          title: "Success",
+          description: "Cargo offer has been deleted.",
+          className: "bg-green-500 text-white",
         });
-        throw new Error(errorMessage);
+      } else {
+        // Handle error
+        const errorData = await response.json();
+        console.error('FRONTEND: Delete failed:', errorData);
+        throw new Error(errorData.message || 'Failed to delete cargo offer');
       }
-      
-      toast({
-        title: "✅ Șters cu succes",
-        description: "Oferta de marfă a fost eliminată.",
-        className: "bg-green-500 text-white",
-      });
-
-      // Optional: refresh to ensure consistency with server
-      await refreshData();
-      
     } catch (error) {
-       console.error('Delete error:', error);
-       const errorMessage = error instanceof Error ? error.message : 'Could not delete the cargo offer';
-       toast({
+      console.error('FRONTEND: Delete error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+      toast({
         title: "Error",
         description: errorMessage,
         variant: "destructive",
       });
     } finally {
-      setOfferToDelete(null); // Close the dialog
+      setOfferToDelete(null);
     }
   };
 
@@ -395,28 +510,52 @@ export default function MarketplacePage() {
 
   const handleUpdateCargo = async () => {
     if (!offerToEdit) return;
-    // Logic to be implemented in the next step
-    console.log("Updating cargo:", offerToEdit);
-    setOfferToEdit(null);
+
+    try {
+      const response = await fetch(`/api/marketplace/cargo/${offerToEdit.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(offerToEdit),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update cargo offer');
+      }
+
+      const updatedOffer = await response.json();
+      updateCargoOffer(offerToEdit.id, updatedOffer);
+
+      toast({
+        title: "Success",
+        description: "Cargo offer has been updated.",
+        className: "bg-green-500 text-white",
+      });
+
+      setOfferToEdit(null);
+      setEditing(false);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update cargo offer.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getPriceDisplay = (offer: CargoOffer) => {
-    switch (offer.priceType) {
-      case 'fixed':
-        return `€${offer.price.toLocaleString()}`;
-      case 'per_km':
-        return `€${offer.price}/km`;
-      case 'negotiable':
-        return `€${offer.price.toLocaleString()} (negotiable)`;
-      default:
-        return `€${offer.price.toLocaleString()}`;
+    if (offer.priceType === 'negotiable') {
+      return `€${offer.price.toLocaleString()} (Negotiable)`;
+    } else if (offer.priceType === 'per_km') {
+      return `€${offer.price}/km`;
+    } else {
+      return `€${offer.price.toLocaleString()}`;
     }
   };
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
       case 'high': return 'bg-red-500 text-white';
-      case 'medium': return 'bg-yellow-500 text-black';
+      case 'medium': return 'bg-yellow-500 text-white';
       case 'low': return 'bg-green-500 text-white';
       default: return 'bg-gray-500 text-white';
     }
@@ -426,7 +565,7 @@ export default function MarketplacePage() {
     if (!offerToAssign) return;
 
     try {
-      const response = await fetch('/api/assignments', {
+      const response = await fetch('/api/assignments/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -446,8 +585,8 @@ export default function MarketplacePage() {
         className: "bg-green-500 text-white",
       });
 
-      setOfferToAssign(null); // Close the dialog
-      await refreshData(); // Refresh the list of offers
+      setOfferToAssign(null);
+      await refreshData();
 
     } catch (error) {
       console.error(error);
@@ -465,8 +604,8 @@ export default function MarketplacePage() {
   };
 
   const handleCloseCargoModal = () => {
-    setIsCargoModalOpen(false);
     setSelectedCargoOffer(null);
+    setIsCargoModalOpen(false);
   };
 
   const handleOpenSendOfferDialog = (offer: CargoOffer) => {
@@ -474,128 +613,110 @@ export default function MarketplacePage() {
   };
 
   const handleAcceptOffer = async (offerId: string) => {
-    setSubmitting(true);
+    if (!user) {
+      toast({ title: 'Authentication Error', description: 'You must be logged in to accept offers.', variant: 'destructive' });
+      return;
+    }
+
     try {
       const response = await fetch(`/api/marketplace/cargo/${offerId}/accept`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to accept offer');
+        throw new Error(errorData.message || 'Failed to accept offer.');
       }
 
-      const updatedOffer = await response.json();
-
-      toast({
-        title: "Success",
-        description: "You have accepted the offer. Chat is now open.",
-        className: "bg-green-500 text-white",
-      });
-
-      // Open chat immediately after accepting
-      // Will auto-refresh list, chat can be opened manually
-
-      // Refresh the list of offers
-      await refreshData();
+      const { chatOffer } = await response.json();
+      
+      toast({ title: "Offer Accepted!", description: "You can now chat with the cargo owner." });
+      
+      // Update the offer in the store
+      updateCargoOffer(offerId, { status: 'TAKEN', acceptedByUserId: user.id });
+      
+      // Open chat
+      openChat(chatOffer);
 
     } catch (error) {
-      console.error(error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
+      toast({ title: 'Error Accepting Offer', description: errorMessage, variant: 'destructive' });
     }
   };
 
-  // NEW: Owner manually accepts after negotiation
   const handleOwnerAcceptOffer = async (offerId: string) => {
-    setSubmitting(true);
+    if (!user) {
+      toast({ title: 'Authentication Error', description: 'You must be logged in.', variant: 'destructive' });
+      return;
+    }
+
     try {
       const response = await fetch(`/api/marketplace/cargo/${offerId}/owner-accept`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to accept as owner');
+        throw new Error(errorData.message || 'Failed to accept offer.');
       }
 
-      toast({
-        title: "Offer Accepted!",
-        description: "Your cargo offer has been accepted and moved to My Offers.",
-        className: "bg-green-500 text-white",
+      toast({ 
+        title: "✅ Offer Manually Accepted!", 
+        description: "The offer has moved to your accepted list." 
       });
-
-      // Refresh the list of offers
-      await refreshData();
-
+      
+      // Update the offer status
+      updateCargoOffer(offerId, { status: 'TAKEN' });
+      
     } catch (error) {
-      console.error(error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
+      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
     }
   };
 
-  // NEW: Repost offer back to marketplace
   const handleRepostOffer = async (offerId: string) => {
-    setSubmitting(true);
+    if (!user) {
+      toast({ title: 'Authentication Error', description: 'You must be logged in.', variant: 'destructive' });
+      return;
+    }
+
     try {
       const response = await fetch(`/api/marketplace/cargo/${offerId}/repost`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to repost offer');
+        throw new Error(errorData.message || 'Failed to repost offer.');
       }
 
-      toast({
-        title: "Offer Reposted!",
-        description: "Your offer is now back on the marketplace.",
-        className: "bg-blue-500 text-white",
+      toast({ 
+        title: "🔄 Offer Reposted!", 
+        description: "The offer is now back on the marketplace." 
       });
-
-      // Refresh the list of offers
-      await refreshData();
-
+      
+      // Update the offer status
+      updateCargoOffer(offerId, { status: 'NEW', acceptedByUserId: null });
+      
     } catch (error) {
-      console.error(error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
+      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
     }
   };
 
   const handleMarkDelivered = async (offerId: string) => {
-    // Check if user is still authenticated
-    if (!isSignedIn || !user?.id) {
-      toast({
-        title: "Authentication Required",
-        description: "Please refresh the page and log in again.",
-        variant: "destructive",
-      });
+    if (!user) {
+      toast({ title: 'Authentication Error', description: 'You must be logged in.', variant: 'destructive' });
       return;
     }
 
     try {
       const response = await fetch(`/api/marketplace/cargo/${offerId}/deliver`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
@@ -609,8 +730,8 @@ export default function MarketplacePage() {
         className: "bg-green-500 text-white",
       });
 
-      // Refresh the list of offers
-      await refreshData();
+      // Update status in store
+      updateCargoOffer(offerId, { status: 'COMPLETED' });
 
     } catch (error) {
       console.error(error);
@@ -656,6 +777,17 @@ export default function MarketplacePage() {
     }
   };
 
+  // Initialize data fetching on component mount and tab changes
+  useEffect(() => {
+    fetchCargoOffers(activeList);
+  }, [activeList]);
+
+  useEffect(() => {
+    if (activeTab === 'find-transport') {
+      fetchTransportRequests();
+    }
+  }, [activeTab, isSignedIn, user?.id]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center">
@@ -669,25 +801,167 @@ export default function MarketplacePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white p-4 sm:p-6 lg:p-8">
-      <header className="mb-8 flex justify-between items-center">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">Logistics Marketplace</h1>
-          <p className="mt-2 text-lg text-blue-200">The central hub for finding cargo and available transport.</p>
-        </div>
-        <Button onClick={() => setIsAddCargoOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="mr-2 h-4 w-4" /> Add Cargo
-        </Button>
-      </header>
-      
-      {/* Dispatcher Panel */}
-      <div className="mb-6">
-        <DispatcherPanel />
-      </div>
+      {/* NEW: Expandable/Collapsible Marketplace Header */}
+      <Collapsible 
+        open={isMarketplaceExpanded} 
+        onOpenChange={setIsMarketplaceExpanded}
+        className="mb-6"
+      >
+        <div className="border-2 border-red-500/50 rounded-lg bg-slate-900/50 backdrop-blur-sm">
+          <CollapsibleTrigger asChild>
+            <Card className="bg-transparent border-none cursor-pointer hover:bg-slate-800/30 transition-colors">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="flex items-center space-x-3">
+                      <Truck className="h-8 w-8 text-blue-400" />
+                      <div>
+                        <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">Logistics Marketplace</h1>
+                        <p className="mt-2 text-lg text-blue-200">The central hub for finding cargo and available transport.</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <Button onClick={() => setIsAddCargoOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="mr-2 h-4 w-4" /> Add Cargo
+                    </Button>
+                    <Button variant="ghost" size="icon">
+                      {isMarketplaceExpanded ? 
+                        <ChevronUp className="h-5 w-5" /> : 
+                        <ChevronDown className="h-5 w-5" />
+                      }
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+          </CollapsibleTrigger>
 
-      {/* Agent AI Toggle */}
-      <div className="mb-6">
-        <AgentToggle />
-      </div>
+          <CollapsibleContent className="space-y-4 p-6">
+            {/* Fleet Dispatcher AI */}
+            <DispatcherPanel />
+            
+            {/* Agent AI Toggle */}
+            <AgentToggle />
+            
+            <Separator className="bg-slate-700" />
+
+            {/* NEW: Advanced Search and Filter System */}
+            <Card className="bg-slate-800/50 border-slate-700">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Search className="h-5 w-5 text-blue-400" />
+                  <span>Advanced Search & Filter</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Search Bar */}
+                <div className="flex space-x-3">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Search cargo offers (title, country, city, company...)"
+                      value={searchFilters.searchQuery}
+                      onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
+                      className="bg-slate-700 border-slate-600 text-white"
+                    />
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={clearFilters}
+                    className="flex items-center space-x-2"
+                  >
+                    <FilterX className="h-4 w-4" />
+                    <span>Clear</span>
+                  </Button>
+                </div>
+
+                {/* Filter Row */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+                  <Select value={searchFilters.country} onValueChange={(value) => handleFilterChange('country', value)}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                      <SelectValue placeholder="Country" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Countries</SelectItem>
+                      {europeanCountries.map(country => (
+                        <SelectItem key={country} value={country}>{country}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={searchFilters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value as any)}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="newest">🕒 Newest First</SelectItem>
+                      <SelectItem value="oldest">⏰ Oldest First</SelectItem>
+                      <SelectItem value="price_high">💰 Highest Price</SelectItem>
+                      <SelectItem value="price_low">💸 Lowest Price</SelectItem>
+                      <SelectItem value="weight_high">⚖️ Heaviest</SelectItem>
+                      <SelectItem value="weight_low">🪶 Lightest</SelectItem>
+                      <SelectItem value="distance">📏 By Distance</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={searchFilters.cargoType} onValueChange={(value) => handleFilterChange('cargoType', value)}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                      <SelectValue placeholder="Cargo Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Types</SelectItem>
+                      <SelectItem value="General">General</SelectItem>
+                      <SelectItem value="Electronics">Electronics</SelectItem>
+                      <SelectItem value="Food">Food</SelectItem>
+                      <SelectItem value="Hazardous">Hazardous</SelectItem>
+                      <SelectItem value="Refrigerated">Refrigerated</SelectItem>
+                      <SelectItem value="Fragile">Fragile</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={searchFilters.urgency} onValueChange={(value) => handleFilterChange('urgency', value)}>
+                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                      <SelectValue placeholder="Urgency" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Urgency</SelectItem>
+                      <SelectItem value="low">🟢 Low</SelectItem>
+                      <SelectItem value="medium">🟡 Medium</SelectItem>
+                      <SelectItem value="high">🔴 High</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Input
+                    placeholder="Min Price (€)"
+                    type="number"
+                    value={searchFilters.minPrice}
+                    onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                    className="bg-slate-700 border-slate-600 text-white"
+                  />
+
+                  <Input
+                    placeholder="Max Price (€)"
+                    type="number"
+                    value={searchFilters.maxPrice}
+                    onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                    className="bg-slate-700 border-slate-600 text-white"
+                  />
+                </div>
+
+                {/* Results Summary */}
+                <div className="flex justify-between items-center text-sm text-slate-300">
+                  <div>
+                    Showing {paginatedOffers.length} of {filteredAndSortedOffers.length} cargo offers
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <span>Page {currentPage} of {totalPages}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
       
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "find-cargo" | "find-transport")} className="w-full">
         <TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
@@ -702,8 +976,9 @@ export default function MarketplacePage() {
               <TabsTrigger value="accepted_offers">Accepted Offers</TabsTrigger>
             </TabsList>
             <TabsContent value="all">
+              {/* NEW: Enhanced CargoOfferList with Pagination */}
               <CargoOfferList
-                  offers={cargoOffers}
+                  offers={paginatedOffers}
                   getUrgencyColor={getUrgencyColor}
                   getPriceDisplay={getPriceDisplay}
                   handleAcceptOffer={handleAcceptOffer}
@@ -717,6 +992,40 @@ export default function MarketplacePage() {
                   onCardClick={handleOpenCargoModal}
                   handleOpenSendOfferDialog={handleOpenSendOfferDialog}
               />
+
+              {/* NEW: Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center space-x-2 mt-8">
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex space-x-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        onClick={() => setCurrentPage(page)}
+                        className={currentPage === page ? "bg-blue-600" : ""}
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              )}
             </TabsContent>
             <TabsContent value="my_offers">
               <CargoOfferList
@@ -756,6 +1065,7 @@ export default function MarketplacePage() {
             </TabsContent>
           </Tabs>
         </TabsContent>
+        
         <TabsContent value="find-transport" className="mt-6">
            <Card className="bg-slate-800/50 border-slate-700 mb-6">
               <CardHeader>
@@ -830,6 +1140,7 @@ export default function MarketplacePage() {
             </div>
         </TabsContent>
       </Tabs>
+
       {/* Edit Dialog */}
       <Dialog open={!!offerToEdit} onOpenChange={() => setOfferToEdit(null)}>
         <DialogContent className="sm:max-w-[625px] bg-slate-900 border-slate-700 text-white">
@@ -938,7 +1249,7 @@ export default function MarketplacePage() {
                     <Input name="fromPostalCode" placeholder="Origin Postal Code" value={newCargo.fromPostalCode} onChange={handleInputChange} />
                     <Input name="toPostalCode" placeholder="Destination Postal Code" value={newCargo.toPostalCode} onChange={handleInputChange} />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-3 gap-4">
                     <Input name="weight" type="number" placeholder="Weight (kg)" value={newCargo.weight} onChange={handleInputChange} />
                     <Input name="volume" type="number" placeholder="Volume (m³)" value={newCargo.volume} onChange={handleInputChange} />
                     <Input name="cargoType" placeholder="Cargo Type" value={newCargo.cargoType} onChange={handleInputChange} />

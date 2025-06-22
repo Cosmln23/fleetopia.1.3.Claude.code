@@ -378,7 +378,7 @@ const CargoOfferList = React.memo(function CargoOfferList({
 
   // CARD MODE for All Offers (default)
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mt-6">
       {offers.map((offer) => (
         <CargoOfferCard
           key={offer.id}
@@ -398,6 +398,17 @@ const CargoOfferList = React.memo(function CargoOfferList({
           handleOpenSendOfferDialog={handleOpenSendOfferDialog}
         />
       ))}
+      
+      {/* Empty state for when no offers match filters */}
+      {offers.length === 0 && (
+        <div className="col-span-full flex flex-col items-center justify-center py-12 text-center">
+          <Package className="h-16 w-16 text-slate-400 mb-4" />
+          <h3 className="text-xl font-semibold text-slate-300 mb-2">No cargo offers found</h3>
+          <p className="text-slate-400 max-w-md">
+            Try adjusting your search filters or check back later for new opportunities.
+          </p>
+        </div>
+      )}
     </div>
   );
 });
