@@ -27,8 +27,8 @@ export async function POST(
       return NextResponse.json({ message: 'You can only repost your own offers' }, { status: 403 });
     }
 
-    if (offer.status !== 'TAKEN') {
-      return NextResponse.json({ message: 'Only TAKEN offers can be reposted' }, { status: 400 });
+    if (offer.status !== 'TAKEN' && offer.status !== 'COMPLETED') {
+      return NextResponse.json({ message: 'Only TAKEN or COMPLETED offers can be reposted' }, { status: 400 });
     }
 
     // Update offer status back to NEW and reset acceptance data

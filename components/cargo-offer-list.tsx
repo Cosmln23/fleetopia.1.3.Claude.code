@@ -208,16 +208,16 @@ const CargoOfferList = React.memo(function CargoOfferList({
                       </Button>
                     </>
                    )}
-                   {userId && userId === offer.userId && offer.status === 'TAKEN' && (
+                   {userId && userId === offer.userId && offer.status === 'COMPLETED' && (
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 bg-blue-600 hover:bg-blue-700 text-white"
-                        title="Repost on Market"
-                        onClick={() => handleRepostOffer?.(offer.id)}
+                        className="h-8 bg-gray-600 text-gray-300 cursor-not-allowed"
+                        title="Offer Delivered"
+                        disabled
                     >
-                      <Package className="h-4 w-4 mr-2" />
-                      Repost
+                      <Check className="h-4 w-4 mr-2" />
+                      Delivered
                     </Button>
                    )}
                    {userId && userId === offer.acceptedByUserId && offer.status === 'COMPLETED' && (
@@ -292,8 +292,8 @@ const CargoOfferList = React.memo(function CargoOfferList({
                   {/* OWNER ACTIONS FOR MY OFFERS */}
                   {listType === 'my_offers' && userId === offer.userId && (
                     <>
-                                             {/* TAKEN OFFERS - Only Repost */}
-                       {offer.status === 'TAKEN' && handleRepostOffer && (
+                                                                    {/* COMPLETED OFFERS - Only Repost */}
+                       {offer.status === 'COMPLETED' && handleRepostOffer && (
                          <Button
                            variant="outline"
                            size="sm"

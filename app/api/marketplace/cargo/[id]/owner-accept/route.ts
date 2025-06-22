@@ -31,11 +31,11 @@ export async function POST(
       return NextResponse.json({ message: 'Only NEW offers can be accepted' }, { status: 400 });
     }
 
-    // Update offer status to TAKEN (accepted)
+    // Update offer status to COMPLETED (accepted and delivered)
     const updatedOffer = await prisma.cargoOffer.update({
       where: { id: offerId },
       data: {
-        status: 'TAKEN',
+        status: 'COMPLETED',
         acceptedAt: new Date(),
       },
     });
