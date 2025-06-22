@@ -845,9 +845,25 @@ export default function MarketplacePage() {
             <AgentToggle />
             
             <Separator className="bg-slate-700" />
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+      
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "find-cargo" | "find-transport")} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
+          <TabsTrigger value="find-cargo" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Find Cargo</TabsTrigger>
+          <TabsTrigger value="find-transport" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Find Transport</TabsTrigger>
+        </TabsList>
+        <TabsContent value="find-cargo">
+          <Tabs defaultValue={activeList} onValueChange={setActiveList} className="w-full mt-4">
+            <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
+              <TabsTrigger value="all">All Offers</TabsTrigger>
+              <TabsTrigger value="my_offers">My Offers</TabsTrigger>
+              <TabsTrigger value="accepted_offers">Accepted Offers</TabsTrigger>
+            </TabsList>
 
-            {/* NEW: Advanced Search and Filter System */}
-            <Card className="bg-slate-800/50 border-slate-700">
+            {/* Advanced Search and Filter System - Moved outside collapse */}
+            <Card className="bg-slate-800/50 border-slate-700 mt-4">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Search className="h-5 w-5 text-blue-400" />
@@ -959,22 +975,7 @@ export default function MarketplacePage() {
                 </div>
               </CardContent>
             </Card>
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
-      
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "find-cargo" | "find-transport")} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
-          <TabsTrigger value="find-cargo" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Find Cargo</TabsTrigger>
-          <TabsTrigger value="find-transport" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Find Transport</TabsTrigger>
-        </TabsList>
-        <TabsContent value="find-cargo">
-          <Tabs defaultValue={activeList} onValueChange={setActiveList} className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
-              <TabsTrigger value="all">All Offers</TabsTrigger>
-              <TabsTrigger value="my_offers">My Offers</TabsTrigger>
-              <TabsTrigger value="accepted_offers">Accepted Offers</TabsTrigger>
-            </TabsList>
+
             <TabsContent value="all">
               {/* NEW: Enhanced CargoOfferList with Pagination */}
               <CargoOfferList
