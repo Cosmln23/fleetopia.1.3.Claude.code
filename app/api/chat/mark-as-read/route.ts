@@ -19,7 +19,7 @@ export async function POST(request: Request) {
 
     // Using raw SQL to bypass persistent type generation issues
     await prisma.$executeRaw(
-      Prisma.sql`UPDATE "ChatMessage" SET "read" = true WHERE "cargoId" = ${conversationId} AND "senderId" != ${userId} AND "read" = false`
+      Prisma.sql`UPDATE "ChatMessage" SET "read" = true WHERE "cargoOfferId" = ${conversationId} AND "senderId" != ${userId} AND "read" = false`
     );
 
     return NextResponse.json({ success: true });

@@ -38,7 +38,7 @@ export async function GET() {
     // Step 2: Find unread messages within those conversations.
     const unreadMessages = await prisma.chatMessage.findMany({
         where: {
-            cargoId: {
+            cargoOfferId: {
                 in: conversationIds
             },
             senderId: {
@@ -47,12 +47,12 @@ export async function GET() {
             read: false
         },
         select: {
-            cargoId: true
+            cargoOfferId: true
         }
     });
 
     const unreadMessageCount = unreadMessages.length;
-    const unreadConversationIds = [...new Set(unreadMessages.map(msg => msg.cargoId))];
+    const unreadConversationIds = [...new Set(unreadMessages.map(msg => msg.cargoOfferId))];
 
     // TEMPORARILY DISABLED to fix the persistent 500 error.
     // The main chat notification functionality will work correctly.
