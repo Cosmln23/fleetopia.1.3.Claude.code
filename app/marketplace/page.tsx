@@ -122,10 +122,10 @@ export default function MarketplacePage() {
   // NEW: Search and Filter State
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
     searchQuery: '',
-    country: '',
+    country: 'all_countries',
     sortBy: 'newest',
-    cargoType: '',
-    urgency: '',
+    cargoType: 'all_types',
+    urgency: 'all_urgency',
     minPrice: '',
     maxPrice: ''
   });
@@ -190,10 +190,10 @@ export default function MarketplacePage() {
   const clearFilters = () => {
     setSearchFilters({
       searchQuery: '',
-      country: '',
+      country: 'all_countries',
       sortBy: 'newest',
-      cargoType: '',
-      urgency: '',
+      cargoType: 'all_types',
+      urgency: 'all_urgency',
       minPrice: '',
       maxPrice: ''
     });
@@ -219,7 +219,7 @@ export default function MarketplacePage() {
     }
 
     // Country filter
-    if (searchFilters.country) {
+    if (searchFilters.country && searchFilters.country !== 'all_countries') {
       filtered = filtered.filter(offer => 
         offer.fromCountry.toLowerCase().includes(searchFilters.country.toLowerCase()) ||
         offer.toCountry.toLowerCase().includes(searchFilters.country.toLowerCase())
@@ -227,12 +227,12 @@ export default function MarketplacePage() {
     }
 
     // Cargo type filter
-    if (searchFilters.cargoType) {
+    if (searchFilters.cargoType && searchFilters.cargoType !== 'all_types') {
       filtered = filtered.filter(offer => offer.cargoType === searchFilters.cargoType);
     }
 
     // Urgency filter
-    if (searchFilters.urgency) {
+    if (searchFilters.urgency && searchFilters.urgency !== 'all_urgency') {
       filtered = filtered.filter(offer => offer.urgency === searchFilters.urgency);
     }
 
@@ -882,9 +882,9 @@ export default function MarketplacePage() {
                       <SelectValue placeholder="Country" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Countries</SelectItem>
+                      <SelectItem value="all_countries">All Countries</SelectItem>
                       {europeanCountries.map(country => (
-                        <SelectItem key={country} value={country}>{country}</SelectItem>
+                        <SelectItem key={country.code} value={country.name}>{country.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -909,7 +909,7 @@ export default function MarketplacePage() {
                       <SelectValue placeholder="Cargo Type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Types</SelectItem>
+                      <SelectItem value="all_types">All Types</SelectItem>
                       <SelectItem value="General">General</SelectItem>
                       <SelectItem value="Electronics">Electronics</SelectItem>
                       <SelectItem value="Food">Food</SelectItem>
@@ -924,7 +924,7 @@ export default function MarketplacePage() {
                       <SelectValue placeholder="Urgency" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Urgency</SelectItem>
+                      <SelectItem value="all_urgency">All Urgency</SelectItem>
                       <SelectItem value="low">🟢 Low</SelectItem>
                       <SelectItem value="medium">🟡 Medium</SelectItem>
                       <SelectItem value="high">🔴 High</SelectItem>
