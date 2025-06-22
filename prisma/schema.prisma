@@ -380,6 +380,7 @@ enum CargoStatus {
   IN_PROGRESS
   COMPLETED
   CANCELED
+  OPEN
 }
 
 enum VehicleStatus {
