@@ -47,7 +47,7 @@ import {
   SortDesc,
   FilterX
 } from 'lucide-react';
-import { useToast } from "@/components/ui/use-toast"
+import { toast } from "sonner";
 import { Textarea } from '@/components/ui/textarea';
 import {
   AlertDialog,
@@ -113,7 +113,10 @@ interface SearchFilters {
 
 export default function MarketplacePage() {
   const [activeTab, setActiveTab] = useState<'post-cargo' | 'find-cargo' | 'find-transport'>('find-cargo');
-  const { toast } = useToast();
+  
+  // Plan awareness - currently on BASIC plan, will be dynamic later
+  const userPlan = 'BASIC'; // TODO: get from user context/store
+
   const { user, isSignedIn } = useUser();
   
   // NEW: Expand/Collapse State
@@ -369,11 +372,7 @@ export default function MarketplacePage() {
   const handlePostCargo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isSignedIn) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to post cargo offers.",
-        variant: "destructive",
-      });
+      toast.error("Please sign in to post cargo offers.");
       return;
     }
 
@@ -393,11 +392,7 @@ export default function MarketplacePage() {
 
       const validation = createCargoOfferSchema.safeParse(formData);
       if (!validation.success) {
-        toast({
-          title: "Validation Error",
-          description: validation.error.errors.map(e => e.message).join(', '),
-          variant: "destructive",
-        });
+        toast.error(`Validation Error: ${validation.error.errors.map(e => e.message).join(', ')}`);
         return;
       }
 
@@ -416,11 +411,7 @@ export default function MarketplacePage() {
       // Add to store for immediate UI update
       addCargoOffer(result.data);
 
-      toast({
-        title: "Success!",
-        description: "Your cargo offer has been posted successfully.",
-        className: "bg-green-500 text-white",
-      });
+      toast.success("📦 Your cargo offer has been posted successfully!");
 
       // Reset form
       setNewCargo({
@@ -449,11 +440,7 @@ export default function MarketplacePage() {
 
     } catch (error) {
       console.error('Error posting cargo:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to post cargo offer",
-        variant: "destructive",
-      });
+      toast.error(error instanceof Error ? error.message : "Failed to post cargo offer");
     } finally {
       setSubmitting(false);
     }
@@ -478,11 +465,7 @@ export default function MarketplacePage() {
         // Remove from store
         removeCargoOffer(offerToDelete);
         
-        toast({
-          title: "Success",
-          description: "Cargo offer has been deleted.",
-          className: "bg-green-500 text-white",
-        });
+        toast.success("✅ Cargo offer has been deleted.");
       } else {
         // Handle error
         const errorData = await response.json();
@@ -492,11 +475,7 @@ export default function MarketplacePage() {
     } catch (error) {
       console.error('FRONTEND: Delete error:', error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast.error(errorMessage);
     } finally {
       setOfferToDelete(null);
     }
@@ -525,20 +504,12 @@ export default function MarketplacePage() {
       const updatedOffer = await response.json();
       updateCargoOffer(offerToEdit.id, updatedOffer);
 
-      toast({
-        title: "Success",
-        description: "Cargo offer has been updated.",
-        className: "bg-green-500 text-white",
-      });
+      toast.success("✅ Cargo offer has been updated.");
 
       setOfferToEdit(null);
       setEditing(false);
     } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update cargo offer.",
-        variant: "destructive",
-      });
+      toast.error("Failed to update cargo offer.");
     }
   };
 
@@ -570,31 +541,29 @@ export default function MarketplacePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           cargoOfferId: offerToAssign.id,
-          vehicleId: vehicleId,
+          vehicleId,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.details || 'Failed to assign the offer.');
+        throw new Error(errorData.message || 'Failed to assign offer');
       }
 
-      toast({
-        title: "Success!",
-        description: `Offer "${offerToAssign.title}" has been assigned.`,
-        className: "bg-green-500 text-white",
-      });
+      const assignment = await response.json();
+
+      // Plan-aware notification
+      if (userPlan === 'PRO') {
+        toast.success("🤖 Agent AI: Offer assigned successfully!");
+      } else {
+        toast.success("✅ Offer assigned successfully!");
+      }
 
       setOfferToAssign(null);
-      await refreshData();
 
     } catch (error) {
-      console.error(error);
-      toast({
-        title: "Assignment Failed",
-        description: error instanceof Error ? error.message : "An unknown error occurred.",
-        variant: "destructive",
-      });
+      const errorMessage = error instanceof Error ? error.message : 'Assignment failed';
+      toast.error(errorMessage);
     }
   };
 
@@ -613,8 +582,8 @@ export default function MarketplacePage() {
   };
 
   const handleAcceptOffer = async (offerId: string) => {
-    if (!user) {
-      toast({ title: 'Authentication Error', description: 'You must be logged in to accept offers.', variant: 'destructive' });
+    if (!isSignedIn) {
+      toast.error('You must be logged in to accept offers.');
       return;
     }
 
@@ -626,28 +595,22 @@ export default function MarketplacePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to accept offer.');
+        throw new Error(errorData.message || 'Failed to accept offer');
       }
 
-      const { chatOffer } = await response.json();
-      
-      toast({ title: "Offer Accepted!", description: "You can now chat with the cargo owner." });
-      
-      // Update the offer in the store
-      updateCargoOffer(offerId, { status: 'TAKEN', acceptedByUserId: user.id });
-      
-      // Open chat
-      openChat(chatOffer);
+      toast.success("🚛 Offer Accepted! You can now chat with the cargo owner.");
 
+      // Refresh cargo offers to reflect changes
+      await refreshData(activeList);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast({ title: 'Error Accepting Offer', description: errorMessage, variant: 'destructive' });
+      toast.error(errorMessage);
     }
   };
 
   const handleOwnerAcceptOffer = async (offerId: string) => {
-    if (!user) {
-      toast({ title: 'Authentication Error', description: 'You must be logged in.', variant: 'destructive' });
+    if (!isSignedIn) {
+      toast.error('You must be logged in.');
       return;
     }
 
@@ -659,26 +622,21 @@ export default function MarketplacePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to accept offer.');
+        throw new Error(errorData.message || 'Failed to accept offer');
       }
 
-      toast({ 
-        title: "✅ Offer Manually Accepted!", 
-        description: "The offer has moved to your accepted list." 
-      });
-      
-      // Update the offer status
-      updateCargoOffer(offerId, { status: 'TAKEN' });
-      
+      toast.success("✅ Offer accepted! Transport can begin.");
+
+      await refreshData(activeList);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
+      toast.error(errorMessage);
     }
   };
 
   const handleRepostOffer = async (offerId: string) => {
-    if (!user) {
-      toast({ title: 'Authentication Error', description: 'You must be logged in.', variant: 'destructive' });
+    if (!isSignedIn) {
+      toast.error('You must be logged in.');
       return;
     }
 
@@ -690,26 +648,21 @@ export default function MarketplacePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to repost offer.');
+        throw new Error(errorData.message || 'Failed to repost offer');
       }
 
-      toast({ 
-        title: "🔄 Offer Reposted!", 
-        description: "The offer is now back on the marketplace." 
-      });
-      
-      // Update the offer status
-      updateCargoOffer(offerId, { status: 'NEW', acceptedByUserId: null });
-      
+      toast.success("📦 Offer reposted successfully!");
+
+      await refreshData(activeList);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast({ title: 'Error', description: errorMessage, variant: 'destructive' });
+      toast.error(errorMessage);
     }
   };
 
   const handleMarkDelivered = async (offerId: string) => {
-    if (!user) {
-      toast({ title: 'Authentication Error', description: 'You must be logged in.', variant: 'destructive' });
+    if (!isSignedIn) {
+      toast.error('You must be logged in.');
       return;
     }
 
@@ -724,30 +677,24 @@ export default function MarketplacePage() {
         throw new Error(errorData.message || 'Failed to mark as delivered');
       }
 
-      toast({
-        title: "Success",
-        description: "Cargo has been marked as delivered.",
-        className: "bg-green-500 text-white",
-      });
+      // Plan-aware notification
+      if (userPlan === 'PRO') {
+        toast.success("🎯 Agent AI: Delivery confirmed! Payment processing initiated.");
+      } else {
+        toast.success("🚚 Delivery confirmed! Thank you for using Fleetopia.");
+      }
 
-      // Update status in store
-      updateCargoOffer(offerId, { status: 'COMPLETED' });
-
+      await refreshData(activeList);
     } catch (error) {
-      console.error(error);
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      toast.error(errorMessage);
     }
   };
 
   const handleSendOffer = async (offerId: string, price: number) => {
-    if (!user) {
-      toast({ title: 'Authentication Error', description: 'You must be logged in to send an offer.', variant: 'destructive' });
-      return false;
+    if (!isSignedIn) {
+      toast.error('You must be logged in to send an offer.');
+      return;
     }
 
     try {
@@ -759,21 +706,16 @@ export default function MarketplacePage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send offer.');
+        throw new Error(errorData.message || 'Failed to send offer');
       }
 
-      const { chatOffer } = await response.json();
-      
-      toast({ title: "Offer Sent!", description: `Your offer of ${price}€ has been sent. You can now chat with the owner.` });
-      
-      // Open chat with the offer details returned from the API
-      openChat(chatOffer);
+      toast.success(`💰 Offer Sent! Your offer of €${price} has been sent. You can now chat with the owner.`);
 
-      return true;
+      setOfferToSend(null);
+      await refreshData(activeList);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
-      toast({ title: 'Error Sending Offer', description: errorMessage, variant: 'destructive' });
-      return false;
+      toast.error(errorMessage);
     }
   };
 

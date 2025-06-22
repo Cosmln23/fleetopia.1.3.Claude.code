@@ -15,7 +15,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send } from 'lucide-react';
-import { useToast } from './ui/use-toast';
+import { toast } from 'sonner';
 import { CargoOffer, ChatMessage as PrismaChatMessage, User } from '@prisma/client';
 
 // We need to include the sender details in our message type
@@ -44,7 +44,7 @@ export function ChatDialog({ cargoOfferId }: ChatDialogProps) {
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const { toast } = useToast();
+
 
   useEffect(() => {
     if (cargoOfferId) {
@@ -66,19 +66,11 @@ export function ChatDialog({ cargoOfferId }: ChatDialogProps) {
         const data = await response.json();
         setMessages(data);
       } else {
-        toast({
-          title: "Error",
-          description: "Failed to load chat messages.",
-          variant: "destructive",
-        });
+        toast.error('Failed to fetch messages.');
       }
     } catch (error) {
-      console.error('Error fetching chat:', error);
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      console.error('Error fetching messages:', error);
+      toast.error('An error occurred while fetching messages.');
     } finally {
       setIsLoading(false);
     }
@@ -110,11 +102,7 @@ export function ChatDialog({ cargoOfferId }: ChatDialogProps) {
 
       if (!response.ok) {
         setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id)); // Revert optimistic update
-        toast({
-          title: "Error",
-          description: "Failed to send message.",
-          variant: "destructive",
-        });
+        toast.error('Failed to send message.');
       } else {
         // Option 1: Re-fetch all messages to get the real one
         fetchMessages();
@@ -125,11 +113,7 @@ export function ChatDialog({ cargoOfferId }: ChatDialogProps) {
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id)); // Revert optimistic update
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred while sending.",
-        variant: "destructive",
-      });
+      toast.error('An error occurred while sending the message.');
     }
   };
 

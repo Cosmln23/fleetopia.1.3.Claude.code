@@ -53,7 +53,7 @@ import { Progress } from '@/components/ui/progress';
 import { AddVehicleForm } from '@/components/add-vehicle-form';
 import Link from 'next/link';
 import { toast as sonnerToast } from 'sonner';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { useUser } from '@clerk/nextjs';
 import { useDispatcherContext } from '@/contexts/dispatcher-context';
 
@@ -125,7 +125,7 @@ export default function FleetManagementPage() {
   const [cargoDetails, setCargoDetails] = useState<CargoOffer | null>(null);
   const [isDetailsLoading, setIsDetailsLoading] = useState(false);
 
-  const { toast } = useToast();
+
 
   // The ONLY function that fetches data
   const fetchVehicleData = useCallback(async () => {

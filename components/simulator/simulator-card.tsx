@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Truck, MapPin, Activity, Save } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 interface SimulatorCardProps {
   vehicle: Vehicle;
@@ -23,7 +23,7 @@ const getInitialCoordinates = (vehicle: Vehicle) => {
 };
 
 export function SimulatorCard({ vehicle }: SimulatorCardProps) {
-  const { toast } = useToast();
+
   const initialLocation = getInitialCoordinates(vehicle);
 
   const [status, setStatus] = useState<VehicleStatus>(vehicle.status);
@@ -57,17 +57,9 @@ export function SimulatorCard({ vehicle }: SimulatorCardProps) {
         throw new Error(errorData.error || 'Failed to update vehicle');
       }
 
-      toast({
-        title: "Update Successful",
-        description: `${vehicle.name} has been updated.`,
-        className: "bg-green-500 text-white",
-      });
+      toast.success(`✅ ${vehicle.name} has been updated.`);
     } catch (error: any) {
-      toast({
-        title: "Update Failed",
-        description: error.message || "An unexpected error occurred.",
-        variant: "destructive",
-      });
+      toast.error(error.message || "An unexpected error occurred.");
     } finally {
       setIsLoading(false);
     }

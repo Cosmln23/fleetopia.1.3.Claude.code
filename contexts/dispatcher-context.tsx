@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback, ReactNode, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { DispatcherAnalysis, DispatcherSuggestion } from '@/lib/dispatcher-types';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 import { SystemAlert } from '@prisma/client';
 
 interface DispatcherState {
@@ -148,7 +148,7 @@ interface DispatcherProviderProps {
 export function DispatcherProvider({ children }: DispatcherProviderProps) {
   const [state, dispatch] = useReducer(dispatcherReducer, initialState);
   const { user, isSignedIn } = useUser();
-  const { toast } = useToast();
+
 
   const refreshAnalysis = useCallback(async () => {
     if (!isSignedIn || !user?.id || !state.isDispatcherActive) return;
@@ -220,18 +220,14 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
       // Remove the accepted suggestion from local state
       dispatch({ type: 'ACCEPT_SUGGESTION', payload: { suggestionId } });
       
-      toast({
-        title: "✅ Suggestion Accepted",
-        description: result.message || "Task has been queued for execution",
-        className: "bg-green-500 text-white",
-      });
+      toast.success("✅ Suggestion Accepted: Task has been queued for execution");
       
       return true;
     } catch (error) {
       console.error('Error accepting suggestion:', error);
       return false;
     }
-  }, [user?.id, toast]);
+  }, [user?.id]);
 
   // DISABLED: Auto-refresh moved to centralized polling service
   useEffect(() => {
@@ -289,17 +285,11 @@ export function DispatcherProvider({ children }: DispatcherProviderProps) {
     dispatch({ type: 'TOGGLE_LIVE_NOTIFICATIONS', payload: enabled });
     
     if (enabled) {
-      toast({
-        title: "🔔 Live Notifications Enabled",
-        description: "You'll receive real-time updates about new opportunities",
-      });
+      toast.success("🔔 Live Notifications Enabled - You'll receive real-time updates!");
     } else {
-      toast({
-        title: "🔕 Live Notifications Disabled",
-        description: "You won't receive real-time notifications",
-      });
+      toast.info("🔕 Live Notifications Disabled");
     }
-  }, [toast]);
+      }, []);
 
   const value: DispatcherContextType = {
     state,

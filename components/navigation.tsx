@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,9 @@ import {
 import { AuthButton } from './AuthButton';
 import { Button } from './ui/button';
 import { ChatPopover } from './chat-popover';
+import { Badge } from './ui/badge';
+import { toast } from 'sonner';
+import useMarketplaceStore from '@/lib/stores/marketplace-store';
 
 const navigation = [
   {
@@ -57,6 +60,23 @@ const navigation = [
 
 export function Navigation() {
   const pathname = usePathname();
+  const { systemAlerts } = useMarketplaceStore();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Calculate unread notifications
+  useEffect(() => {
+    const unread = systemAlerts.filter(alert => !alert.read).length;
+    setUnreadCount(unread);
+  }, [systemAlerts]);
+
+  // Handle notification click
+  const handleNotificationClick = () => {
+    if (unreadCount > 0) {
+      toast.info(`📢 You have ${unreadCount} new notification${unreadCount > 1 ? 's' : ''}`);
+    } else {
+      toast.info("📢 No new notifications");
+    }
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
@@ -97,8 +117,22 @@ export function Navigation() {
 
           {/* Settings & Auth */}
           <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon" title="Notifications">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              title="Notifications"
+              onClick={handleNotificationClick}
+              className="relative"
+            >
               <Bell className="h-5 w-5" />
+              {unreadCount > 0 && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs"
+                >
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Badge>
+              )}
             </Button>
             <ChatPopover>
               <Button variant="ghost" size="icon" title="Chat">

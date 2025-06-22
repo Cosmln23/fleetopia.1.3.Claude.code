@@ -8,7 +8,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, X } from 'lucide-react';
-import { useToast } from './ui/use-toast';
+import { toast } from 'sonner';
 import { CargoOffer, ChatMessage as PrismaChatMessage, User } from '@prisma/client';
 import { useChat } from '@/contexts/chat-provider';
 
@@ -22,7 +22,7 @@ interface ChatWindowProps {
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
   const { user, isSignedIn } = useUser();
-  const { toast } = useToast();
+
   const { closeChat } = useChat();
   const [messages, setMessages] = useState<MessageWithSender[]>([]);
   const [newMessage, setNewMessage] = useState('');
@@ -93,10 +93,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
         const data = await response.json();
         setMessages(data);
       } else {
-        toast({ title: 'Error', description: 'Failed to fetch messages.', variant: 'destructive' });
+        toast.error('Failed to fetch messages');
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'An error occurred while fetching messages.', variant: 'destructive' });
+      console.error('Failed to load messages:', error);
+      toast.error('Failed to load chat messages');
     }
   };
 
@@ -130,10 +131,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
         // Force scroll to bottom after sending
         setTimeout(scrollToBottom, 100);
       } else {
-        toast({ title: 'Error', description: 'Failed to send message.', variant: 'destructive' });
+        toast.error('Failed to send message');
       }
     } catch (error) {
-      toast({ title: 'Error', description: 'An error occurred while sending the message.', variant: 'destructive' });
+      console.error('Failed to send message:', error);
+      toast.error('Failed to send message');
     } finally {
       setIsLoading(false);
     }

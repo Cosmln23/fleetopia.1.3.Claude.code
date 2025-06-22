@@ -43,7 +43,7 @@ import {
 } from 'lucide-react';
 import { useDispatcher, useDispatcherMetrics } from '@/hooks/use-dispatcher';
 import { useDispatcherContext } from '@/contexts/dispatcher-context';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from 'sonner';
 
 interface DispatcherPanelProps {
   className?: string;
@@ -74,31 +74,33 @@ const DispatcherPanel = React.memo(function DispatcherPanel({ className = '', co
   } = useDispatcher();
 
   const metrics = useDispatcherMetrics();
-  const { toast } = useToast();
+
   const { state: dispatcherState, markOpportunitiesSeen, toggleLiveNotifications } = useDispatcherContext();
 
   // Always define all hooks at the top level - before any early returns
-  const handleAcceptSuggestion = useCallback(async (suggestionId: string) => {
-    // Find the suggestion details for better messaging
-    const suggestion = topSuggestions.find(s => s.id === suggestionId);
+  const handleToggleLiveNotifications = () => {
+    const newState = !dispatcherState.liveNotificationsEnabled;
+    toggleLiveNotifications(newState);
     
-    const result = await acceptSuggestion(suggestionId);
-    if (result) {
-      toast({
-        title: "✅ Assignment Successful!",
-        description: suggestion 
-          ? `${suggestion.vehicleName} assigned to "${suggestion.title}"` 
-          : "Cargo has been assigned to your vehicle",
-        className: "bg-green-500 text-white",
-      });
+    if (newState) {
+      toast.success("🔔 Live notifications enabled");
     } else {
-      toast({
-        title: "❌ Assignment Failed",
-        description: "Could not assign cargo. Please try again or check if the offer is still available.",
-        variant: "destructive"
-      });
+      toast.info("🔕 Live notifications disabled");
     }
-  }, [topSuggestions, acceptSuggestion, toast]);
+  };
+
+  const handleAcceptSuggestion = async (suggestionId: string) => {
+    try {
+      const success = await acceptSuggestion(suggestionId);
+      if (success) {
+        toast.success("✅ Suggestion accepted and queued for execution");
+      } else {
+        toast.error("Failed to accept suggestion");
+      }
+    } catch (error) {
+      toast.error("Error accepting suggestion");
+    }
+  };
 
   const getPriorityColor = useCallback((priority: 'high' | 'medium' | 'low') => {
     switch (priority) {
@@ -207,7 +209,7 @@ const DispatcherPanel = React.memo(function DispatcherPanel({ className = '', co
                 <span className="text-sm text-gray-300">Live Alerts:</span>
                 <Switch 
                   checked={dispatcherState.liveNotificationsEnabled} 
-                  onCheckedChange={toggleLiveNotifications} 
+                  onCheckedChange={handleToggleLiveNotifications} 
                 />
               </div>
             </div>
