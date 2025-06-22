@@ -865,7 +865,7 @@ export default function MarketplacePage() {
                     <Input name="volume" type="number" placeholder="Volume (m³)" value={newCargo.volume} onChange={handleInputChange} />
                     <Input name="cargoType" placeholder="Cargo Type" value={newCargo.cargoType} onChange={handleInputChange} />
                 </div>
-                 <div className="grid grid-cols-3 gap-4">
+                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label htmlFor="loadingDate" className="text-sm font-medium text-gray-500">Loading Date</label>
                         <Input 
@@ -874,8 +874,7 @@ export default function MarketplacePage() {
                           type="date" 
                           value={newCargo.loadingDate} 
                           onChange={handleInputChange}
-                          disabled={isFlexibleDate}
-                          className={isFlexibleDate ? "opacity-50" : ""}
+                          required
                         />
                     </div>
                      <div>
@@ -886,34 +885,8 @@ export default function MarketplacePage() {
                           type="date" 
                           value={newCargo.deliveryDate} 
                           onChange={handleInputChange}
-                          disabled={isFlexibleDate}
-                          className={isFlexibleDate ? "opacity-50" : ""}
+                          required
                         />
-                    </div>
-                    <div className="flex flex-col">
-                        <label className="text-sm font-medium text-gray-500 mb-2">Date Option</label>
-                        <Button
-                          type="button"
-                          variant={isFlexibleDate ? "default" : "outline"}
-                          onClick={() => {
-                            setIsFlexibleDate(!isFlexibleDate);
-                            setNewCargo(prev => ({ 
-                              ...prev, 
-                              flexibleDate: !isFlexibleDate,
-                              // Clear dates when flexible is enabled
-                              loadingDate: !isFlexibleDate ? '' : prev.loadingDate,
-                              deliveryDate: !isFlexibleDate ? '' : prev.deliveryDate
-                            }));
-                          }}
-                          className="h-9 text-sm"
-                        >
-                          📅 {isFlexibleDate ? 'Date Fixe' : 'Date Flexibile'}
-                        </Button>
-                        {isFlexibleDate && (
-                          <p className="text-xs text-blue-400 mt-1">
-                            Datele vor fi stabilite în funcție de disponibilitate
-                          </p>
-                        )}
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
