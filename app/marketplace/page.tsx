@@ -707,6 +707,8 @@ export default function MarketplacePage() {
                   getUrgencyColor={getUrgencyColor}
                   getPriceDisplay={getPriceDisplay}
                   handleAcceptOffer={handleAcceptOffer}
+                  handleOwnerAcceptOffer={handleOwnerAcceptOffer}
+                  handleRepostOffer={handleRepostOffer}
                   handleMarkDelivered={handleMarkDelivered}
                   setChatOffer={openChat}
                   setOfferToEdit={setOfferToEdit}
