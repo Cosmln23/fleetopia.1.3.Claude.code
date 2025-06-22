@@ -56,6 +56,8 @@ const CargoOfferList = React.memo(function CargoOfferList({
     getUrgencyColor, 
     getPriceDisplay,
     handleAcceptOffer,
+    handleOwnerAcceptOffer,
+    handleRepostOffer,
     handleMarkDelivered,
     setChatOffer,
     setOfferToEdit,
@@ -69,6 +71,8 @@ const CargoOfferList = React.memo(function CargoOfferList({
     getUrgencyColor: (urgency: string) => string;
     getPriceDisplay: (offer: CargoOffer) => string;
     handleAcceptOffer: (id: string) => void;
+    handleOwnerAcceptOffer?: (id: string) => void;
+    handleRepostOffer?: (id: string) => void;
     handleMarkDelivered: (id: string) => void;
     setChatOffer: (offer: CargoOffer) => void;
     setOfferToEdit: (offer: CargoOffer) => void;
@@ -172,8 +176,18 @@ const CargoOfferList = React.memo(function CargoOfferList({
                        Delivered
                      </Button>
                    )}
-                   {userId && userId === offer.userId && (
+                   {userId && userId === offer.userId && offer.status === 'NEW' && (
                     <>
+                      <Button
+                          variant="default"
+                          size="sm"
+                          className="h-8 bg-green-600 hover:bg-green-700 text-white"
+                          title="Accept Offer (after agreement)"
+                          onClick={() => handleOwnerAcceptOffer?.(offer.id)}
+                      >
+                        <Check className="h-4 w-4 mr-2" />
+                        Accept Offer
+                      </Button>
                       <Button
                           variant="outline"
                           size="icon"
@@ -193,6 +207,18 @@ const CargoOfferList = React.memo(function CargoOfferList({
                         <Trash2 className="h-4 w-4"/>
                       </Button>
                     </>
+                   )}
+                   {userId && userId === offer.userId && offer.status === 'TAKEN' && (
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 bg-blue-600 hover:bg-blue-700 text-white"
+                        title="Repost on Market"
+                        onClick={() => handleRepostOffer?.(offer.id)}
+                    >
+                      <Package className="h-4 w-4 mr-2" />
+                      Repost
+                    </Button>
                    )}
                    {userId && userId === offer.acceptedByUserId && offer.status === 'COMPLETED' && (
                      <div className="flex items-center gap-2">
@@ -343,6 +369,8 @@ const CargoOfferList = React.memo(function CargoOfferList({
           getUrgencyColor={getUrgencyColor}
           getPriceDisplay={getPriceDisplay}
           handleAcceptOffer={handleAcceptOffer}
+          handleOwnerAcceptOffer={handleOwnerAcceptOffer}
+          handleRepostOffer={handleRepostOffer}
           handleMarkDelivered={handleMarkDelivered}
           setChatOffer={setChatOffer}
           setOfferToEdit={setOfferToEdit}
