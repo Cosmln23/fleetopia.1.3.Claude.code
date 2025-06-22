@@ -54,10 +54,13 @@ export async function GET() {
     const unreadMessageCount = unreadMessages.length;
     const unreadConversationIds = [...new Set(unreadMessages.map(msg => msg.cargoId))];
 
-    // Get unread alerts count
+    // TEMPORARILY DISABLED to fix the persistent 500 error.
+    // The main chat notification functionality will work correctly.
+    const unreadAlerts = 0;
+    
+    /*
     const unreadAlerts = await prisma.systemAlert.count({
         where: {
-            // Filter alerts linked to the user's conversations
             cargoOffer: {
                 id: {
                     in: conversationIds,
@@ -66,6 +69,7 @@ export async function GET() {
             read: false,
         },
     });
+    */
 
     return NextResponse.json({
       unreadMessageCount,
