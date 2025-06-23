@@ -119,8 +119,8 @@ export default function MarketplacePage() {
 
   const { user, isSignedIn } = useUser();
   
-  // NEW: Expand/Collapse State
-  const [isMarketplaceExpanded, setIsMarketplaceExpanded] = useState(true);
+  // NEW: Expand/Collapse State - ÎNCHIS inițial pentru UI curat
+  const [isMarketplaceExpanded, setIsMarketplaceExpanded] = useState(false);
   
   // NEW: Search and Filter State
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
@@ -743,6 +743,16 @@ export default function MarketplacePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white p-4 sm:p-6 lg:p-8">
+      {/* Add Cargo Button - Independent și deasupra secțiunii */}
+      <div className="mb-4 flex justify-end">
+        <Button 
+          onClick={() => setIsAddCargoOpen(true)} 
+          className="bg-blue-600 hover:bg-blue-700 shadow-lg"
+        >
+          <Plus className="mr-2 h-4 w-4" /> Add Cargo
+        </Button>
+      </div>
+
       {/* NEW: Expandable/Collapsible Marketplace Header */}
       <Collapsible 
         open={isMarketplaceExpanded} 
@@ -763,10 +773,7 @@ export default function MarketplacePage() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3">
-                    <Button onClick={() => setIsAddCargoOpen(true)} className="bg-blue-600 hover:bg-blue-700">
-                      <Plus className="mr-2 h-4 w-4" /> Add Cargo
-                    </Button>
+                  <div className="flex items-center">
                     <Button variant="ghost" size="icon">
                       {isMarketplaceExpanded ? 
                         <ChevronUp className="h-5 w-5" /> : 
