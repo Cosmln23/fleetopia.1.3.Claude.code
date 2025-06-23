@@ -29,6 +29,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
   const [messages, setMessages] = useState<MessageWithSender[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [shouldScrollOnUpdate, setShouldScrollOnUpdate] = useState(true);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -108,12 +109,29 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
     fetchMessages();
     // Mark the conversation as read
     markConversationAsViewed(offer.id);
+
+    // Set up polling pentru mesaje noi la fiecare 3 secunde
+    // Doar dacă user-ul nu scrie (nu vrem să întrerupem typing-ul)
+    const messagePolling = setInterval(() => {
+      // Nu face polling dacă user-ul scrie în acest moment
+      if (!isLoading && document.activeElement?.tagName !== 'INPUT') {
+        fetchMessages();
+      }
+    }, 3000);
+
+    // Cleanup interval când componenta se unmount-ează
+    return () => {
+      clearInterval(messagePolling);
+    };
   }, [offer.id]);
 
-  // Scroll to bottom when messages change
+  // Scroll to bottom when messages change (doar când flag-ul e true)
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (shouldScrollOnUpdate) {
+      scrollToBottom();
+      setShouldScrollOnUpdate(false); // Reset flag după scroll
+    }
+  }, [messages, shouldScrollOnUpdate]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,7 +149,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
         const sentMessage = await response.json();
         setMessages(prev => [...prev, sentMessage]);
         setNewMessage('');
-        // Force scroll to bottom after sending
+        // Force scroll to bottom after sending (când trimiți tu)
+        setShouldScrollOnUpdate(true);
         setTimeout(scrollToBottom, 100);
         // REFRESH INSTANT AL CHAT DROPDOWN-ULUI
         refreshInstant();
