@@ -78,28 +78,7 @@ import { createCargoOfferSchema } from '@/lib/validations';
 import { CargoDetailModal } from '@/components/cargo-detail-modal';
 import { SendOfferDialog } from '@/components/send-offer-dialog';
 
-interface TransportRequest {
-  id: string;
-  from: string;
-  to: string;
-  truckType: string;
-  availableFrom: string;
-  availableTo: string;
-  priceRange: {
-    min: number;
-    max: number;
-  };
-  company: {
-    name: string;
-    rating: number;
-    verified: boolean;
-    fleetSize: number;
-  };
-  capabilities: string[];
-  status: 'available' | 'booked' | 'en_route';
-  driverName?: string;
-  licensePlate?: string;
-}
+// ELIMINAT: TransportRequest interface - nu mai este nevoie
 
 interface SearchFilters {
   searchQuery: string;
@@ -112,7 +91,7 @@ interface SearchFilters {
 }
 
 export default function MarketplacePage() {
-  const [activeTab, setActiveTab] = useState<'post-cargo' | 'find-cargo' | 'find-transport'>('find-cargo');
+  const [activeTab, setActiveTab] = useState<'find-cargo'>('find-cargo');
   
   // Plan awareness - currently on BASIC plan, will be dynamic later
   const userPlan = 'BASIC'; // TODO: get from user context/store
@@ -172,7 +151,7 @@ export default function MarketplacePage() {
     setSubmitting
   } = useMarketplaceStore();
   
-  const [transportRequests, setTransportRequests] = useState<TransportRequest[]>([]);
+  // ELIMINAT: transportRequests - nu mai este nevoie
   const [activeList, setActiveList] = useState("all"); // 'all', 'my_offers', 'accepted_offers'
   const [offerToDelete, setOfferToDelete] = useState<string | null>(null);
   const [offerToEdit, setOfferToEdit] = useState<CargoOffer | null>(null);
@@ -294,62 +273,10 @@ export default function MarketplacePage() {
     await refreshData(listType);
   };
 
-  // Add fetchTransportRequests function
-  const fetchTransportRequests = async () => {
-    // Only fetch if user is authenticated
-    if (!isSignedIn || !user?.id) {
-      setTransportRequests([]);
-      return;
-    }
-
-    try {
-      // Fetch available vehicles from a new API endpoint
-      const response = await fetch('/api/vehicles/available');
-      if (!response.ok) {
-        console.warn('Failed to fetch available vehicles');
-        setTransportRequests([]);
-        return;
-      }
-      const availableVehicles = await response.json();
-      
-      // Only process if we actually have vehicles
-      if (!Array.isArray(availableVehicles) || availableVehicles.length === 0) {
-        setTransportRequests([]);
-        return;
-      }
-      
-      // Convert vehicles to transport requests format
-      const availableTransports: TransportRequest[] = availableVehicles
-        .map((vehicle: any) => ({
-          id: vehicle.id,
-          from: vehicle.currentLocation || 'Current Location',
-          to: vehicle.availableRoute || 'Available for any destination',
-          truckType: vehicle.type || 'Standard Truck',
-          availableFrom: new Date().toISOString().split('T')[0],
-          availableTo: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          priceRange: { min: 500, max: 2000 },
-          company: {
-            name: vehicle.fleetName || 'Independent Operator',
-            rating: 4.5,
-            verified: true,
-            fleetSize: 1
-          },
-          capabilities: ['Standard Transport', 'Regional Coverage'],
-          status: 'available' as const,
-          driverName: vehicle.driverName,
-          licensePlate: vehicle.licensePlate
-        }));
-
-      setTransportRequests(availableTransports);
-    } catch (error) {
-      console.error('Error fetching transport requests:', error);
-      setTransportRequests([]);
-    }
-  };
+  // ELIMINAT: fetchTransportRequests function - nu mai este nevoie
 
   useEffect(() => {
     fetchCargoOffers(activeList);
-    fetchTransportRequests();
     
     // Initialize polling service
     pollingService.initialize();
@@ -724,11 +651,7 @@ export default function MarketplacePage() {
     fetchCargoOffers(activeList);
   }, [activeList]);
 
-  useEffect(() => {
-    if (activeTab === 'find-transport') {
-      fetchTransportRequests();
-    }
-  }, [activeTab, isSignedIn, user?.id]);
+  // ELIMINAT: useEffect pentru find-transport - nu mai este nevoie
 
   if (loading) {
     return (
@@ -798,18 +721,14 @@ export default function MarketplacePage() {
         </div>
       </Collapsible>
       
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as "find-cargo" | "find-transport")} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 bg-slate-800/50">
-          <TabsTrigger value="find-cargo" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Find Cargo</TabsTrigger>
-          <TabsTrigger value="find-transport" className="data-[state=active]:bg-blue-600 data-[state=active]:text-white">Find Transport</TabsTrigger>
-        </TabsList>
-        <TabsContent value="find-cargo">
-          <Tabs defaultValue={activeList} onValueChange={setActiveList} className="w-full mt-4">
-            <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
-              <TabsTrigger value="all">All Offers</TabsTrigger>
-              <TabsTrigger value="my_offers">My Offers</TabsTrigger>
-              <TabsTrigger value="accepted_offers">Accepted Offers</TabsTrigger>
-            </TabsList>
+      {/* Simplificat - doar secțiunea Find Cargo */}
+      <div className="w-full">
+        <Tabs defaultValue={activeList} onValueChange={setActiveList} className="w-full mt-4">
+          <TabsList className="grid w-full grid-cols-3 bg-slate-800/50">
+            <TabsTrigger value="all">All Offers</TabsTrigger>
+            <TabsTrigger value="my_offers">My Offers</TabsTrigger>
+            <TabsTrigger value="accepted_offers">Accepted Offers</TabsTrigger>
+          </TabsList>
 
             {/* Advanced Search and Filter System - Moved outside collapse */}
             <Card className="bg-slate-800/50 border-slate-700 mt-4">
@@ -1014,82 +933,7 @@ export default function MarketplacePage() {
               />
             </TabsContent>
           </Tabs>
-        </TabsContent>
-        
-        <TabsContent value="find-transport" className="mt-6">
-           <Card className="bg-slate-800/50 border-slate-700 mb-6">
-              <CardHeader>
-                <CardTitle className="text-2xl text-white">Find Available Transport</CardTitle>
-                <CardDescription className="text-blue-200">Search for available trucks for your cargo.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  <Input placeholder="Origin (e.g., Romania)" className="bg-slate-700 border-slate-600 text-white" />
-                  <Input placeholder="Destination (e.g., France)" className="bg-slate-700 border-slate-600 text-white" />
-                  <Input placeholder="Truck Type" className="bg-slate-700 border-slate-600 text-white" />
-                  <Input type="date" placeholder="Available from" className="bg-slate-700 border-slate-600 text-white" />
-                  <Button className="bg-blue-600 hover:bg-blue-700 lg:col-span-1 xl:col-span-1 w-full">
-                    <Search className="mr-2 h-4 w-4" /> Search
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {transportRequests.map((req, index) => (
-                <motion.div
-                  key={`transport-${req.id}-${index}`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <Card className="bg-slate-800/70 border-slate-700 hover:border-blue-500 transition-all duration-300 flex flex-col h-full">
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg font-bold text-white mb-2">Transport Request: {req.truckType}</CardTitle>
-                        <Badge className={req.status === 'available' ? 'bg-green-500' : 'bg-yellow-500'}>{req.status.toUpperCase()}</Badge>
-                      </div>
-                       <div className="flex items-center text-sm text-blue-300">
-                        <MapPin className="h-4 w-4 mr-2" />
-                        <span className="font-semibold">{req.from}</span>
-                        <ArrowRight className="h-4 w-4 mx-2" />
-                        <span className="font-semibold">{req.to}</span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                        <div className="flex items-center text-slate-300"><Calendar className="h-4 w-4 mr-2 text-blue-400"/> Available From: {req.availableFrom}</div>
-                        <div className="flex items-center text-slate-300"><Clock className="h-4 w-4 mr-2 text-blue-400"/> Available Until: {req.availableTo}</div>
-                        <div className="flex items-center text-slate-300 col-span-2"><Truck className="h-4 w-4 mr-2 text-blue-400"/> Truck Type: <Badge variant="secondary" className="ml-2">{req.truckType}</Badge></div>
-                      </div>
-                      <div className="mt-4">
-                        <h4 className="font-semibold text-slate-200 mb-2 text-xs">Capabilities:</h4>
-                        <div className="flex flex-wrap gap-2">
-                          {req.capabilities.map((cap, index) => <Badge key={`${req.id}-cap-${index}`} variant="outline" className="text-slate-300 border-slate-600">{cap}</Badge>)}
-                        </div>
-                      </div>
-                    </CardContent>
-                    <div className="p-4 bg-slate-900/50 rounded-b-lg mt-auto">
-                      <div className="flex justify-between items-center">
-                         <div>
-                          <p className="text-sm font-semibold text-slate-300">{req.company.name}</p>
-                          <div className="flex items-center text-xs text-slate-400">
-                            <Star className="h-3 w-3 mr-1 text-yellow-400" /> {req.company.rating}
-                            <Users className="h-3 w-3 ml-2 mr-1 text-blue-400"/> {req.company.fleetSize} trucks
-                            {req.company.verified && <Shield className="h-3 w-3 ml-2 text-green-400" />}
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold text-green-400">€{req.priceRange.min} - €{req.priceRange.max}</p>
-                          <Button size="sm" className="mt-1 bg-blue-600 hover:bg-blue-700 h-8">View Details</Button>
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-        </TabsContent>
-      </Tabs>
+        </div>
 
       {/* Edit Dialog */}
       <Dialog open={!!offerToEdit} onOpenChange={() => setOfferToEdit(null)}>
