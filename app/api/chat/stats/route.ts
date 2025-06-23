@@ -52,11 +52,18 @@ export async function GET() {
         
         const lastMessage = offer.chatMessages[0]; // Cel mai recent mesaj
         
+        // Determină numele afișat mai inteligent
+        const displayName = otherUser?.name 
+          || offer.companyName 
+          || otherUser?.email?.split('@')[0] 
+          || 'Unknown User';
+
         return {
           id: `${offer.id}-${otherUser?.id || 'unknown'}`,
           cargoOfferId: offer.id,
           cargoTitle: offer.title,
-          otherUserName: otherUser?.name || otherUser?.email || 'Unknown User',
+          otherUserName: displayName,
+          otherUserId: otherUser?.id,
           lastMessage: lastMessage?.content || 'No messages yet',
           lastMessageTime: lastMessage?.createdAt || offer.createdAt,
           unreadCount: unreadMessages.length,

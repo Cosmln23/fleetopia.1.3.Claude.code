@@ -58,9 +58,9 @@ export function NotificationDropdown() {
         </Button>
       </PopoverTrigger>
       
-      <PopoverContent className="w-80 md:w-96 p-0" align="end">
-          <div className="flex items-center justify-between p-3 border-b">
-            <h3 className="font-semibold text-lg">Notifications</h3>
+      <PopoverContent className="w-80 md:w-96 p-0 bg-slate-900 border-slate-700 text-white" align="end" sideOffset={5}>
+          <div className="flex items-center justify-between p-3 border-b border-slate-700">
+            <h3 className="font-semibold text-lg text-blue-400">🔔 Notifications ({unreadCount} unread)</h3>
             {/* The mark all as read button is removed for simplicity for now */}
           </div>
           
@@ -71,16 +71,16 @@ export function NotificationDropdown() {
                   key={notification.id}
                   onClick={() => handleNotificationClick(notification)}
                   className={cn(
-                    'flex items-start p-3 space-x-3 border-b last:border-b-0 hover:bg-muted/50 transition-colors cursor-pointer',
-                    notification.read ? 'opacity-60' : 'bg-primary/5'
+                    'flex items-start p-3 space-x-3 border-b border-slate-700/50 last:border-b-0 hover:bg-slate-800 transition-colors cursor-pointer',
+                    notification.read ? 'opacity-60' : 'bg-slate-800/30'
                   )}
                 >
                   <div className="flex-shrink-0 mt-1">
                     {getNotificationIcon(notification.type)}
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm">{notification.text}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
+                    <p className="text-sm text-white">{notification.text}</p>
+                    <p className="text-xs text-slate-400 mt-1">
                       {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
                     </p>
                   </div>
@@ -101,9 +101,9 @@ export function NotificationDropdown() {
               ))
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                <Bell className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                <h4 className="font-semibold">No notifications</h4>
-                <p className="text-sm text-muted-foreground">You are all caught up!</p>
+                <Bell className="h-12 w-12 text-slate-500 mb-4" />
+                <h4 className="font-semibold text-white">No notifications</h4>
+                <p className="text-sm text-slate-400">You are all caught up!</p>
               </div>
             )}
           </ScrollArea>

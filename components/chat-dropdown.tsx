@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { MessageSquare, User, Clock } from 'lucide-react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -24,16 +25,36 @@ export function ChatDropdown() {
 
   const handleConversationClick = async (conversation: any) => {
     try {
-      // Găsește cargo offer-ul complet pentru chat
-      const response = await fetch(`/api/marketplace/cargo/${conversation.cargoOfferId}`);
-      if (response.ok) {
-        const cargoOffer = await response.json();
-        openChat(cargoOffer);
-        setIsOpen(false);
-      }
+      // Creează un obiect cargo offer pentru chat folosind datele din conversație
+      const cargoOffer = {
+        id: conversation.cargoOfferId,
+        title: conversation.cargoTitle,
+        fromCountry: conversation.fromCountry,
+        toCountry: conversation.toCountry,
+        // Adaugă date minime necesare pentru chat
+        weight: 0,
+        price: 0,
+        status: 'OPEN',
+        urgency: 'medium',
+        cargoType: 'General',
+        createdAt: new Date(),
+        userId: conversation.otherUserId || 'unknown'
+      };
+      
+      openChat(cargoOffer);
+      setIsOpen(false);
+      
+      // Marchează conversația ca vizualizată
+      // markConversationAsViewed(conversation.cargoOfferId);
     } catch (error) {
       console.error('Error opening chat:', error);
     }
+  };
+
+  const handleViewAllConversations = () => {
+    // Navighează către pagina de marketplace unde sunt toate conversațiile
+    setIsOpen(false);
+    window.location.href = '/marketplace';
   };
 
   return (
@@ -131,7 +152,10 @@ export function ChatDropdown() {
         {conversations.length > 0 && (
           <>
             <DropdownMenuSeparator className="bg-slate-700" />
-            <DropdownMenuItem className="text-center py-2 text-blue-400 hover:bg-slate-800">
+            <DropdownMenuItem 
+              className="text-center py-2 text-blue-400 hover:bg-slate-800 cursor-pointer"
+              onClick={handleViewAllConversations}
+            >
               <span className="text-sm">View all conversations</span>
             </DropdownMenuItem>
           </>

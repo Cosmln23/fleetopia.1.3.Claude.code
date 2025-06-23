@@ -10,6 +10,7 @@ export interface ChatConversation {
   cargoOfferId: string;
   cargoTitle: string;
   otherUserName: string;
+  otherUserId?: string;
   lastMessage: string;
   lastMessageTime: Date;
   unreadCount: number;
