@@ -33,16 +33,19 @@ export async function GET(
       return NextResponse.json({ message: 'Offer not found' }, { status: 404 });
     }
 
-    // Security check: Only allow chat between the offer owner and someone who has sent an offer request
-    const hasSentOffer = await prisma.offerRequest.findFirst({
-      where: {
-        cargoOfferId: offerId,
-        transporterId: userId,
-      },
+    // Security check: Allow chat for ANYONE who has interacted with this cargo offer
+    // 1. Owner of the cargo offer (can chat with all interested transporters)
+    // 2. Anyone who has sent an offer request (transporters can chat with owner)
+    // Chat is allowed as long as cargo is not delivered
+    const hasOfferRequest = await prisma.offerRequest.findFirst({
+      where: { cargoOfferId: offerId, transporterId: userId }
     });
 
-    if (userId !== cargoOffer.userId && !hasSentOffer) {
-      return NextResponse.json({ message: 'You do not have permission to view this chat.' }, { status: 403 });
+    const isOwner = userId === cargoOffer.userId;
+    const hasInteracted = hasOfferRequest || userId === cargoOffer.acceptedByUserId;
+
+    if (!isOwner && !hasInteracted) {
+      return NextResponse.json({ message: 'You must send an offer to start chatting about this cargo.' }, { status: 403 });
     }
 
     const messages = await prisma.chatMessage.findMany({
@@ -100,16 +103,17 @@ export async function POST(
       return NextResponse.json({ message: 'Offer not found' }, { status: 404 });
     }
 
-    // Security check: Only allow chat between the offer owner and someone who has sent an offer request
-    const canChat = await prisma.offerRequest.findFirst({
-      where: {
-        cargoOfferId: offerId,
-        transporterId: userId,
-      },
+    // Security check: Allow chat for ANYONE who has interacted with this cargo offer
+    // Same logic as GET - owner or anyone who has sent an offer request
+    const hasOfferRequest = await prisma.offerRequest.findFirst({
+      where: { cargoOfferId: offerId, transporterId: userId }
     });
 
-    if (userId !== cargoOffer.userId && !canChat) {
-      return NextResponse.json({ message: 'You must send an offer to start chatting.' }, { status: 403 });
+    const isOwner = userId === cargoOffer.userId;
+    const hasInteracted = hasOfferRequest || userId === cargoOffer.acceptedByUserId;
+
+    if (!isOwner && !hasInteracted) {
+      return NextResponse.json({ message: 'You must send an offer to start chatting about this cargo.' }, { status: 403 });
     }
 
     const newMessage = await prisma.chatMessage.create({

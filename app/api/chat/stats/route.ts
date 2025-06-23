@@ -9,15 +9,27 @@ export async function GET() {
     const { userId } = await auth();
     
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      // Return empty data instead of error pentru a nu bloca UI-ul
+      return NextResponse.json({
+        conversations: [],
+        totalUnreadCount: 0
+      });
     }
 
-    // Găsește toate cargo offers unde user-ul este owner sau acceptor
+    // Găsește toate cargo offers unde user-ul este owner, acceptor SAU a trimis oferte
+    const userOfferRequests = await prisma.offerRequest.findMany({
+      where: { transporterId: userId },
+      select: { cargoOfferId: true }
+    });
+    
+    const offerRequestCargoIds = userOfferRequests.map(req => req.cargoOfferId);
+
     const userCargoOffers = await prisma.cargoOffer.findMany({
       where: {
         OR: [
-          { userId: userId },
-          { acceptedByUserId: userId }
+          { userId: userId }, // Owner
+          { acceptedByUserId: userId }, // Acceptor  
+          { id: { in: offerRequestCargoIds } } // A trimis oferte
         ]
       },
       include: {
