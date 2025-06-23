@@ -11,7 +11,7 @@ import { Send, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { CargoOffer, ChatMessage as PrismaChatMessage, User } from '@prisma/client';
 import { useChat } from '@/contexts/chat-provider';
-import { useNotificationSystem } from '@/hooks/use-notification-system';
+import { useChatSystem } from '@/hooks/use-chat-system';
 
 type MessageWithSender = PrismaChatMessage & {
   sender: Partial<User>;
@@ -23,7 +23,7 @@ interface ChatWindowProps {
 
 export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
   const { user, isSignedIn } = useUser();
-  const { markConversationAsRead } = useNotificationSystem();
+  const { refreshInstant, markConversationAsViewed } = useChatSystem();
 
   const { closeChat } = useChat();
   const [messages, setMessages] = useState<MessageWithSender[]>([]);
@@ -107,7 +107,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
     // Fetch messages only when the component mounts (chat window is opened)
     fetchMessages();
     // Mark the conversation as read
-    markConversationAsRead(offer.id);
+    markConversationAsViewed(offer.id);
   }, [offer.id]);
 
   // Scroll to bottom when messages change
@@ -133,6 +133,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
         setNewMessage('');
         // Force scroll to bottom after sending
         setTimeout(scrollToBottom, 100);
+        // REFRESH INSTANT AL CHAT DROPDOWN-ULUI
+        refreshInstant();
       } else {
         toast.error('Failed to send message');
       }

@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 
-const CHAT_POLLING_INTERVAL = 3000; // 3 secunde sincronizat cu notification system
+const CHAT_POLLING_INTERVAL = 2000; // 2 secunde pentru chat în timp real
 
 export interface ChatConversation {
   id: string;
@@ -69,10 +69,16 @@ export function useChatSystem() {
     });
   }, [conversations]);
 
+  // Funcție pentru refresh instant când se trimite mesaj
+  const refreshInstant = useCallback(() => {
+    fetchChatStats();
+  }, [fetchChatStats]);
+
   return { 
     conversations,
     totalUnreadCount,
     markConversationAsViewed,
-    refreshChats: fetchChatStats
+    refreshChats: fetchChatStats,
+    refreshInstant
   };
 }

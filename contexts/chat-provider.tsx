@@ -29,7 +29,11 @@ interface ChatProviderProps {
 
 export function ChatProvider({ children }: ChatProviderProps) {
   const [openChats, setOpenChats] = useState<CargoOffer[]>([]);
-  const { totalUnreadCount, markConversationAsViewed } = useChatSystem();
+  
+  // Folosim hook-ul de chat system doar pentru stats, nu în provider
+  const chatSystem = useChatSystem();
+  const totalUnreadCount = chatSystem?.totalUnreadCount || 0;
+  const markConversationAsViewed = chatSystem?.markConversationAsViewed || (() => {});
 
   const openChat = (offer: CargoOffer) => {
     setOpenChats((prevChats) => {
