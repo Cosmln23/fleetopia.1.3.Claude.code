@@ -2,11 +2,15 @@
 
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { CargoOffer } from '@prisma/client';
+import { useChatSystem } from '@/hooks/use-chat-system';
 
 interface ChatContextType {
   openChats: CargoOffer[];
   openChat: (offer: CargoOffer) => void;
   closeChat: (offerId: string) => void;
+  // Chat system stats pentru global usage
+  totalUnreadCount: number;
+  markConversationAsViewed: (cargoOfferId: string) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -25,6 +29,7 @@ interface ChatProviderProps {
 
 export function ChatProvider({ children }: ChatProviderProps) {
   const [openChats, setOpenChats] = useState<CargoOffer[]>([]);
+  const { totalUnreadCount, markConversationAsViewed } = useChatSystem();
 
   const openChat = (offer: CargoOffer) => {
     setOpenChats((prevChats) => {
@@ -33,6 +38,9 @@ export function ChatProvider({ children }: ChatProviderProps) {
       }
       return [...prevChats, offer];
     });
+    
+    // Marchează conversația ca vizualizată când se deschide
+    markConversationAsViewed(offer.id);
   };
 
   const closeChat = (offerId: string) => {
@@ -43,6 +51,8 @@ export function ChatProvider({ children }: ChatProviderProps) {
     openChats,
     openChat,
     closeChat,
+    totalUnreadCount,
+    markConversationAsViewed,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

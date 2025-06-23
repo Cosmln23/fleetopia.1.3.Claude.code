@@ -15,6 +15,7 @@ import {
 import { cn } from '@/lib/utils';
 import { AuthButton } from './AuthButton';
 import { NotificationDropdown } from './notifications-dropdown';
+import { ChatDropdown } from './chat-dropdown';
 
 const navigation = [
   {
@@ -92,6 +93,7 @@ export function Navigation() {
           {/* Settings & Auth */}
           <div className="flex items-center space-x-2">
             <NotificationDropdown />
+            <ChatDropdown />
             <AuthButton />
             <Link
               href="/settings"
