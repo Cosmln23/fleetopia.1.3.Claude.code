@@ -1,5 +1,4 @@
 import React, { useCallback, useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -82,12 +81,7 @@ const CargoOfferList = React.memo(function CargoOfferList({
     handleOpenSendOfferDialog: (offer: CargoOffer) => void;
   }) {
     return (
-      <motion.div
-        key={offer.id}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+      <div key={offer.id}>
         <Card 
           className="bg-slate-800/70 border-slate-700 hover:border-blue-500 transition-all duration-300 flex flex-col h-full cursor-pointer"
           onClick={() => onCardClick?.(offer)}
@@ -258,7 +252,7 @@ const CargoOfferList = React.memo(function CargoOfferList({
             </div>
           </div>
         </Card>
-      </motion.div>
+      </div>
     );
   });
 
@@ -267,11 +261,8 @@ const CargoOfferList = React.memo(function CargoOfferList({
     return (
       <div className="space-y-4 mt-6">
         {offers.map((offer) => (
-          <motion.div
+          <div
             key={offer.id}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3 }}
             className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-blue-500 transition-colors"
           >
             <div className="flex items-center justify-between">
@@ -370,7 +361,7 @@ const CargoOfferList = React.memo(function CargoOfferList({
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
     );
