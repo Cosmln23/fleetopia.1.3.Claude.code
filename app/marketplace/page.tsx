@@ -763,7 +763,7 @@ export default function MarketplacePage() {
                     <SelectTrigger className="bg-slate-700 border-slate-600">
                       <SelectValue placeholder="Country" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 text-white border-slate-700">
                       <SelectItem value="all_countries">All Countries</SelectItem>
                       {europeanCountries.map(country => (
                         <SelectItem key={country.code} value={country.name}>{country.name}</SelectItem>
@@ -775,7 +775,7 @@ export default function MarketplacePage() {
                     <SelectTrigger className="bg-slate-700 border-slate-600">
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 text-white border-slate-700">
                       <SelectItem value="newest">🕒 Newest First</SelectItem>
                       <SelectItem value="oldest">⏰ Oldest First</SelectItem>
                       <SelectItem value="price_high">💰 Highest Price</SelectItem>
@@ -790,7 +790,7 @@ export default function MarketplacePage() {
                     <SelectTrigger className="bg-slate-700 border-slate-600">
                       <SelectValue placeholder="Cargo Type" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 text-white border-slate-700">
                       <SelectItem value="all_types">All Types</SelectItem>
                       <SelectItem value="General">General</SelectItem>
                       <SelectItem value="Electronics">Electronics</SelectItem>
@@ -805,7 +805,7 @@ export default function MarketplacePage() {
                     <SelectTrigger className="bg-slate-700 border-slate-600">
                       <SelectValue placeholder="Urgency" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-slate-800 text-white border-slate-700">
                       <SelectItem value="all_urgency">All Urgency</SelectItem>
                       <SelectItem value="low">🟢 Low</SelectItem>
                       <SelectItem value="medium">🟡 Medium</SelectItem>
@@ -935,7 +935,7 @@ export default function MarketplacePage() {
 
       {/* Edit Dialog */}
       <Dialog open={!!offerToEdit} onOpenChange={() => setOfferToEdit(null)}>
-        <DialogContent className="sm:max-w-[625px] bg-slate-900 border-slate-700 text-white">
+        <DialogContent className="sm:max-w-[625px] bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 border-slate-700 text-white">
           <DialogHeader>
             <DialogTitle>Edit Cargo Offer</DialogTitle>
             <DialogDescription>
@@ -978,7 +978,7 @@ export default function MarketplacePage() {
       />
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!offerToDelete} onOpenChange={() => setOfferToDelete(null)}>
-        <DialogContent className="sm:max-w-[425px] bg-slate-900 border-slate-700 text-white">
+        <DialogContent className="sm:max-w-[425px] bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 border-slate-700 text-white">
           <DialogHeader>
             <DialogTitle>Delete Cargo Offer</DialogTitle>
             <DialogDescription>
@@ -997,7 +997,7 @@ export default function MarketplacePage() {
       </Dialog>
       {/* Add Cargo Dialog */}
       <Dialog open={isAddCargoOpen} onOpenChange={setIsAddCargoOpen}>
-        <DialogContent className="sm:max-w-[550px] bg-slate-900 border-slate-700 text-white">
+        <DialogContent className="sm:max-w-[550px] bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 border-slate-700 text-white">
             <DialogHeader>
                 <DialogTitle>Post a New Cargo Offer</DialogTitle>
                 <DialogDescription>
