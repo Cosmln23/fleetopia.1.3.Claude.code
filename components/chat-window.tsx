@@ -80,9 +80,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
     return `${offer.title} ${fromCode}-${toCode}`;
   };
 
-  const scrollToBottom = () => {
+  const scrollToBottom = (immediate = false) => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: immediate ? 'instant' : 'smooth' 
+      });
     }
   };
 
@@ -95,6 +97,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
       if (response.ok) {
         const data = await response.json();
         setMessages(data);
+        // Auto-scroll to bottom after loading messages (immediate)
+        setTimeout(() => scrollToBottom(true), 50);
       } else {
         toast.error('Failed to fetch messages');
       }
@@ -109,6 +113,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
     fetchMessages();
     // Mark the conversation as read
     markConversationAsViewed(offer.id);
+    // Scroll to bottom when chat opens (immediate)
+    setTimeout(() => scrollToBottom(true), 100);
 
     // Set up polling pentru mesaje noi la fiecare 3 secunde
     // Doar dacă user-ul nu scrie (nu vrem să întrerupem typing-ul)
