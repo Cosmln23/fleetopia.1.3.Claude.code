@@ -277,14 +277,6 @@ export default function MarketplacePage() {
 
   useEffect(() => {
     fetchCargoOffers(activeList);
-    
-    // Initialize polling service
-    pollingService.initialize();
-    
-    return () => {
-      // Cleanup polling service when component unmounts
-      pollingService.destroy();
-    };
   }, [activeList]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
