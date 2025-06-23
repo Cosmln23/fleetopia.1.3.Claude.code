@@ -110,7 +110,15 @@ const CargoOfferList = React.memo(function CargoOfferList({
             <div className="mt-4">
               <h4 className="font-semibold text-slate-200 mb-2 text-xs">Requirements:</h4>
               <div className="flex flex-wrap gap-2">
-                {offer.requirements.map(req => <Badge key={req} variant="outline" className="text-slate-300 border-slate-600">{req}</Badge>)}
+                {Array.isArray(offer.requirements) ? offer.requirements.map((req, index) => (
+                  <Badge key={index} variant="outline" className="text-slate-300 border-slate-600">
+                    {typeof req === 'string' ? req : JSON.stringify(req)}
+                  </Badge>
+                )) : (
+                  <Badge variant="outline" className="text-slate-300 border-slate-600">
+                    No requirements
+                  </Badge>
+                )}
               </div>
             </div>
           </CardContent>

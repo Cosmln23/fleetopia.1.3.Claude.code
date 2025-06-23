@@ -571,7 +571,7 @@ export default function FleetManagementPage() {
               )}
               {error && (
                 <div className="text-center py-12 text-red-400">
-                  <p>Error: {error}</p>
+                  <p>Error: {typeof error === 'string' ? error : 'An error occurred while loading fleet data'}</p>
                 </div>
               )}
               {!isLoading && !error && (

@@ -1,12 +1,23 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@clerk/nextjs/server';
 
 // Define the possible statuses based on the Prisma schema enum
 const validCargoStatuses = ['NEW', 'TAKEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELED'];
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const statusParam = searchParams.get('status');
+  try {
+    const { userId } = await auth();
+    
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const { searchParams } = new URL(request.url);
+    const statusParam = searchParams.get('status');
 
   let whereClause: any = {
     NOT: {
@@ -30,7 +41,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  try {
     const jobs = await prisma.cargoOffer.findMany({
       where: whereClause,
       orderBy: {

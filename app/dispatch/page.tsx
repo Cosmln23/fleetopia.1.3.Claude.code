@@ -101,7 +101,7 @@ export default function DispatchPage() {
         <div className="flex flex-col justify-center items-center h-64 text-red-400">
           <ServerCrash className="w-12 h-12 mb-4" />
           <p className="text-lg">Error loading data</p>
-          <p className="text-sm">{error}</p>
+          <p className="text-sm">{typeof error === 'string' ? error : 'Failed to load dispatch jobs'}</p>
         </div>
       );
     }
