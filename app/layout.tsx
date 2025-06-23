@@ -4,6 +4,7 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import { Navigation } from '@/components/navigation';
+import { Sidebar } from '@/components/sidebar';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,6 +14,7 @@ import { ChatProvider } from '@/contexts/chat-provider';
 import { ChatManager } from '@/components/chat-manager';
 import { DispatcherProvider } from '@/contexts/dispatcher-context';
 import { NotificationProvider } from '@/contexts/notification-provider';
+import { SidebarWrapper } from '@/components/sidebar-wrapper';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -45,9 +47,11 @@ export default function RootLayout({
                   disableTransitionOnChange
                 >
                   <Navigation />
-                  <main className="min-h-screen text-white">
-                    {children}
-                  </main>
+                  <SidebarWrapper>
+                    <main className="min-h-screen text-white">
+                      {children}
+                    </main>
+                  </SidebarWrapper>
                   <Toaster />
                   <ChatManager />
                 </ThemeProvider>

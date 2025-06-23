@@ -11,11 +11,13 @@ import {
   Activity,
   MessageSquare,
   Settings,
+  Menu,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AuthButton } from './AuthButton';
 import { NotificationDropdown } from './notifications-dropdown';
 import { ChatDropdown } from './chat-dropdown';
+import { useSidebar } from '@/hooks/use-sidebar';
 
 const navigation = [
   {
@@ -52,20 +54,34 @@ const navigation = [
 
 export function Navigation() {
   const pathname = usePathname();
+  const { isMobile, isOpen, setOpen } = useSidebar();
 
   return (
     <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-              <Truck className="h-5 w-5 text-white" />
-            </div>
-            <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              Fleetopia
-            </span>
-          </Link>
+          {/* Mobile Menu Button & Logo */}
+          <div className="flex items-center space-x-3">
+            {/* Mobile Hamburger */}
+            {isMobile && (
+              <button
+                onClick={() => setOpen(!isOpen)}
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors md:hidden"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            )}
+            
+            {/* Logo */}
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="h-8 w-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <Truck className="h-5 w-5 text-white" />
+              </div>
+              <span className="font-bold text-xl bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Fleetopia
+              </span>
+            </Link>
+          </div>
 
           {/* Navigation Links */}
           <div className="hidden md:flex items-center space-x-1">
