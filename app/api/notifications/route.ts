@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 interface Notification {
     id: string;
-    type: 'message' | 'alert';
+    type: 'alert'; // DOAR alerte sistem, nu mai includem 'message'
     text: string;
     relatedId: string;
     createdAt: Date;
@@ -23,32 +23,10 @@ export async function GET() {
   const notifications: Notification[] = [];
 
   try {
-    // --- Get Unread Messages ---
-    const unreadMessages = await prisma.chatMessage.findMany({
-      where: {
-        cargoOffer: {
-          OR: [{ userId }, { acceptedByUserId: userId }],
-        },
-        senderId: { not: userId },
-      },
-      include: {
-        sender: { select: { name: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 25,
-    });
-
-    unreadMessages.forEach(msg => {
-        notifications.push({
-            id: msg.id,
-            type: 'message',
-            text: `New message from ${msg.sender?.name || 'a user'}`,
-            relatedId: msg.cargoOfferId,
-            createdAt: msg.createdAt,
-            read: false // Assume all are unread for now
-        });
-    });
-
+    // --- ELIMINAT: Mesajele chat sunt acum gestionate separat de chat dropdown ---
+    // Bell icon (🔔) = DOAR notificări sistem
+    // Message icon (💬) = DOAR mesaje chat
+    
     // --- Get Unread System Alerts ---
     // Since SystemAlert doesn't have userId, we need to filter by cargoOffer relation
     const unreadAlerts = await prisma.systemAlert.findMany({

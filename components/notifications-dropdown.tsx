@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, MessageSquare, AlertTriangle, Trash2, CheckCheck } from 'lucide-react';
+import { Bell, AlertTriangle, Trash2, CheckCheck } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
@@ -29,12 +29,9 @@ export function NotificationDropdown() {
     markAsRead(notification.id, notification.type);
   }
 
-  const getNotificationIcon = (type: 'message' | 'alert') => {
-    switch (type) {
-      case 'message': return <MessageSquare className="h-5 w-5 text-blue-400" />;
-      case 'alert': return <AlertTriangle className="h-5 w-5 text-yellow-400" />;
-      default: return <Bell className="h-5 w-5" />;
-    }
+  const getNotificationIcon = (type: 'alert') => {
+    // DOAR alerte sistem - nu mai avem mesaje aici
+    return <AlertTriangle className="h-5 w-5 text-yellow-400" />;
   };
 
   return (
@@ -60,7 +57,7 @@ export function NotificationDropdown() {
       
       <PopoverContent className="w-80 md:w-96 p-0 bg-slate-900 border-slate-700 text-white" align="end" sideOffset={5}>
           <div className="flex items-center justify-between p-3 border-b border-slate-700">
-            <h3 className="font-semibold text-lg text-blue-400">🔔 Notifications ({unreadCount} unread)</h3>
+            <h3 className="font-semibold text-lg text-blue-400">🔔 System Notifications ({unreadCount} unread)</h3>
             {/* The mark all as read button is removed for simplicity for now */}
           </div>
           
@@ -102,8 +99,8 @@ export function NotificationDropdown() {
             ) : (
               <div className="flex flex-col items-center justify-center h-full text-center p-6">
                 <Bell className="h-12 w-12 text-slate-500 mb-4" />
-                <h4 className="font-semibold text-white">No notifications</h4>
-                <p className="text-sm text-slate-400">You are all caught up!</p>
+                <h4 className="font-semibold text-white">No system notifications</h4>
+                <p className="text-sm text-slate-400">All cargo & marketplace alerts are up to date!</p>
               </div>
             )}
           </ScrollArea>

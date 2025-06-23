@@ -99,7 +99,7 @@ export function ChatDropdown() {
         ) : (
           <ScrollArea className="h-80">
             {conversations.map((conversation) => (
-              <DropdownMenuItem
+              <div
                 key={conversation.id}
                 className="p-3 cursor-pointer hover:bg-slate-800 border-b border-slate-700/50 last:border-b-0"
                 onClick={() => handleConversationClick(conversation)}
@@ -144,7 +144,7 @@ export function ChatDropdown() {
                     </div>
                   </div>
                 </div>
-              </DropdownMenuItem>
+              </div>
             ))}
           </ScrollArea>
         )}

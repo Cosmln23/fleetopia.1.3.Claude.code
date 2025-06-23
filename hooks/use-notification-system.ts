@@ -7,7 +7,7 @@ const POLLING_INTERVAL = 3000; // Sincronizat cu chat system la 3 secunde
 
 export interface Notification {
     id: string;
-    type: 'message' | 'alert';
+    type: 'alert'; // DOAR alerte sistem (cargo, oferte, plăți)
     text: string;
     relatedId: string;
     createdAt: Date;
@@ -48,34 +48,23 @@ export function useNotificationSystem() {
     }
   }, [isSignedIn, fetchNotifications]);
   
-  const markAsRead = async (notificationId: string, type: 'message' | 'alert') => {
+  const markAsRead = async (notificationId: string, type: 'alert') => {
     // Optimistically update the UI by removing the notification from the list
     const originalNotifications = notifications;
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
     setUnreadCount(prev => Math.max(0, prev - 1));
 
-    let endpoint = '';
-    let options: RequestInit = {};
-
-    if (type === 'message') {
-      endpoint = '/api/chat/mark-as-read';
-      options = {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ conversationId: notificationId }) // Use conversationId
-      };
-    } else { // type === 'alert'
-      endpoint = `/api/dispatcher/alerts/${notificationId}`;
-      options = {
-        method: 'DELETE'
-      };
-    }
+    // DOAR pentru alerte sistem (nu mai avem mesaje aici)
+    const endpoint = `/api/dispatcher/alerts/${notificationId}`;
+    const options: RequestInit = {
+      method: 'DELETE'
+    };
 
     try {
         const response = await fetch(endpoint, options);
         if (!response.ok) {
           // If the API call fails, revert the optimistic update
-          console.error(`Failed to mark ${type} as read, response not OK.`);
+          console.error(`Failed to mark alert as read, response not OK.`);
           setNotifications(originalNotifications);
           // Re-fetch to get the true state
           fetchNotifications();
@@ -84,7 +73,7 @@ export function useNotificationSystem() {
         // Maybe a re-fetch to ensure consistency? For now, we'll trust the optimistic update.
 
     } catch (error) {
-        console.error(`Failed to mark ${type} as read:`, error);
+        console.error(`Failed to mark alert as read:`, error);
         // Revert optimistic update on failure
         setNotifications(originalNotifications);
         fetchNotifications();
