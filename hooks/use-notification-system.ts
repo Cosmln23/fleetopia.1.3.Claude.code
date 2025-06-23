@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 
-const POLLING_INTERVAL = 30000; // 30 secunde - reduce auto-refresh pentru UX mai bun
+const POLLING_INTERVAL = 3000; // 3 secunde - sincronizat cu chat system
 
 export interface Notification {
     id: string;

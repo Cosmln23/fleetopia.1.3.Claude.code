@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -256,12 +256,18 @@ export default function MarketplacePage() {
     return filtered;
   }, [cargoOffers, searchFilters]);
 
-  // NEW: Pagination Logic
-  const totalPages = Math.ceil(filteredAndSortedOffers.length / itemsPerPage);
-  const paginatedOffers = filteredAndSortedOffers.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // NEW: Pagination Logic with useMemo to prevent re-rendering
+  const { paginatedOffers, totalPages } = useMemo(() => {
+    const total = Math.ceil(filteredAndSortedOffers.length / itemsPerPage);
+    const paginated = filteredAndSortedOffers.slice(
+      (currentPage - 1) * itemsPerPage,
+      currentPage * itemsPerPage
+    );
+    return { paginatedOffers: paginated, totalPages: total };
+  }, [filteredAndSortedOffers, currentPage, itemsPerPage]);
+
+  // Memoized cargo offers for other tabs to prevent re-rendering
+  const memoizedCargoOffers = useMemo(() => cargoOffers, [cargoOffers]);
 
   // REPLACED: fetchCargoOffers now uses centralized store
   const fetchCargoOffers = async (listType: string = 'all') => {
@@ -890,7 +896,7 @@ export default function MarketplacePage() {
             </TabsContent>
             <TabsContent value="my_offers">
               <CargoOfferList
-                  offers={cargoOffers}
+                  offers={memoizedCargoOffers}
                   listType="my_offers"
                   getUrgencyColor={getUrgencyColor}
                   getPriceDisplay={getPriceDisplay}
@@ -908,7 +914,7 @@ export default function MarketplacePage() {
             </TabsContent>
             <TabsContent value="accepted_offers">
               <CargoOfferList
-                  offers={cargoOffers}
+                  offers={memoizedCargoOffers}
                   listType="accepted_offers"
                   getUrgencyColor={getUrgencyColor}
                   getPriceDisplay={getPriceDisplay}

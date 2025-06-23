@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 
-const CHAT_POLLING_INTERVAL = 30000; // 30 secunde - reduce auto-refresh pentru UX mai bun
+const CHAT_POLLING_INTERVAL = 3000; // 3 secunde pentru chat în timp real
 
 export interface ChatConversation {
   id: string;
