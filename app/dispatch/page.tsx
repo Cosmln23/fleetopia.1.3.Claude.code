@@ -170,7 +170,7 @@ export default function DispatcherProDashboard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
       {/* SECTION 1: Welcome Header */}
-      <div className="bg-slate-800 rounded-lg p-6 mb-6 border border-slate-700">
+      <div className="bg-slate-800 rounded-lg p-6 mb-6 border border-blue-800/30">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white">
             👋 Welcome, {user?.firstName || 'Cosmin'}
@@ -199,7 +199,7 @@ export default function DispatcherProDashboard() {
       {/* SECTION 2: AI Suggestions + Fleet Status Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* AI Suggestions Card */}
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-slate-800 border-blue-800/30">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🤖 AI Suggestions
@@ -224,7 +224,7 @@ export default function DispatcherProDashboard() {
         </Card>
 
         {/* Fleet Status Card */}
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-slate-800 border-blue-800/30">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🚛 Fleet Status
@@ -260,7 +260,7 @@ export default function DispatcherProDashboard() {
       </div>
 
       {/* SECTION 3: Recent Jobs */}
-      <Card className="bg-slate-800 border-slate-700 mb-6">
+      <Card className="bg-slate-800 border-blue-800/30 mb-6">
         <CardContent className="p-6">
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
             📋 Recent Jobs
@@ -268,18 +268,16 @@ export default function DispatcherProDashboard() {
           <div className="space-y-3">
             {jobs.length > 0 ? jobs.map((job) => (
               <Link key={job.id} href={`/dispatch/${job.id}`}>
-                <div className="flex justify-between items-center text-gray-300 py-2 border-b border-slate-700 last:border-b-0 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2">
-                  <span className="font-mono text-blue-400">#{job.id.slice(-3)}</span>
-                  <span className="flex-1 mx-4">{job.fromAddress} → {job.toAddress}</span>
-                  <span className="text-right">{getStatusBadge(job.status)}</span>
+                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2 font-mono text-gray-300">
+                  <span className="text-blue-400">#{job.id.slice(-3)}</span>    {job.fromAddress} → {job.toAddress}         {getStatusBadge(job.status)}
                 </div>
               </Link>
             )) : (
-              <div className="text-gray-400">
-                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2">#156    Arad → Constanța         <span className="text-yellow-400">In Progress 🟡</span></div>
-                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2">#151    Galați → Cluj-Napoca     <span className="text-green-400">Completed 🟢</span></div>
-                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2">#147    Iași → Oradea            <span className="text-green-400">Completed 🟢</span></div>
-                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2">#143    București → Timișoara    <span className="text-red-400">Canceled 🔴</span></div>
+              <div className="text-gray-400 font-mono">
+                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2"><span className="text-blue-400">#156</span>    Arad → Constanța         <span className="text-yellow-400">In Progress 🟡</span></div>
+                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2"><span className="text-blue-400">#151</span>    Galați → Cluj-Napoca     <span className="text-green-400">Completed 🟢</span></div>
+                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2"><span className="text-blue-400">#147</span>    Iași → Oradea            <span className="text-green-400">Completed 🟢</span></div>
+                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2"><span className="text-blue-400">#143</span>    București → Timișoara    <span className="text-red-400">Canceled 🔴</span></div>
               </div>
             )}
           </div>
@@ -287,7 +285,7 @@ export default function DispatcherProDashboard() {
       </Card>
 
       {/* SECTION 4: AI Automatic Activity */}
-      <Card className="bg-slate-800 border-slate-700 mb-6">
+      <Card className="bg-slate-800 border-blue-800/30 mb-6">
         <CardContent className="p-6">
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
             🔄 AI Automatic Activity
@@ -331,7 +329,7 @@ export default function DispatcherProDashboard() {
       {/* SECTION 5: Fleet Map + Fleet Management Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Mini Map Section */}
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-slate-800 border-blue-800/30">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🗺 Fleet Map (mini view)
@@ -349,7 +347,7 @@ export default function DispatcherProDashboard() {
         </Card>
 
         {/* Fleet Management Links */}
-        <Card className="bg-slate-800 border-slate-700">
+        <Card className="bg-slate-800 border-blue-800/30">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🔗 Fleet Management
