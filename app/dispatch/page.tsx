@@ -315,7 +315,7 @@ export default function DispatcherProDashboard() {
       {/* SECTION 2: AI Suggestions + Fleet Status Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* AI Suggestions Card */}
-        <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+        <Card className="bg-[--card] hover:bg-gradient-to-r hover:from-white/10 hover:via-white/20 hover:to-white/10 transition-all duration-500">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🤖 AI Suggestions
@@ -361,7 +361,7 @@ export default function DispatcherProDashboard() {
         </Card>
 
         {/* Fleet Status Card */}
-        <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+        <Card className="bg-[--card] hover:bg-gradient-to-r hover:from-white/10 hover:via-white/20 hover:to-white/10 transition-all duration-500">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🚛 Fleet Status

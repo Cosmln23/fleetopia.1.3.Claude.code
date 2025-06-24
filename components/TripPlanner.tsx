@@ -212,7 +212,7 @@ const TripPlanner: React.FC<TripPlannerProps> = ({
   }
 
   return (
-    <Card className="bg-[--card] text-[--card-foreground] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+    <Card className="bg-[--card] text-[--card-foreground] hover:bg-gradient-to-r hover:from-white/10 hover:via-white/20 hover:to-white/10 transition-all duration-500">
       <CardHeader>
         <CardTitle className="flex items-center text-xl">
           <MapIcon className="mr-3 h-6 w-6 text-[--accent]" />
