@@ -139,7 +139,7 @@ function MapView({ isLoaded, vehicles, focusedVehicle, directions, onMapLoad, se
   };
 
   if (!isLoaded) {
-    return <div className="h-[600px] w-full animate-pulse rounded-lg bg-gray-200 dark:bg-gray-800 flex items-center justify-center"><p>Loading Map...</p></div>;
+    return <div className="h-[600px] w-full animate-pulse rounded-lg bg-[--card] border-0 flex items-center justify-center"><p className="text-[--muted-foreground]">Loading Map...</p></div>;
   }
 
   return (
@@ -181,22 +181,22 @@ function MapView({ isLoaded, vehicles, focusedVehicle, directions, onMapLoad, se
           position={{ lat: selectedVehicle.lat, lng: selectedVehicle.lng }}
           onCloseClick={() => setSelectedVehicle(null)}
         >
-          <div className="p-2 bg-white rounded-lg shadow-lg dark:bg-gray-800">
-            <h3 className="font-bold text-lg text-gray-900 dark:text-white">
+          <div className="p-2 bg-[--card] rounded-lg border-0">
+            <h3 className="font-bold text-lg text-[--card-foreground]">
               {selectedVehicle.name} ({selectedVehicle.type})
             </h3>
-            <p className="text-gray-700 dark:text-gray-300">
+            <p className="text-[--muted-foreground]">
               License: {selectedVehicle.licensePlate}
             </p>
             <p className={`text-sm font-semibold ${
               isActiveStatus(selectedVehicle.status)
-                ? 'text-green-600 dark:text-green-400'
-                : 'text-yellow-600 dark:text-yellow-400'
+                ? 'text-green-400'
+                : 'text-yellow-400'
             }`}>
               Status: {selectedVehicle.status.replace('_', ' ')}
             </p>
             {selectedVehicle.driverName && (
-              <p className="text-gray-600 dark:text-gray-400">
+              <p className="text-[--muted-foreground]">
                 Driver: {selectedVehicle.driverName}
               </p>
             )}

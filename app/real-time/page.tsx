@@ -110,12 +110,12 @@ function RealTimePageContent() {
     <div className="flex-1 p-4 sm:p-6 md:p-8 bg-background text-foreground h-screen">
       {/* Status Banner */}
       {(isDemo || hasError || statusMessage) && (
-        <div className={`mb-4 p-3 rounded-lg border ${
+        <div className={`mb-4 p-3 rounded-lg border-0 ${
           hasError 
-            ? 'bg-yellow-50 border-yellow-200 text-yellow-800' 
+            ? 'bg-[--card] text-yellow-300' 
             : isDemo 
-              ? 'bg-blue-50 border-blue-200 text-blue-800'
-              : 'bg-green-50 border-green-200 text-green-800'
+              ? 'bg-[--card] text-blue-300'
+              : 'bg-[--card] text-green-300'
         }`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
@@ -137,7 +137,7 @@ function RealTimePageContent() {
               <p className="text-sm font-medium">
                 {hasError && 'Warning: '}{statusMessage}
                 {isDemo && (
-                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-600/20 text-blue-300 border-0">
                     Demo Mode
                   </span>
                 )}
@@ -146,7 +146,7 @@ function RealTimePageContent() {
             {isDemo && (
               <div className="ml-4">
                 <Link href="/fleet-management">
-                  <Button size="sm" variant="outline" className="text-xs">
+                  <Button size="sm" variant="outline" className="text-xs border-0">
                     Add Vehicles
                   </Button>
                 </Link>
@@ -159,9 +159,9 @@ function RealTimePageContent() {
       <div className="h-full w-full max-w-full mx-auto grid grid-cols-1 xl:grid-cols-8 gap-6 xl:gap-8">
         
         {/* --- Map Column --- */}
-        <div className="xl:col-span-5 h-full w-full rounded-xl overflow-hidden shadow-lg">
+        <div className="xl:col-span-5 h-full w-full rounded-xl overflow-hidden border-0 bg-[--card]">
           {isLoading ? (
-            <div className="h-full w-full animate-pulse bg-card flex flex-col items-center justify-center">
+            <div className="h-full w-full animate-pulse bg-[--card] flex flex-col items-center justify-center border-0">
               <div className="flex items-center space-x-2 mb-4">
                 <div className="w-4 h-4 bg-blue-500 rounded-full animate-bounce"></div>
                 <div className="w-4 h-4 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>

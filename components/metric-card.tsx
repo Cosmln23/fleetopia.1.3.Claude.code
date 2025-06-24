@@ -68,7 +68,7 @@ export default function MetricCard({
   };
 
   return (
-    <div className={`metric-card rounded-lg p-6 transition-all duration-500 ${
+    <div className={`bg-[--card] border-0 rounded-lg p-6 transition-all duration-500 ${
       isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
     } ${className}`}>
       <div className="flex items-center justify-between mb-4">

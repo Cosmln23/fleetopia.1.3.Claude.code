@@ -141,7 +141,7 @@ export default function FleetopiaHome() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
         >
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-[--card] border-0">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -153,7 +153,7 @@ export default function FleetopiaHome() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-[--card] border-0">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -165,7 +165,7 @@ export default function FleetopiaHome() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-[--card] border-0">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -177,7 +177,7 @@ export default function FleetopiaHome() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-[--card] border-0">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -200,7 +200,7 @@ export default function FleetopiaHome() {
           className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-8"
         >
           <div className="lg:col-span-3">
-            <Card className="bg-slate-800/50 border-slate-700">
+            <Card className="bg-[--card] border-0">
               <CardHeader>
                 <CardTitle className="flex items-center text-white">
                   <Activity className="w-5 h-5 mr-2 text-green-400" />

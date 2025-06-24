@@ -152,7 +152,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer, onSendOffer }: C
             <div className="flex-1 overflow-y-auto bg-slate-900">
               <div className="p-6 space-y-6">
                 {/* Route Information */}
-                <Card className="bg-slate-800/70 border-slate-700">
+                <Card className="bg-[--card] border-0">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2 text-white">
                       <Navigation className="h-5 w-5 text-blue-400" />
@@ -198,7 +198,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer, onSendOffer }: C
 
                 {/* Cargo Details */}
                 <div className="grid grid-cols-2 gap-6">
-                  <Card className="bg-slate-800/70 border-slate-700">
+                  <Card className="bg-[--card] border-0">
                     <CardHeader>
                       <CardTitle className="flex items-center space-x-2 text-white">
                         <Package className="h-5 w-5 text-orange-400" />
@@ -238,7 +238,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer, onSendOffer }: C
                     </CardContent>
                   </Card>
 
-                  <Card className="bg-slate-800/70 border-slate-700">
+                  <Card className="bg-[--card] border-0">
                     <CardHeader>
                       <CardTitle className="flex items-center space-x-2 text-white">
                         <Calendar className="h-5 w-5 text-purple-400" />
@@ -259,7 +259,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer, onSendOffer }: C
                 </div>
 
                 {/* Price Information */}
-                <Card className="bg-slate-800/70 border-slate-700">
+                <Card className="bg-[--card] border-0">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2 text-white">
                       <Euro className="h-5 w-5 text-green-400" />
@@ -286,7 +286,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer, onSendOffer }: C
             <div className="w-96 border-l border-slate-700 bg-slate-800">
               <div className="p-6 space-y-6">
                 {/* Company Information */}
-                <Card className="bg-slate-800/70 border-slate-700">
+                <Card className="bg-[--card] border-0">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2 text-white">
                       <Building className="h-5 w-5 text-teal-400" />
@@ -310,7 +310,7 @@ export function CargoDetailModal({ isOpen, onClose, cargoOffer, onSendOffer }: C
                 </Card>
 
                 {/* Cargo Info Summary */}
-                <Card className="bg-slate-800/70 border-slate-700">
+                <Card className="bg-[--card] border-0">
                   <CardHeader>
                     <CardTitle className="text-sm text-white">Quick Summary</CardTitle>
                   </CardHeader>

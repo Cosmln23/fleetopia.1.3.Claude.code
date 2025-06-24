@@ -288,7 +288,7 @@ export default function FleetMindHome() {
               <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 
                 {/* AI Performance */}
-                <Card className="bg-slate-800/50 border-slate-700">
+                <Card className="bg-[--card] border-0">
                   <CardHeader>
                     <CardTitle className="flex items-center text-slate-200">
                       <Bot className="w-5 h-5 mr-2 text-blue-400" />
@@ -311,7 +311,7 @@ export default function FleetMindHome() {
                 </Card>
 
                 {/* Fleet Status */}
-                <Card className="bg-slate-800/50 border-slate-700">
+                <Card className="bg-[--card] border-0">
                   <CardHeader>
                     <CardTitle className="flex items-center text-slate-200">
                       <Truck className="w-5 h-5 mr-2 text-green-400" />
@@ -334,7 +334,7 @@ export default function FleetMindHome() {
                 </Card>
 
                 {/* Real-time Activity */}
-                <Card className="bg-slate-800/50 border-slate-700">
+                <Card className="bg-[--card] border-0">
                   <CardHeader>
                     <CardTitle className="flex items-center text-slate-200">
                       <Activity className="w-5 h-5 mr-2 text-purple-400" />

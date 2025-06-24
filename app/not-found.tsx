@@ -8,7 +8,7 @@ import { Home, ArrowLeft, MapPin } from 'lucide-react';
 export default function NotFound() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-slate-800/50 border-slate-700">
+      <Card className="w-full max-w-md bg-[--card] border-0">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 p-3 bg-blue-500/10 rounded-full w-16 h-16 flex items-center justify-center">
             <MapPin className="w-8 h-8 text-blue-400" />

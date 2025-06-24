@@ -49,7 +49,7 @@ const VehicleList = React.memo(function VehicleList({ vehicles, onVehicleClick }
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
           >
-            <Card className="bg-slate-800/60 border-slate-700 hover:border-slate-600 transition-colors">
+            <Card className="bg-[--card] border-0 transition-colors">
               <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
                   <div>

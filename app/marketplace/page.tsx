@@ -729,7 +729,7 @@ export default function MarketplacePage() {
           </TabsList>
 
             {/* Advanced Search and Filter System - Moved outside collapse */}
-            <Card className="bg-slate-800/50 border-slate-700 mt-4">
+            <Card className="bg-[--card] border-0 mt-4">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Search className="h-5 w-5 text-blue-400" />

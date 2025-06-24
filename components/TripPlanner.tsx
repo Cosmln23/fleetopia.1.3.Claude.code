@@ -283,7 +283,7 @@ const TripPlanner: React.FC<TripPlannerProps> = ({
 
         {legDetails.length > 0 && (
           <>
-            <Separator className="my-4" />
+            <Separator className="my-4 bg-[--border]/20" />
             <h3 className="text-lg font-semibold mb-2">Trip Summary</h3>
             
             <div className="flex justify-between font-bold text-md mb-3">

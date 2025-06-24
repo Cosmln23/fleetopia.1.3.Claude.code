@@ -264,7 +264,7 @@ export default function APIIntegrationsPage() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
         >
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-[--card] border-0">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -277,7 +277,7 @@ export default function APIIntegrationsPage() {
             </CardContent>
           </Card>
           
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-[--card] border-0">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -290,7 +290,7 @@ export default function APIIntegrationsPage() {
             </CardContent>
           </Card>
           
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-[--card] border-0">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -303,7 +303,7 @@ export default function APIIntegrationsPage() {
             </CardContent>
           </Card>
           
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card className="bg-[--card] border-0">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -338,7 +338,7 @@ export default function APIIntegrationsPage() {
                 
                 {/* API List */}
                 <div className="lg:col-span-2">
-                  <Card className="bg-slate-800/50 border-slate-700">
+                  <Card className="bg-[--card] border-0">
                     <CardHeader>
                       <CardTitle className="text-slate-200">Universal API Providers</CardTitle>
                       <CardDescription>Built-in free APIs and client-configurable services</CardDescription>
@@ -439,7 +439,7 @@ export default function APIIntegrationsPage() {
 
                 {/* Side Panel */}
                 <div className="space-y-6">
-                  <Card className="bg-slate-800/50 border-slate-700">
+                  <Card className="bg-[--card] border-0">
                     <CardHeader>
                       <CardTitle className="flex items-center text-slate-200">
                         <Activity className="w-5 h-5 mr-2 text-blue-400" />
@@ -478,7 +478,7 @@ export default function APIIntegrationsPage() {
                   const totalCount = categoryProviders.length;
                   
                   return (
-                    <Card key={category} className="bg-slate-800/50 border-slate-700">
+                    <Card key={category} className="bg-[--card] border-0">
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
@@ -575,7 +575,7 @@ export default function APIIntegrationsPage() {
 
             {/* Connections Tab */}
             <TabsContent value="connections">
-              <Card className="bg-slate-800/50 border-slate-700">
+              <Card className="bg-[--card] border-0">
                 <CardHeader>
                   <CardTitle className="text-slate-200">Agent-API Connections</CardTitle>
                   <CardDescription>Connect AI agents with your APIs for seamless integration</CardDescription>
@@ -628,7 +628,7 @@ export default function APIIntegrationsPage() {
             {/* Analytics Tab */}
             <TabsContent value="analytics">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-slate-800/50 border-slate-700">
+                <Card className="bg-[--card] border-0">
                   <CardHeader>
                     <CardTitle className="text-slate-200">Usage Analytics</CardTitle>
                   </CardHeader>
@@ -654,7 +654,7 @@ export default function APIIntegrationsPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-slate-800/50 border-slate-700">
+                <Card className="bg-[--card] border-0">
                   <CardHeader>
                     <CardTitle className="text-slate-200">Performance Metrics</CardTitle>
                   </CardHeader>

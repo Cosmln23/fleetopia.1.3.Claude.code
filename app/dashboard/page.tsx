@@ -197,7 +197,7 @@ export default function DashboardPage() {
           className="grid grid-cols-1 lg:grid-cols-2 gap-8"
         >
           {/* Active Operations */}
-          <div className="terminal-border rounded-lg p-6">
+          <div className="bg-[--card] border-0 rounded-lg p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-light text-white matrix-text">Active Operations</h3>
               <Activity className="w-5 h-5 text-green-400" />
@@ -209,7 +209,7 @@ export default function DashboardPage() {
                 { id: 'OP-003', route: 'Cologne → Stuttgart', status: 'Delivered', progress: 100 },
                 { id: 'OP-004', route: 'Dresden → Leipzig', status: 'In Transit', progress: 43 }
               ].map((operation) => (
-                <div key={operation.id} className="metric-card rounded p-4">
+                <div key={operation.id} className="bg-[--card]/50 border-0 rounded p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-white font-mono">{operation.id}</span>
                     <span className={`text-xs px-2 py-1 rounded ${
@@ -233,7 +233,7 @@ export default function DashboardPage() {
           </div>
 
           {/* AI Agent Status */}
-          <div className="terminal-border rounded-lg p-6">
+          <div className="bg-[--card] border-0 rounded-lg p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-light text-white matrix-text">AI Agent Status</h3>
               <Bot className="w-5 h-5 text-green-400" />
@@ -245,7 +245,7 @@ export default function DashboardPage() {
                 { name: 'Weather Prophet', status: 'Active', requests: 156, efficiency: 91 },
                 { name: 'Maintenance Predictor', status: 'Standby', requests: 67, efficiency: 89 }
               ].map((agent) => (
-                <div key={agent.name} className="metric-card rounded p-4">
+                <div key={agent.name} className="bg-[--card]/50 border-0 rounded p-4">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-white">{agent.name}</span>
                     <span className={`text-xs px-2 py-1 rounded ${

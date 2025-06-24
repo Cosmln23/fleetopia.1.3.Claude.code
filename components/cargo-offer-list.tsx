@@ -83,7 +83,7 @@ const CargoOfferList = React.memo(function CargoOfferList({
     return (
       <div key={offer.id}>
         <Card 
-          className="bg-slate-800/70 border-slate-700 hover:border-blue-500 transition-all duration-300 flex flex-col h-full cursor-pointer"
+          className="bg-[--card] border-0 transition-all duration-300 flex flex-col h-full cursor-pointer"
           onClick={() => onCardClick?.(offer)}
         >
           <CardHeader>
@@ -271,7 +271,7 @@ const CargoOfferList = React.memo(function CargoOfferList({
         {offers.map((offer) => (
           <div
             key={offer.id}
-            className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-blue-500 transition-colors"
+            className="bg-[--card] border-0 rounded-lg p-4 transition-colors"
           >
             <div className="flex items-center justify-between">
               {/* LEFT SIDE - Basic Info */}
