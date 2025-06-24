@@ -381,6 +381,51 @@ export default function DispatcherProDashboard() {
           </div>
         </div>
 
+        {/* Status Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="bg-[--card]">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-blue-500/20 rounded-lg">
+                  <Truck className="h-6 w-6 text-blue-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-300">Available Vehicles</p>
+                  <p className="text-2xl font-bold text-white">{dispatcherAnalysis?.availableVehicles || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[--card]">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-green-500/20 rounded-lg">
+                  <ClipboardList className="h-6 w-6 text-green-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-300">New Offers</p>
+                  <p className="text-2xl font-bold text-white">{dispatcherAnalysis?.newOffers || 0}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-[--card]">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-yellow-500/20 rounded-lg">
+                  <Activity className="h-6 w-6 text-yellow-400" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-slate-300">Today's Profit</p>
+                  <p className="text-2xl font-bold text-white">€{(dispatcherAnalysis?.todayProfit || 0).toLocaleString()}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* SECTION 1: Welcome Header */}
         <div className="bg-[--card] rounded-lg p-6 mb-6 wave-hover relative">
           <div className="flex justify-between items-center relative z-10">
@@ -414,7 +459,7 @@ export default function DispatcherProDashboard() {
           <Card className="bg-[--card] wave-hover">
             <CardContent className="p-6 relative z-10">
               <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-                🤖 AI Suggestions
+                💬 AI Assistant (Demo)
               </h3>
               {/* Show filter status */}
               <div className="mb-3 p-2 bg-blue-900/20 rounded shadow-sm">
@@ -492,7 +537,59 @@ export default function DispatcherProDashboard() {
           </Card>
         </div>
 
-        {/* SECTION 3: Recent Jobs */}
+        {/* SECTION 3: AI Suggestions + Cargo Date Filter Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          {/* AI Suggestions Card */}
+          <Card className="bg-[--card] wave-hover">
+            <CardContent className="p-6 relative z-10">
+              <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
+                🤖 AI Suggestions
+              </h3>
+              {/* Show filter status */}
+              <div className="mb-3 p-2 bg-blue-900/20 rounded shadow-sm">
+                <div className="text-xs text-blue-300">
+                  📦 {cargoOffers.length} cargo offers found in database
+                  {cargoOffers.length === 0 && (
+                    <div className="text-orange-300 mt-1">
+                      ⚠️ No offers match current filter criteria
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="space-y-3">
+                {dispatcherAnalysis?.suggestions && dispatcherAnalysis.suggestions.length > 0 ? (
+                  dispatcherAnalysis.suggestions.slice(0, 3).map((suggestion) => (
+                    <div key={suggestion.id} className="border border-slate-700 rounded p-3 bg-slate-700/30">
+                      <div className="text-blue-400 font-medium">🎯 AI Match: {suggestion.title}</div>
+                      <div className="ml-4 text-sm text-gray-300 mt-1">
+                        Confidence: {Math.round(suggestion.confidence * 100)}% | Distance: {suggestion.estimatedDistance}km
+                      </div>
+                      <div className="ml-4 text-xs text-green-400 mt-1">
+                        Est. profit: €{suggestion.estimatedProfit.toFixed(0)} | Duration: {suggestion.estimatedDuration}h
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-gray-400">
+                    <div className="text-blue-400">• No active suggestions</div>
+                    <div className="ml-4 text-sm">
+                      {cargoOffers.length === 0 ? 
+                        'No cargo offers found in database for selected time period' : 
+                        'Add vehicles to your fleet to see AI recommendations'
+                      }
+                    </div>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Cargo Date Filter */}
+          <CargoDateFilter onDateSelect={setBeforeDate} />
+        </div>
+
+        {/* SECTION 4: Recent Jobs */}
         <Card className="bg-[--card] mb-6 wave-hover">
           <CardContent className="p-6 relative z-10">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
@@ -559,73 +656,7 @@ export default function DispatcherProDashboard() {
           </CardContent>
         </Card>
 
-        {/* Status Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-[--card]">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-blue-500/20 rounded-lg">
-                  <Truck className="h-6 w-6 text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-300">Available Vehicles</p>
-                  <p className="text-2xl font-bold text-white">{dispatcherAnalysis?.availableVehicles || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card className="bg-[--card]">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-green-500/20 rounded-lg">
-                  <ClipboardList className="h-6 w-6 text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-300">New Offers</p>
-                  <p className="text-2xl font-bold text-white">{dispatcherAnalysis?.newOffers || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[--card]">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-yellow-500/20 rounded-lg">
-                  <Activity className="h-6 w-6 text-yellow-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-300">Today's Profit</p>
-                  <p className="text-2xl font-bold text-white">€{(dispatcherAnalysis?.todayProfit || 0).toLocaleString()}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-[--card]">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-purple-500/20 rounded-lg">
-                  <Bot className="h-6 w-6 text-purple-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-slate-300">AI Suggestions</p>
-                  <p className="text-2xl font-bold text-white">{dispatcherAnalysis?.suggestions?.length || 0}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* AI Chat + Cargo Filter Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* AI Chat Demo */}
-          <AIChatDemo />
-          
-          {/* Cargo Date Filter */}
-          <CargoDateFilter onDateSelect={setBeforeDate} />
-        </div>
 
         {/* SECTION 5: Fleet Map + Fleet Management Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
