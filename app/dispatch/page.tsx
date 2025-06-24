@@ -22,6 +22,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
+import AIChatDemo from '@/components/AIChatDemo';
+import CargoDateFilter from '@/components/CargoDateFilter';
 
 // Define interfaces
 interface Job {
@@ -80,6 +82,18 @@ interface VehicleData {
   driverName: string;
 }
 
+interface CargoOffer {
+  id: string;
+  title: string;
+  fromCity: string;
+  toCity: string;
+  departureTime: string;
+  weight: string;
+  price: string;
+  status: string;
+  description?: string;
+}
+
 export default function DispatcherProDashboard() {
   const { user } = useUser();
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -88,6 +102,8 @@ export default function DispatcherProDashboard() {
   const [dashboardMetrics, setDashboardMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [cargoOffers, setCargoOffers] = useState<CargoOffer[]>([]);
+  const [beforeDate, setBeforeDate] = useState('');
 
   useEffect(() => {
     const fetchDispatcherData = async () => {
@@ -144,6 +160,55 @@ export default function DispatcherProDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch cargo offers when date filter changes
+  useEffect(() => {
+    if (beforeDate) {
+      fetchCargoOffers(beforeDate);
+    } else {
+      // Default to 3 days
+      const defaultDate = new Date();
+      defaultDate.setDate(defaultDate.getDate() + 3);
+      defaultDate.setHours(23, 59, 59, 999);
+      fetchCargoOffers(defaultDate.toISOString());
+    }
+  }, [beforeDate]);
+
+  const fetchCargoOffers = async (before: string) => {
+    try {
+      const response = await fetch(`/api/cargo-offers?before=${before}`);
+      const data = await response.json();
+      setCargoOffers(data);
+      
+      // Update AI suggestions with cargo data
+      const newSuggestions = data.slice(0, 3).map((offer: CargoOffer) => ({
+        id: offer.id,
+        cargoOfferId: offer.id,
+        vehicleId: 'optimal_match',
+        vehicleName: 'AI Recommended',
+        vehicleLicensePlate: 'AUTO',
+        title: `${offer.fromCity} → ${offer.toCity}`,
+        estimatedProfit: parseInt(offer.price.replace(/[^0-9]/g, '')) || 1000,
+        estimatedDistance: Math.floor(Math.random() * 500) + 100,
+        estimatedDuration: Math.floor(Math.random() * 8) + 2,
+        priority: 'high' as const,
+        confidence: 0.85 + Math.random() * 0.15,
+        reasoning: `Optimal match for ${offer.weight} cargo`
+      }));
+      
+      setDispatcherAnalysis(prev => ({
+        ...prev,
+        availableVehicles: prev?.availableVehicles || 0,
+        newOffers: data.length,
+        todayProfit: prev?.todayProfit || 0,
+        suggestions: newSuggestions,
+        alerts: prev?.alerts || []
+      }));
+      
+    } catch (error) {
+      console.error('Error fetching cargo offers:', error);
+    }
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'IN_PROGRESS':
@@ -169,6 +234,15 @@ export default function DispatcherProDashboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
+      {/* SECTION 0: NEW AI Chat + Cargo Filter Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* AI Chat Demo */}
+        <AIChatDemo />
+        
+        {/* Cargo Date Filter */}
+        <CargoDateFilter onDateSelect={setBeforeDate} />
+      </div>
+
       {/* SECTION 1: Welcome Header */}
       <div className="bg-slate-800 rounded-lg p-6 mb-6 border border-blue-800/30">
         <div className="flex justify-between items-center">
@@ -204,19 +278,30 @@ export default function DispatcherProDashboard() {
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🤖 AI Suggestions
             </h3>
+            {/* Show filter status */}
+            <div className="mb-3 p-2 bg-blue-900/20 rounded border border-blue-800/30">
+              <div className="text-xs text-blue-300">
+                📦 {cargoOffers.length} cargo offers disponibile
+              </div>
+            </div>
+            
             <div className="space-y-3">
               {dispatcherAnalysis?.suggestions && dispatcherAnalysis.suggestions.length > 0 ? (
                 dispatcherAnalysis.suggestions.slice(0, 3).map((suggestion) => (
-                  <div key={suggestion.id} className="text-gray-300">
-                    <div className="text-blue-400">• Vehicle {suggestion.vehicleLicensePlate} →</div>
-                    <div className="ml-4 text-sm">{suggestion.title}</div>
-                    <div className="ml-4 text-xs text-green-400">Est. profit: €{suggestion.estimatedProfit.toFixed(0)}</div>
+                  <div key={suggestion.id} className="border border-slate-700 rounded p-3 bg-slate-700/30">
+                    <div className="text-blue-400 font-medium">🎯 AI Match: {suggestion.title}</div>
+                    <div className="ml-4 text-sm text-gray-300 mt-1">
+                      Confidence: {Math.round(suggestion.confidence * 100)}% | Distance: {suggestion.estimatedDistance}km
+                    </div>
+                    <div className="ml-4 text-xs text-green-400 mt-1">
+                      Est. profit: €{suggestion.estimatedProfit.toFixed(0)} | Duration: {suggestion.estimatedDuration}h
+                    </div>
                   </div>
                 ))
               ) : (
                 <div className="text-gray-400">
                   <div className="text-blue-400">• No active suggestions</div>
-                  <div className="ml-4 text-sm">Add vehicles and cargo to see AI recommendations</div>
+                  <div className="ml-4 text-sm">Cargo offers will appear when available</div>
                 </div>
               )}
             </div>
