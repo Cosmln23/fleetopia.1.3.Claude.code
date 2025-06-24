@@ -286,7 +286,7 @@ export default function DispatcherProDashboard() {
       </div>
 
       {/* SECTION 1: Welcome Header */}
-      <div className="bg-slate-800 rounded-lg p-6 mb-6 border border-blue-800/30">
+      <div className="bg-slate-800 rounded-lg p-6 mb-6 shadow-sm">
         <div className="flex justify-between items-center">
           <h1 className="text-2xl font-bold text-white">
             👋 Welcome, {user?.firstName || 'Cosmin'}
@@ -315,13 +315,13 @@ export default function DispatcherProDashboard() {
       {/* SECTION 2: AI Suggestions + Fleet Status Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* AI Suggestions Card */}
-        <Card className="bg-slate-800 border-blue-800/30">
+        <Card className="bg-slate-800 shadow-sm">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🤖 AI Suggestions
             </h3>
             {/* Show filter status */}
-            <div className="mb-3 p-2 bg-blue-900/20 rounded border border-blue-800/30">
+            <div className="mb-3 p-2 bg-blue-900/20 rounded shadow-sm">
               <div className="text-xs text-blue-300">
                 📦 {cargoOffers.length} cargo offers found in database
                 {cargoOffers.length === 0 && (
@@ -361,7 +361,7 @@ export default function DispatcherProDashboard() {
         </Card>
 
         {/* Fleet Status Card */}
-        <Card className="bg-slate-800 border-blue-800/30">
+        <Card className="bg-slate-800 shadow-sm">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🚛 Fleet Status
@@ -397,7 +397,7 @@ export default function DispatcherProDashboard() {
       </div>
 
       {/* SECTION 3: Recent Jobs */}
-      <Card className="bg-slate-800 border-blue-800/30 mb-6">
+      <Card className="bg-slate-800 shadow-sm mb-6">
         <CardContent className="p-6">
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
             📋 Recent Jobs
@@ -422,7 +422,7 @@ export default function DispatcherProDashboard() {
       </Card>
 
       {/* SECTION 4: AI Automatic Activity */}
-      <Card className="bg-slate-800 border-blue-800/30 mb-6">
+      <Card className="bg-slate-800 shadow-sm mb-6">
         <CardContent className="p-6">
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
             🔄 AI Automatic Activity
@@ -466,7 +466,7 @@ export default function DispatcherProDashboard() {
       {/* SECTION 5: Fleet Map + Fleet Management Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Mini Map Section */}
-        <Card className="bg-slate-800 border-blue-800/30">
+        <Card className="bg-slate-800 shadow-sm">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🗺 Fleet Map (mini view)
@@ -484,7 +484,7 @@ export default function DispatcherProDashboard() {
         </Card>
 
         {/* Fleet Management Links */}
-        <Card className="bg-slate-800 border-blue-800/30">
+        <Card className="bg-slate-800 shadow-sm">
           <CardContent className="p-6">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🔗 Fleet Management

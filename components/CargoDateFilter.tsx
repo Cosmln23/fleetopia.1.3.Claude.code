@@ -47,7 +47,7 @@ export default function CargoDateFilter({ onDateSelect }: CargoDateFilterProps) 
   };
 
   return (
-    <Card className="bg-slate-800 border-blue-800/30 h-full">
+    <Card className="bg-slate-800 shadow-sm h-full">
       <CardContent className="p-6 h-full flex flex-col">
         <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
           <Filter className="w-5 h-5 mr-2 text-blue-400" />
@@ -55,7 +55,7 @@ export default function CargoDateFilter({ onDateSelect }: CargoDateFilterProps) 
         </h3>
 
         {/* Filter Status */}
-        <div className="mb-4 p-3 bg-slate-700/50 rounded-lg border border-blue-800/20">
+        <div className="mb-4 p-3 bg-slate-700/50 rounded-lg shadow-sm">
           <div className="flex items-center space-x-2">
             <Calendar className="w-4 h-4 text-blue-400" />
             <span className="text-sm text-gray-300">{getFilterLabel()}</span>
@@ -100,7 +100,7 @@ export default function CargoDateFilter({ onDateSelect }: CargoDateFilterProps) 
 
         {/* Filter Info */}
         <div className="mt-auto">
-          <div className="bg-blue-900/20 border border-blue-800/30 rounded-lg p-3">
+          <div className="bg-blue-900/20 shadow-sm rounded-lg p-3">
             <div className="text-xs text-blue-300 text-center">
               ✨ Filter applies automatically to cargo offers
             </div>
