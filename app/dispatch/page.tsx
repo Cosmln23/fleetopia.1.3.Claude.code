@@ -315,8 +315,8 @@ export default function DispatcherProDashboard() {
       {/* SECTION 2: AI Suggestions + Fleet Status Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* AI Suggestions Card */}
-        <Card className="bg-[--card] hover:bg-gradient-to-r hover:from-white/10 hover:via-white/20 hover:to-white/10 transition-all duration-500">
-          <CardContent className="p-6">
+        <Card className="bg-[--card] wave-hover">
+          <CardContent className="p-6 relative z-10">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🤖 AI Suggestions
             </h3>
@@ -361,8 +361,8 @@ export default function DispatcherProDashboard() {
         </Card>
 
         {/* Fleet Status Card */}
-        <Card className="bg-[--card] hover:bg-gradient-to-r hover:from-white/10 hover:via-white/20 hover:to-white/10 transition-all duration-500">
-          <CardContent className="p-6">
+        <Card className="bg-[--card] wave-hover">
+          <CardContent className="p-6 relative z-10">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🚛 Fleet Status
             </h3>
@@ -397,8 +397,8 @@ export default function DispatcherProDashboard() {
       </div>
 
       {/* SECTION 3: Recent Jobs */}
-      <Card className="bg-[--card] border-0 mb-6 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
-        <CardContent className="p-6">
+      <Card className="bg-[--card] mb-6 wave-hover">
+        <CardContent className="p-6 relative z-10">
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
             📋 Recent Jobs
           </h3>
@@ -422,8 +422,8 @@ export default function DispatcherProDashboard() {
       </Card>
 
       {/* SECTION 4: AI Automatic Activity */}
-      <Card className="bg-[--card] border-0 mb-6 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
-        <CardContent className="p-6">
+      <Card className="bg-[--card] mb-6 wave-hover">
+        <CardContent className="p-6 relative z-10">
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
             🔄 AI Automatic Activity
           </h3>
@@ -466,8 +466,8 @@ export default function DispatcherProDashboard() {
       {/* SECTION 5: Fleet Map + Fleet Management Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Mini Map Section */}
-        <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
-          <CardContent className="p-6">
+        <Card className="bg-[--card] wave-hover">
+          <CardContent className="p-6 relative z-10">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🗺 Fleet Map (mini view)
             </h3>
@@ -484,8 +484,8 @@ export default function DispatcherProDashboard() {
         </Card>
 
         {/* Fleet Management Links */}
-        <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
-          <CardContent className="p-6">
+        <Card className="bg-[--card] wave-hover">
+          <CardContent className="p-6 relative z-10">
             <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
               🔗 Fleet Management
             </h3>
