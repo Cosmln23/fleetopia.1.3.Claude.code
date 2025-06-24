@@ -116,23 +116,23 @@ export function VehicleForm({ onVehicleAdded }: VehicleFormProps) {
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="name" className="text-right">Name</Label>
-              <Input id="name" name="name" value={formData.name} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
+                              <Input id="name" name="name" value={formData.name} onChange={handleChange} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="licensePlate" className="text-right">License Plate</Label>
-              <Input id="licensePlate" name="licensePlate" value={formData.licensePlate} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
+                              <Input id="licensePlate" name="licensePlate" value={formData.licensePlate} onChange={handleChange} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="driverName" className="text-right">Driver</Label>
-              <Input id="driverName" name="driverName" value={formData.driverName} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
+                              <Input id="driverName" name="driverName" value={formData.driverName} onChange={handleChange} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="type" className="text-right">Type</Label>
               <Select name="type" onValueChange={(value) => handleSelectChange('type', value)} defaultValue={formData.type}>
-                  <SelectTrigger className="col-span-3 bg-slate-800 border-slate-600">
-                      <SelectValue placeholder="Select vehicle type" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                                  <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select vehicle type" />
+                </SelectTrigger>
+                <SelectContent>
                       <SelectItem value="Truck">Truck</SelectItem>
                       <SelectItem value="Van">Van</SelectItem>
                       <SelectItem value="Car">Car</SelectItem>
@@ -142,10 +142,10 @@ export function VehicleForm({ onVehicleAdded }: VehicleFormProps) {
              <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="status" className="text-right">Status</Label>
               <Select name="status" onValueChange={(value) => handleSelectChange('status', value)} defaultValue={formData.status}>
-                  <SelectTrigger className="col-span-3 bg-slate-800 border-slate-600">
-                      <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                                  <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
                       <SelectItem value="idle">Idle</SelectItem>
                       <SelectItem value="active">Active</SelectItem>
                       <SelectItem value="maintenance">Maintenance</SelectItem>
@@ -155,11 +155,11 @@ export function VehicleForm({ onVehicleAdded }: VehicleFormProps) {
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="lat" className="text-right">Latitude</Label>
-                <Input id="lat" name="lat" type="number" value={formData.lat} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
+                <Input id="lat" name="lat" type="number" value={formData.lat} onChange={handleChange} className="col-span-3" />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="lng" className="text-right">Longitude</Label>
-                <Input id="lng" name="lng" type="number" value={formData.lng} onChange={handleChange} className="col-span-3 bg-slate-800 border-slate-600" />
+                <Input id="lng" name="lng" type="number" value={formData.lng} onChange={handleChange} className="col-span-3" />
             </div>
           </div>
           <DialogFooter>

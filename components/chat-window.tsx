@@ -218,7 +218,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ offer }) => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             placeholder="Type..."
-            className="h-8 bg-slate-800 border-slate-600"
+                            className="h-8"
             disabled={isLoading}
           />
           <Button type="submit" size="icon" className="h-8 w-8" disabled={isLoading}>

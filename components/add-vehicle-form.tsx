@@ -194,7 +194,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
                 name="name" 
                 value={formData.name} 
                 onChange={handleChange} 
-                className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                className="h-11 text-white"
                 placeholder="e.g., Fleet Truck #001"
               />
             </div>
@@ -206,7 +206,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
                 name="licensePlate" 
                 value={formData.licensePlate} 
                 onChange={handleChange} 
-                className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                className="h-11 text-white"
                 placeholder="e.g., ABC-123"
               />
             </div>
@@ -214,10 +214,10 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
             <div className="space-y-2">
               <Label htmlFor="type" className="text-sm font-medium text-slate-300">Vehicle Type</Label>
               <Select name="type" onValueChange={(value) => handleSelectChange('type', value)} defaultValue={formData.type}>
-                <SelectTrigger className="bg-slate-800/50 border-slate-600 h-11 text-white">
+                <SelectTrigger className="h-11 text-white">
                   <SelectValue placeholder="Select vehicle type" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                <SelectContent>
                   <SelectItem value="Truck">Truck</SelectItem>
                   <SelectItem value="Van">Van</SelectItem>
                   <SelectItem value="Car">Car</SelectItem>
@@ -228,10 +228,10 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
             <div className="space-y-2">
               <Label htmlFor="status" className="text-sm font-medium text-slate-300">Status</Label>
               <Select name="status" onValueChange={(value) => handleSelectChange('status', value)} defaultValue={formData.status}>
-                <SelectTrigger className="bg-slate-800/50 border-slate-600 h-11 text-white">
+                <SelectTrigger className="h-11 text-white">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                <SelectContent>
                   <SelectItem value="idle">Idle</SelectItem>
                   <SelectItem value="in_transit">In Transit</SelectItem>
                   <SelectItem value="loading">Loading</SelectItem>
@@ -251,7 +251,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
                 type="number"
                 value={formData.fuelConsumption || ''} 
                 onChange={handleChange} 
-                className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                className="h-11 text-white"
                 placeholder="e.g., 30"
               />
             </div>
@@ -272,7 +272,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
               name="driverName" 
               value={formData.driverName} 
               onChange={handleChange} 
-              className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+              className="h-11 text-white"
               placeholder="e.g., John Smith"
             />
           </div>
@@ -289,10 +289,10 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
             <div className="space-y-2">
               <Label htmlFor="locationType" className="text-sm font-medium text-slate-300">Location Method</Label>
               <Select name="locationType" onValueChange={handleLocationTypeChange} defaultValue={formData.locationType}>
-                <SelectTrigger className="bg-slate-800/50 border-slate-600 h-11 text-white">
+                <SelectTrigger className="h-11 text-white">
                   <SelectValue placeholder="Select location method" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-600 text-white">
+                <SelectContent>
                   <SelectItem value="MANUAL_COORDS">Manual Coordinates</SelectItem>
                   <SelectItem value="MANUAL_ADDRESS">Manual Address</SelectItem>
                 </SelectContent>
@@ -310,7 +310,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
                     step="any"
                     value={formData.lat ?? ''} 
                     onChange={handleChange} 
-                    className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                    className="h-11 text-white"
                     placeholder="e.g., 44.4268"
                   />
                 </div>
@@ -323,7 +323,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
                     step="any"
                     value={formData.lng ?? ''} 
                     onChange={handleChange} 
-                    className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                    className="h-11 text-white"
                     placeholder="e.g., 26.1025"
                   />
                 </div>
@@ -338,7 +338,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
                   name="manualLocationAddress" 
                   value={formData.manualLocationAddress ?? ''} 
                   onChange={handleChange} 
-                  className="bg-slate-800/50 border-slate-600 h-11 text-white placeholder:text-slate-500"
+                  className="h-11 text-white"
                   placeholder="e.g., Bucharest, Romania"
                 />
               </div>

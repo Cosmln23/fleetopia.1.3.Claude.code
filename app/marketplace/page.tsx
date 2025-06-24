@@ -744,7 +744,6 @@ export default function MarketplacePage() {
                       placeholder="Search cargo offers (title, country, city, company...)"
                       value={searchFilters.searchQuery}
                       onChange={(e) => handleFilterChange('searchQuery', e.target.value)}
-                      className="bg-slate-700 border-slate-600 text-white"
                     />
                   </div>
                   <Button 
@@ -760,10 +759,10 @@ export default function MarketplacePage() {
                 {/* Filter Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-3">
                   <Select value={searchFilters.country} onValueChange={(value) => handleFilterChange('country', value)}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectTrigger>
                       <SelectValue placeholder="Country" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 text-white border-slate-700">
+                    <SelectContent>
                       <SelectItem value="all_countries">All Countries</SelectItem>
                       {europeanCountries.map(country => (
                         <SelectItem key={country.code} value={country.name}>{country.name}</SelectItem>
@@ -772,10 +771,10 @@ export default function MarketplacePage() {
                   </Select>
 
                   <Select value={searchFilters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value as any)}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectTrigger>
                       <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 text-white border-slate-700">
+                    <SelectContent>
                       <SelectItem value="newest">🕒 Newest First</SelectItem>
                       <SelectItem value="oldest">⏰ Oldest First</SelectItem>
                       <SelectItem value="price_high">💰 Highest Price</SelectItem>
@@ -787,10 +786,10 @@ export default function MarketplacePage() {
                   </Select>
 
                   <Select value={searchFilters.cargoType} onValueChange={(value) => handleFilterChange('cargoType', value)}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectTrigger>
                       <SelectValue placeholder="Cargo Type" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 text-white border-slate-700">
+                    <SelectContent>
                       <SelectItem value="all_types">All Types</SelectItem>
                       <SelectItem value="General">General</SelectItem>
                       <SelectItem value="Electronics">Electronics</SelectItem>
@@ -802,10 +801,10 @@ export default function MarketplacePage() {
                   </Select>
 
                   <Select value={searchFilters.urgency} onValueChange={(value) => handleFilterChange('urgency', value)}>
-                    <SelectTrigger className="bg-slate-700 border-slate-600">
+                    <SelectTrigger>
                       <SelectValue placeholder="Urgency" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 text-white border-slate-700">
+                    <SelectContent>
                       <SelectItem value="all_urgency">All Urgency</SelectItem>
                       <SelectItem value="low">🟢 Low</SelectItem>
                       <SelectItem value="medium">🟡 Medium</SelectItem>
@@ -818,7 +817,6 @@ export default function MarketplacePage() {
                     type="number"
                     value={searchFilters.minPrice}
                     onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
                   />
 
                   <Input
@@ -826,7 +824,6 @@ export default function MarketplacePage() {
                     type="number"
                     value={searchFilters.maxPrice}
                     onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-                    className="bg-slate-700 border-slate-600 text-white"
                   />
                 </div>
 
@@ -945,17 +942,17 @@ export default function MarketplacePage() {
           {offerToEdit && (
             <form onSubmit={handleUpdateCargo} className="space-y-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
-                   <Input name="title" value={offerToEdit.title} onChange={handleEditInputChange} placeholder="Offer Title" required className="bg-slate-700 border-slate-600"/>
-                   <Input name="companyName" value={offerToEdit.companyName || ''} onChange={handleEditInputChange} placeholder="Company Name" className="bg-slate-700 border-slate-600"/>
+                   <Input name="title" value={offerToEdit.title} onChange={handleEditInputChange} placeholder="Offer Title" required />
+                   <Input name="companyName" value={offerToEdit.companyName || ''} onChange={handleEditInputChange} placeholder="Company Name" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Input name="fromCountry" value={offerToEdit.fromCountry} onChange={handleEditInputChange} placeholder="From" required className="bg-slate-700 border-slate-600"/>
-                  <Input name="toCountry" value={offerToEdit.toCountry} onChange={handleEditInputChange} placeholder="To" required className="bg-slate-700 border-slate-600"/>
+                  <Input name="fromCountry" value={offerToEdit.fromCountry} onChange={handleEditInputChange} placeholder="From" required />
+                  <Input name="toCountry" value={offerToEdit.toCountry} onChange={handleEditInputChange} placeholder="To" required />
                 </div>
                 <div className="grid grid-3 gap-4">
-                  <Input name="weight" type="number" value={offerToEdit.weight} onChange={handleEditInputChange} placeholder="Weight (kg)" required className="bg-slate-700 border-slate-600"/>
-                  <Input name="price" type="number" value={offerToEdit.price} onChange={handleEditInputChange} placeholder="Price (€)" required className="bg-slate-700 border-slate-600"/>
-                  <select name="urgency" value={offerToEdit.urgency} onChange={handleEditInputChange} className="bg-slate-700 border-slate-600 rounded-md p-2 w-full">
+                  <Input name="weight" type="number" value={offerToEdit.weight} onChange={handleEditInputChange} placeholder="Weight (kg)" required />
+                  <Input name="price" type="number" value={offerToEdit.price} onChange={handleEditInputChange} placeholder="Price (€)" required />
+                  <select name="urgency" value={offerToEdit.urgency} onChange={handleEditInputChange} className="rounded-md p-2 w-full">
                       <option value="low">Low</option>
                       <option value="medium">Medium</option>
                       <option value="high">High</option>

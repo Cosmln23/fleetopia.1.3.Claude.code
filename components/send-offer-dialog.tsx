@@ -78,7 +78,7 @@ export function SendOfferDialog({ isOpen, onClose, offer, onSubmit }: SendOfferD
                 type="number"
                 value={price}
                 onChange={(e) => setPrice(e.target.value)}
-                className="pl-9 bg-slate-800 border-slate-600"
+                className="pl-9"
                 placeholder="e.g., 890"
               />
             </div>
