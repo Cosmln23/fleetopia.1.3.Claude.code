@@ -17,7 +17,7 @@ export default function AIChatDemo() {
     {
       id: '1',
       type: 'ai',
-      message: 'Bună! Sunt AI Dispatcher Assistant. Cum te pot ajuta astăzi?',
+      message: 'Hello! I\'m your AI Dispatcher Assistant. How can I help you today?',
       timestamp: new Date()
     }
   ]);
@@ -25,11 +25,11 @@ export default function AIChatDemo() {
   const [isTyping, setIsTyping] = useState(false);
 
   const demoResponses = [
-    'Înțeleg. Verific ruta optimă pentru această misiune...',
-    'Am găsit 3 vehicule disponibile în zona respectivă.',
-    'Recomand vehiculul GR-1245 pentru această sarcină.',
-    'Calculez timpul estimat de livrare...',
-    'Funcționalitatea completă va fi disponibilă în curând!'
+    'I understand. Checking optimal route for this mission...',
+    'Found 3 available vehicles in the specified area.',
+    'I recommend vehicle GR-1245 for this task.',
+    'Calculating estimated delivery time...',
+    'Full functionality will be available soon!'
   ];
 
   const handleSendMessage = () => {
@@ -121,7 +121,7 @@ export default function AIChatDemo() {
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder="Întreabă AI Dispatcher..."
+            placeholder="Ask AI Dispatcher..."
             className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 text-sm"
             disabled={isTyping}
           />
@@ -137,7 +137,7 @@ export default function AIChatDemo() {
 
         {/* Demo Notice */}
         <div className="mt-2 text-xs text-gray-500 text-center">
-          🚧 Funcționalitate demo - implementare completă în dezvoltare
+          🚧 Demo functionality - full implementation in development
         </div>
       </CardContent>
     </Card>

@@ -176,36 +176,78 @@ export default function DispatcherProDashboard() {
   const fetchCargoOffers = async (before: string) => {
     try {
       const response = await fetch(`/api/cargo-offers?before=${before}`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      
+      // Handle error responses from API
+      if (data.error) {
+        console.error('API error:', data.error);
+        setCargoOffers([]);
+        setDispatcherAnalysis(prev => ({
+          ...prev,
+          availableVehicles: prev?.availableVehicles || 0,
+          newOffers: 0,
+          todayProfit: prev?.todayProfit || 0,
+          suggestions: [],
+          alerts: prev?.alerts || []
+        }));
+        return;
+      }
+      
       setCargoOffers(data);
       
-      // Update AI suggestions with cargo data
-      const newSuggestions = data.slice(0, 3).map((offer: CargoOffer) => ({
-        id: offer.id,
-        cargoOfferId: offer.id,
-        vehicleId: 'optimal_match',
-        vehicleName: 'AI Recommended',
-        vehicleLicensePlate: 'AUTO',
-        title: `${offer.fromCity} → ${offer.toCity}`,
-        estimatedProfit: parseInt(offer.price.replace(/[^0-9]/g, '')) || 1000,
-        estimatedDistance: Math.floor(Math.random() * 500) + 100,
-        estimatedDuration: Math.floor(Math.random() * 8) + 2,
-        priority: 'high' as const,
-        confidence: 0.85 + Math.random() * 0.15,
-        reasoning: `Optimal match for ${offer.weight} cargo`
-      }));
-      
-      setDispatcherAnalysis(prev => ({
-        ...prev,
-        availableVehicles: prev?.availableVehicles || 0,
-        newOffers: data.length,
-        todayProfit: prev?.todayProfit || 0,
-        suggestions: newSuggestions,
-        alerts: prev?.alerts || []
-      }));
+      // Only create AI suggestions if we have real cargo data
+      if (data && data.length > 0) {
+        const newSuggestions = data.slice(0, 3).map((offer: CargoOffer) => ({
+          id: offer.id,
+          cargoOfferId: offer.id,
+          vehicleId: 'optimal_match',
+          vehicleName: 'AI Recommended',
+          vehicleLicensePlate: 'AUTO',
+          title: `${offer.fromCity} → ${offer.toCity}`,
+          estimatedProfit: parseInt(offer.price.replace(/[^0-9]/g, '')) || 0,
+          estimatedDistance: Math.floor(Math.random() * 500) + 100,
+          estimatedDuration: Math.floor(Math.random() * 8) + 2,
+          priority: 'high' as const,
+          confidence: 0.85 + Math.random() * 0.15,
+          reasoning: `Optimal match for ${offer.weight} cargo`
+        }));
+        
+        setDispatcherAnalysis(prev => ({
+          ...prev,
+          availableVehicles: prev?.availableVehicles || 0,
+          newOffers: data.length,
+          todayProfit: prev?.todayProfit || 0,
+          suggestions: newSuggestions,
+          alerts: prev?.alerts || []
+        }));
+      } else {
+        // No cargo offers found - clear suggestions
+        setDispatcherAnalysis(prev => ({
+          ...prev,
+          availableVehicles: prev?.availableVehicles || 0,
+          newOffers: 0,
+          todayProfit: prev?.todayProfit || 0,
+          suggestions: [],
+          alerts: prev?.alerts || []
+        }));
+      }
       
     } catch (error) {
       console.error('Error fetching cargo offers:', error);
+      setCargoOffers([]);
+      setDispatcherAnalysis(prev => ({
+        ...prev,
+        availableVehicles: prev?.availableVehicles || 0,
+        newOffers: 0,
+        todayProfit: prev?.todayProfit || 0,
+        suggestions: [],
+        alerts: prev?.alerts || []
+      }));
     }
   };
 
@@ -281,7 +323,12 @@ export default function DispatcherProDashboard() {
             {/* Show filter status */}
             <div className="mb-3 p-2 bg-blue-900/20 rounded border border-blue-800/30">
               <div className="text-xs text-blue-300">
-                📦 {cargoOffers.length} cargo offers disponibile
+                📦 {cargoOffers.length} cargo offers found in database
+                {cargoOffers.length === 0 && (
+                  <div className="text-orange-300 mt-1">
+                    ⚠️ No offers match current filter criteria
+                  </div>
+                )}
               </div>
             </div>
             
@@ -301,7 +348,12 @@ export default function DispatcherProDashboard() {
               ) : (
                 <div className="text-gray-400">
                   <div className="text-blue-400">• No active suggestions</div>
-                  <div className="ml-4 text-sm">Cargo offers will appear when available</div>
+                  <div className="ml-4 text-sm">
+                    {cargoOffers.length === 0 ? 
+                      'No cargo offers found in database for selected time period' : 
+                      'Add vehicles to your fleet to see AI recommendations'
+                    }
+                  </div>
                 </div>
               )}
             </div>

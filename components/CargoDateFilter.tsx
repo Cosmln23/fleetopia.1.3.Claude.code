@@ -39,10 +39,10 @@ export default function CargoDateFilter({ onDateSelect }: CargoDateFilterProps) 
 
   const getFilterLabel = () => {
     switch (selected) {
-      case 'today': return 'Cargo disponibil astăzi';
-      case 'tomorrow': return 'Cargo disponibil mâine';
-      case '3days': return 'Cargo următoarele 3 zile';
-      default: return 'Filtrează cargo';
+      case 'today': return 'Cargo available today';
+      case 'tomorrow': return 'Cargo available tomorrow';
+      case '3days': return 'Cargo next 3 days';
+      default: return 'Filter cargo';
     }
   };
 
@@ -70,8 +70,8 @@ export default function CargoDateFilter({ onDateSelect }: CargoDateFilterProps) 
           >
             <div className="flex items-center justify-center space-x-2">
               <span>🔘</span>
-              <span>Azi</span>
-              <span className="text-xs opacity-75">(până la 23:59)</span>
+              <span>Today</span>
+              <span className="text-xs opacity-75">(until 23:59)</span>
             </div>
           </button>
           
@@ -81,8 +81,8 @@ export default function CargoDateFilter({ onDateSelect }: CargoDateFilterProps) 
           >
             <div className="flex items-center justify-center space-x-2">
               <span>🔘</span>
-              <span>Mâine</span>
-              <span className="text-xs opacity-75">(24h următoare)</span>
+              <span>Tomorrow</span>
+              <span className="text-xs opacity-75">(next 24h)</span>
             </div>
           </button>
           
@@ -92,8 +92,8 @@ export default function CargoDateFilter({ onDateSelect }: CargoDateFilterProps) 
           >
             <div className="flex items-center justify-center space-x-2">
               <span>🔘</span>
-              <span>În 3 Zile</span>
-              <span className="text-xs opacity-75">(72h următoare)</span>
+              <span>3 Days</span>
+              <span className="text-xs opacity-75">(next 72h)</span>
             </div>
           </button>
         </div>
@@ -102,10 +102,10 @@ export default function CargoDateFilter({ onDateSelect }: CargoDateFilterProps) 
         <div className="mt-auto">
           <div className="bg-blue-900/20 border border-blue-800/30 rounded-lg p-3">
             <div className="text-xs text-blue-300 text-center">
-              ✨ Filtrul se aplică automat la cargo offers
+              ✨ Filter applies automatically to cargo offers
             </div>
             <div className="text-xs text-gray-400 text-center mt-1">
-              Updates real-time în AI Suggestions
+              Real-time updates in AI Suggestions
             </div>
           </div>
         </div>
