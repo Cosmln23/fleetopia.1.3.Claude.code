@@ -1,6 +1,6 @@
 import prisma from './prisma';
 import { Vehicle, Route, CargoOffer, GpsLog } from '@prisma/client';
-import { MLOptimizationResult } from './ml-route-optimizer';
+import { BasicOptimizationResult } from './basic-route-optimizer';
 
 // Interfață simplificată care corespunde cu ce avem
 export interface VehicleProfile {

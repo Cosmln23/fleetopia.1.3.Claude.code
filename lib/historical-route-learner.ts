@@ -1,5 +1,4 @@
-import * as tf from '@tensorflow/tfjs';
-import { MLOptimizationResult } from './ml-route-optimizer';
+import { BasicOptimizationResult } from './basic-route-optimizer';
 import { PrismaClient, Route } from '@prisma/client';
 
 // Historical Route Data Schema
@@ -135,7 +134,7 @@ export class HistoricalRouteLearner {
 
   async recordOptimizationResult(
     routeId: string, 
-    originalPrediction: MLOptimizationResult, 
+    originalPrediction: BasicOptimizationResult, 
     actualResult: any
   ): Promise<HistoricalRoute | null> {
     console.log('📝 Recording optimization result for learning...');
@@ -224,7 +223,7 @@ export class HistoricalRouteLearner {
     }
   }
 
-  calculateAccuracyMetrics(prediction: MLOptimizationResult, actual: any): any {
+  calculateAccuracyMetrics(prediction: BasicOptimizationResult, actual: any): any {
     const actualSavings = actual.actualSavingsPercent || (Math.random() * 20 + 10);
     const predictedSavings = prediction.optimizationFactor * 100;
     
@@ -245,7 +244,7 @@ export class HistoricalRouteLearner {
     };
   }
 
-  extractKeyFactors(prediction: MLOptimizationResult): Array<{factor: string, impact: number}> {
+  extractKeyFactors(prediction: BasicOptimizationResult): Array<{factor: string, impact: number}> {
     return [
       { factor: 'traffic_optimization', impact: 0.3 },
       { factor: 'route_efficiency', impact: 0.4 },
@@ -254,7 +253,7 @@ export class HistoricalRouteLearner {
     ];
   }
 
-  async generateLearningData(prediction: MLOptimizationResult, actual: any): Promise<any> {
+  async generateLearningData(prediction: BasicOptimizationResult, actual: any): Promise<any> {
     return {
       routeCluster: `cluster_${Math.floor(prediction.distance / 100)}`, // Group by 100km ranges
       seasonalPattern: this.getCurrentSeason(),

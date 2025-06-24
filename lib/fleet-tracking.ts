@@ -1,7 +1,7 @@
 import prisma from './prisma';
 import { Server as SocketIOServer } from 'socket.io';
 import { Server } from 'http';
-import { MLRouteOptimizer, MLOptimizationResult } from './ml-route-optimizer';
+import { BasicRouteOptimizer, BasicOptimizationResult } from './basic-route-optimizer';
 import { Vehicle, GpsLog, VehicleStatus } from '@prisma/client';
 
 const FLEET_TRACKING_CACHE_TTL = 60 * 1000; // 1 minut
@@ -41,20 +41,20 @@ export class FleetTrackingService {
   private io: SocketIOServer | null = null;
   private activeVehicles: Map<string, VehicleLocation> = new Map();
   private updateInterval: NodeJS.Timeout | null = null;
-  private mlOptimizer: MLRouteOptimizer;
+  private basicOptimizer: BasicRouteOptimizer;
 
   constructor() {
     this.startMetricsUpdate();
-    this.mlOptimizer = new MLRouteOptimizer();
-    this.initializeMLOptimizer();
+    this.basicOptimizer = new BasicRouteOptimizer();
+    this.initializeOptimizer();
   }
 
-  async initializeMLOptimizer() {
+  async initializeOptimizer() {
     try {
-      await this.mlOptimizer.initializeML();
-      console.log('✅ ML Route Optimizer initialized successfully');
+      await this.basicOptimizer.initialize();
+      console.log('✅ Basic Route Optimizer initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize ML Route Optimizer:', error);
+      console.error('❌ Failed to initialize Basic Route Optimizer:', error);
     }
   }
 
@@ -165,22 +165,22 @@ export class FleetTrackingService {
     }
   }
 
-  // ML-Enhanced Route Optimization
+  // Basic Route Optimization
   async optimizeRoute(routeId: string): Promise<RouteOptimization> {
     try {
-      // Try ML optimization first
-      const mlResult = await this.optimizeRouteWithML(routeId);
+      // Try basic optimization first
+      const basicResult = await this.optimizeRouteWithBasic(routeId);
       
-      if (mlResult) {
-        console.log('🧠 Using ML optimization result');
+      if (basicResult) {
+        console.log('🔧 Using basic optimization result');
         return {
           routeId,
-          originalDistance: mlResult.distance / (1 - mlResult.optimizationFactor),
-          optimizedDistance: mlResult.distance,
-          timeSaved: mlResult.savings.timeHours,
-          fuelSaved: mlResult.savings.fuelLiters,
-          costSaved: mlResult.savings.costEuros,
-          efficiency: mlResult.optimizationFactor * 100
+          originalDistance: basicResult.distance / (1 - basicResult.optimizationFactor),
+          optimizedDistance: basicResult.distance,
+          timeSaved: basicResult.savings.timeHours,
+          fuelSaved: basicResult.savings.fuelLiters,
+          costSaved: basicResult.savings.costEuros,
+          efficiency: basicResult.optimizationFactor * 100
         };
       }
 
@@ -194,8 +194,8 @@ export class FleetTrackingService {
     }
   }
 
-  // New ML-enhanced route optimization
-  async optimizeRouteWithML(routeId: string): Promise<MLOptimizationResult | null> {
+  // Basic route optimization
+  async optimizeRouteWithBasic(routeId: string): Promise<BasicOptimizationResult | null> {
     try {
       // Mock route data for testing
       const routeData = {
@@ -209,10 +209,10 @@ export class FleetTrackingService {
         waypoints: []
       };
 
-      return await this.mlOptimizer.optimizeRouteML(routeData);
+      return await this.basicOptimizer.optimizeRoute(routeData);
       
     } catch (error) {
-      console.error('❌ ML optimization failed:', error);
+      console.error('❌ Basic optimization failed:', error);
       return null;
     }
   }
@@ -250,14 +250,16 @@ export class FleetTrackingService {
     }
   }
 
-  // Get ML Optimizer stats
-  getMLStats() {
-    return this.mlOptimizer.getStats();
+  // Get Basic Optimizer stats
+  getOptimizerStats() {
+    return this.basicOptimizer.getStats();
   }
 
-  // Learn from route result for ML improvement
-  async learnFromRouteResult(routeId: string, prediction: MLOptimizationResult, actualResult: any) {
-    return await this.mlOptimizer.learnFromResult(routeId, prediction, actualResult);
+  // Learn from route result for basic improvement
+  async learnFromRouteResult(routeId: string, prediction: BasicOptimizationResult, actualResult: any) {
+    // Basic optimizer doesn't have learning capability
+    console.log('Basic optimizer does not support learning from results');
+    return null;
   }
 
   // AI-powered route optimization algorithms

@@ -274,10 +274,10 @@ export default function DispatcherProDashboard() {
               </Link>
             )) : (
               <div className="text-gray-400 font-mono">
-                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2"><span className="text-blue-400">#156</span>    Arad → Constanța         <span className="text-yellow-400">In Progress 🟡</span></div>
-                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2"><span className="text-blue-400">#151</span>    Galați → Cluj-Napoca     <span className="text-green-400">Completed 🟢</span></div>
-                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2"><span className="text-blue-400">#147</span>    Iași → Oradea            <span className="text-green-400">Completed 🟢</span></div>
-                <div className="py-2 hover:bg-slate-700/50 transition-colors cursor-pointer rounded px-2"><span className="text-blue-400">#143</span>    București → Timișoara    <span className="text-red-400">Canceled 🔴</span></div>
+                <div className="py-4 text-center">
+                  <span className="text-slate-500">No recent jobs available</span>
+                  <div className="text-sm text-slate-600 mt-2">Jobs will appear here when they are created in the system</div>
+                </div>
               </div>
             )}
           </div>

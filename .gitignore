@@ -36,3 +36,4 @@ server.log
 # IDE
 .vscode/
 .idea/
+*.zip

@@ -10,7 +10,6 @@ import {
   ShoppingCart,
   ClipboardList,
   Map,
-  Brain,
   Network,
   Settings,
   ChevronLeft,
@@ -55,12 +54,6 @@ const sidebarItems: SidebarItem[] = [
     href: '/free-maps',
     icon: Map,
     color: 'bg-cyan-500'
-  },
-  {
-    title: 'ML Route Optimizer',
-    href: '/ml-route-optimizer',
-    icon: Brain,
-    color: 'bg-pink-500'
   },
   {
     title: 'API Integrations',

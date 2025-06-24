@@ -1,4 +1,4 @@
-import { MLRouteOptimizer, MLOptimizationResult } from './ml-route-optimizer';
+import { BasicRouteOptimizer, BasicOptimizationResult } from './basic-route-optimizer';
 import { HistoricalRouteLearner } from './historical-route-learner';
 import { DriverPersonalizationEngine } from './driver-personalization-engine';
 import { VehicleSpecificOptimizer, VehicleProfile, VehicleOptimizationResult } from './vehicle-specific-optimizer';
@@ -33,7 +33,7 @@ export interface RouteOptimizationRequest {
   vehicleId?: string; // Vehicle ID for vehicle-specific optimization
 }
 
-export interface EnhancedOptimizationResult extends MLOptimizationResult {
+export interface EnhancedOptimizationResult extends BasicOptimizationResult {
   historicallyEnhanced?: boolean;
   basedOnSimilarRoutes?: number;
   historicalAccuracy?: number;
@@ -59,7 +59,7 @@ export interface EnhancedOptimizationResult extends MLOptimizationResult {
 }
 
 export class RouteOptimizationService {
-  private mlOptimizer: MLRouteOptimizer;
+  private mlOptimizer: BasicRouteOptimizer;
   private routeLearner: HistoricalRouteLearner;
   private driverPersonalization: DriverPersonalizationEngine;
   private vehicleOptimizer: VehicleSpecificOptimizer;
@@ -72,7 +72,7 @@ export class RouteOptimizationService {
   }> = new Map();
 
   constructor() {
-    this.mlOptimizer = new MLRouteOptimizer();
+    this.mlOptimizer = new BasicRouteOptimizer();
     this.routeLearner = new HistoricalRouteLearner();
     this.driverPersonalization = new DriverPersonalizationEngine();
     this.vehicleOptimizer = new VehicleSpecificOptimizer();
@@ -85,8 +85,8 @@ export class RouteOptimizationService {
     try {
       console.log('🔧 Initializing Route Optimization Service...');
       
-      // Initialize ML Engine
-      await this.mlOptimizer.initializeML();
+      // Initialize Basic Route Optimizer
+      await this.mlOptimizer.initialize();
       
       // Initialize Historical Learning System
       await this.routeLearner.initializeLearningSystem();
@@ -117,8 +117,8 @@ export class RouteOptimizationService {
     try {
       console.log('🎯 Starting enhanced route optimization...');
       
-      // Step 1: Get basic ML prediction
-      const basicPrediction = await this.mlOptimizer.optimizeRouteML({
+      // Step 1: Get basic route optimization
+      const basicPrediction = await this.mlOptimizer.optimizeRoute({
         distance: request.distance,
         waypoints: request.waypoints || []
       });
@@ -284,7 +284,7 @@ export class RouteOptimizationService {
         ...insights,
         pendingPredictions: this.pendingLearning.size,
         serviceStatus: 'operational',
-        mlModelAccuracy: this.mlOptimizer.getStats().accuracy,
+        basicOptimizerAccuracy: this.mlOptimizer.getStats().accuracy,
         lastUpdate: new Date()
       };
       
@@ -316,7 +316,7 @@ export class RouteOptimizationService {
     return actions;
   }
 
-  private generateConfidenceFactors(basicPrediction: MLOptimizationResult, historicalEnhancement: any): Array<{factor: string, confidence: number}> {
+  private generateConfidenceFactors(basicPrediction: BasicOptimizationResult, historicalEnhancement: any): Array<{factor: string, confidence: number}> {
     return [
       { factor: 'ml_model', confidence: basicPrediction.confidence },
       { factor: 'historical_similarity', confidence: historicalEnhancement.confidence || 0.5 },
@@ -365,7 +365,7 @@ export class RouteOptimizationService {
       pendingPredictions: this.pendingLearning.size,
       historicalRoutes: this.routeLearner.getRouteCount(),
       averageAccuracy: this.routeLearner.getAverageAccuracy(),
-      mlStats: this.mlOptimizer.getStats()
+      basicOptimizerStats: this.mlOptimizer.getStats()
     };
   }
 
