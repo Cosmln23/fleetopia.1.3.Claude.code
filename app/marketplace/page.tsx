@@ -682,7 +682,7 @@ export default function MarketplacePage() {
       >
         <div className="border-2 border-red-500/50 rounded-lg bg-slate-900/50 backdrop-blur-sm">
           <CollapsibleTrigger asChild>
-            <Card className="bg-transparent border-none cursor-pointer hover:bg-slate-800/30 transition-colors">
+            <Card className="bg-[--card] border-none cursor-pointer hover:bg-slate-800/30 transition-colors">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-center">
                   <div>

@@ -450,104 +450,91 @@ export default function FleetManagementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-      <div className="container mx-auto px-6 py-8">
-        
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                Fleet Management
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                Fleet <span className="text-blue-400">Management</span>
               </h1>
-              <p className="text-slate-400 text-lg">
-                Real-time tracking and optimization of your entire fleet
+              <p className="text-slate-300">
+                Manage your vehicles, drivers, and routes efficiently
               </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <Button onClick={fetchVehicleData} disabled={isLoading}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-                {isLoading ? 'Loading...' : 'Refresh Data'}
-              </Button>
-              <Dialog open={isAddVehicleOpen || !!editingVehicle} onOpenChange={(isOpen) => {
-                if (!isOpen) {
-                  setAddVehicleOpen(false);
-                  setEditingVehicle(null);
-                } else {
-                  setAddVehicleOpen(true);
-                }
-              }}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => setAddVehicleOpen(true)}>
-                      <PlusCircle className="mr-2 h-4 w-4" /> Add Vehicle
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>{editingVehicle ? 'Edit Vehicle' : 'Add a New Vehicle'}</DialogTitle>
-                    <DialogDescription>
-                      {editingVehicle ? 'Update vehicle details.' : 'Add a new vehicle to your fleet.'}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <AddVehicleForm
-                    onFormSubmit={onFormSubmit}
-                    vehicle={editingVehicle}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
+            <Button 
+              onClick={() => setAddVehicleOpen(true)}
+              className="bg-blue-600 hover:bg-blue-700 shadow-lg"
+            >
+              <PlusCircle className="mr-2 h-4 w-4" />
+              Add Vehicle
+            </Button>
           </div>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8"
-        >
-          <Card className="bg-[--card] border-0 wave-hover">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Total Vehicles</CardTitle>
-              <Truck className="h-5 w-5 text-slate-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white">{fleetStats.totalVehicles}</div>
-              <p className="text-xs text-slate-500">across all fleets</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-[--card] border-0 wave-hover">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Active Vehicles</CardTitle>
-              <Activity className="h-5 w-5 text-slate-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white">{fleetStats.activeVehicles}</div>
-              <p className="text-xs text-slate-500">{((fleetStats.activeVehicles / fleetStats.totalVehicles) * 100 || 0).toFixed(1)}% of fleet</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-[--card] border-0 wave-hover">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">Idle Vehicles</CardTitle>
-              <Users className="h-5 w-5 text-slate-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white">{fleetStats.idleVehicles}</div>
-              <p className="text-xs text-slate-500">ready for dispatch</p>
-            </CardContent>
-          </Card>
-          <Card className="bg-[--card] border-0 wave-hover">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-slate-400">In Maintenance</CardTitle>
-              <Settings className="h-5 w-5 text-slate-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-white">{fleetStats.maintenanceVehicles}</div>
-              <p className="text-xs text-slate-500">currently in service</p>
-            </CardContent>
-          </Card>
+          {/* Fleet Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="bg-[--card]">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-blue-500/20 rounded-lg">
+                    <Truck className="h-6 w-6 text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-300">Total Vehicles</p>
+                    <p className="text-2xl font-bold text-white">{fleetStats.totalVehicles}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[--card]">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-green-500/20 rounded-lg">
+                    <CheckCircle className="h-6 w-6 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-300">Active</p>
+                    <p className="text-2xl font-bold text-white">{fleetStats.activeVehicles}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[--card]">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-yellow-500/20 rounded-lg">
+                    <Clock className="h-6 w-6 text-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-300">Idle</p>
+                    <p className="text-2xl font-bold text-white">{fleetStats.idleVehicles}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[--card]">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-red-500/20 rounded-lg">
+                    <AlertTriangle className="h-6 w-6 text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-300">Maintenance</p>
+                    <p className="text-2xl font-bold text-white">{fleetStats.maintenanceVehicles}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </motion.div>
 
         <motion.div

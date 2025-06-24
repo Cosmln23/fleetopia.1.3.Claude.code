@@ -226,95 +226,100 @@ export default function APIIntegrationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
-      <div className="container mx-auto px-6 py-8">
-        
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between">
+          <div className="flex justify-between items-center mb-6">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                API Integrations
+              <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                API <span className="text-blue-400">Integrations</span>
               </h1>
-              <p className="text-slate-400 text-lg">
-                Universal API Bridge - Built-in free APIs + client-configurable services
+              <p className="text-slate-300">
+                Connect and manage external service integrations
               </p>
             </div>
-            <div className="flex items-center space-x-4">
-              <Badge variant="outline" className="text-green-400 border-green-400">
-                <LinkIcon className="w-4 h-4 mr-2" />
-                {builtInProviders}/{totalProviders} Ready
-              </Badge>
-              <Button onClick={() => setShowAddForm(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Configure API
+            <div className="flex space-x-3">
+              <Button 
+                onClick={() => setShowConnector(true)}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <LinkIcon className="mr-2 h-4 w-4" />
+                AI Agent
+              </Button>
+              <Button 
+                onClick={() => setShowAddForm(true)}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Integration
               </Button>
             </div>
           </div>
-        </motion.div>
 
-        {/* Stats Overview */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
-        >
-          <Card className="bg-[--card] border-0 wave-hover">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Total Providers</p>
-                  <p className="text-2xl font-bold text-white">{totalProviders}</p>
-                  <p className="text-xs text-blue-400">5 categories</p>
+          {/* Statistics Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="bg-[--card]">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-blue-500/20 rounded-lg">
+                    <Zap className="h-6 w-6 text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-300">Total Providers</p>
+                    <p className="text-2xl font-bold text-white">{totalProviders}</p>
+                  </div>
                 </div>
-                <Zap className="w-8 h-8 text-blue-400" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-[--card] border-0 wave-hover">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Built-in Ready</p>
-                  <p className="text-2xl font-bold text-green-400">{builtInProviders}</p>
-                  <p className="text-xs text-green-400">Free APIs available</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[--card]">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-green-500/20 rounded-lg">
+                    <CheckCircle className="h-6 w-6 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-300">Built-in</p>
+                    <p className="text-2xl font-bold text-white">{builtInProviders}</p>
+                  </div>
                 </div>
-                <CheckCircle className="w-8 h-8 text-green-400" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-[--card] border-0 wave-hover">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Requests Today</p>
-                  <p className="text-2xl font-bold text-purple-400">{totalRequests.toLocaleString()}</p>
-                  <p className="text-xs text-green-400">+12% from yesterday</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[--card]">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-purple-500/20 rounded-lg">
+                    <Activity className="h-6 w-6 text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-300">Requests Today</p>
+                    <p className="text-2xl font-bold text-white">{totalRequests.toLocaleString()}</p>
+                  </div>
                 </div>
-                <Activity className="w-8 h-8 text-purple-400" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-[--card] border-0 wave-hover">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-slate-400">Avg Health</p>
-                  <p className="text-2xl font-bold text-yellow-400">{avgHealth.toFixed(0)}%</p>
-                  <p className="text-xs text-green-400">All systems operational</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-[--card]">
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="p-3 bg-yellow-500/20 rounded-lg">
+                    <Gauge className="h-6 w-6 text-yellow-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-slate-300">Avg Health</p>
+                    <p className="text-2xl font-bold text-white">{avgHealth.toFixed(0)}%</p>
+                  </div>
                 </div>
-                <Shield className="w-8 h-8 text-yellow-400" />
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
         </motion.div>
 
         {/* Main Dashboard */}

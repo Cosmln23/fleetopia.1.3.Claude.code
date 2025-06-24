@@ -82,7 +82,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-black">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <motion.div
@@ -91,10 +91,10 @@ export default function DashboardPage() {
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-thin text-white mb-2 matrix-text">
-            Fleet Control <span className="text-green-400">Center</span>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            Fleet Control <span className="text-blue-400">Center</span>
           </h1>
-          <p className="text-gray-400 font-light">
+          <p className="text-slate-300">
             Real-time monitoring and control of your entire fleet ecosystem
           </p>
         </motion.div>
@@ -197,10 +197,10 @@ export default function DashboardPage() {
           className="grid grid-cols-1 lg:grid-cols-2 gap-8"
         >
           {/* Active Operations */}
-          <div className="bg-[--card] border-0 rounded-lg p-6 wave-hover">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-light text-white matrix-text">Active Operations</h3>
-              <Activity className="w-5 h-5 text-green-400" />
+          <div className="bg-[--card] rounded-lg p-6 space-y-4">
+            <div className="flex items-center space-x-3">
+              <Activity className="h-6 w-6 text-green-400" />
+              <h3 className="text-xl font-semibold text-white">Active Operations</h3>
             </div>
             <div className="space-y-4">
               {[
@@ -233,10 +233,10 @@ export default function DashboardPage() {
           </div>
 
           {/* AI Agent Status */}
-          <div className="bg-[--card] border-0 rounded-lg p-6 wave-hover">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-light text-white matrix-text">AI Agent Status</h3>
-              <Bot className="w-5 h-5 text-green-400" />
+          <div className="bg-[--card] rounded-lg p-6 space-y-4">
+            <div className="flex items-center space-x-3">
+              <Bot className="h-6 w-6 text-green-400" />
+              <h3 className="text-xl font-semibold text-white">AI Agent Status</h3>
             </div>
             <div className="space-y-4">
               {[

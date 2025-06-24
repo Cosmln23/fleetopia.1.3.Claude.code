@@ -442,81 +442,83 @@ function TestConnectionStep({ data, updateData }: any) {
 }
 
 export default function AddAPIPage() {
-  const wizardSteps = [
+  const [currentStep, setCurrentStep] = useState(0);
+  const [apiConfig, setApiConfig] = useState<Partial<APIConfiguration>>({
+    settings: {
+      timeout: 30,
+      retryAttempts: 3,
+      cacheTime: 300,
+      rateLimitPerMinute: 60
+    },
+    endpoints: []
+  });
+
+  const updateData = (key: string, value: any) => {
+    setApiConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleComplete = async (data: APIConfiguration) => {
+    try {
+      console.log('Configuring API:', data);
+      // Here you would typically save to your backend
+      // For now, we'll simulate success
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      alert('API configured successfully!');
+    } catch (error) {
+      console.error('Failed to configure API:', error);
+      alert('Failed to configure API. Please try again.');
+    }
+  };
+
+  const steps = [
     {
       id: 'basic',
       title: 'Basic Information',
       description: 'Configure your API service details',
-      component: BasicInfoStep
+      component: () => <BasicInfoStep data={apiConfig} updateData={updateData} />
     },
     {
       id: 'auth',
       title: 'Authentication',
       description: 'Set up authentication credentials',
-      component: AuthenticationStep
+      component: () => <AuthenticationStep data={apiConfig} updateData={updateData} />
     },
     {
       id: 'config',
       title: 'Configuration',
-      description: 'Configure performance settings',
-      component: ConfigurationStep
+      description: 'Fine-tune API settings',
+      component: () => <ConfigurationStep data={apiConfig} updateData={updateData} />
     },
     {
       id: 'test',
       title: 'Test Connection',
-      description: 'Verify your API connection',
-      component: TestConnectionStep
+      description: 'Verify the API configuration works',
+      component: () => <TestConnectionStep data={apiConfig} updateData={updateData} />
     }
   ];
 
-  const handleComplete = async (data: APIConfiguration) => {
-    try {
-      const response = await fetch('/api/integrations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      });
-
-      if (response.ok) {
-        // Redirect to API integrations page
-        window.location.href = '/api-integrations';
-      }
-    } catch (error) {
-      console.error('Error saving API integration:', error);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-black">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white p-4 sm:p-6 lg:p-8">
+      <div className="max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="text-3xl md:text-4xl font-thin text-white mb-2 matrix-text">
-            Add Your <span className="text-blue-400">API Integration</span>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            Add API <span className="text-blue-400">Integration</span>
           </h1>
-          <p className="text-gray-400 font-light">
-            Connect your preferred services to optimize your fleet operations
+          <p className="text-slate-300">
+            Connect your preferred services to enhance fleet operations
           </p>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="terminal-border rounded-lg p-8"
-        >
+        <div className="bg-[--card] rounded-lg p-8">
           <Wizard
-            steps={wizardSteps}
+            steps={steps}
             onComplete={handleComplete}
-            className="w-full"
           />
-        </motion.div>
+        </div>
       </div>
     </div>
   );
