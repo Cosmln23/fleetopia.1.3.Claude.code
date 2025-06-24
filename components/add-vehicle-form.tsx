@@ -326,17 +326,12 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
                     <SelectValue placeholder="Select GPS provider" />
                   </SelectTrigger>
                   <SelectContent>
-                    {API_PROVIDERS
-                      .filter(provider => provider.category === 'gps')
-                      .map(provider => (
-                        <SelectItem key={provider.provider} value={provider.provider}>
-                          <div className="flex items-center space-x-2">
-                            <span>{provider.name}</span>
-                            <span className="text-xs text-slate-400">({provider.tier})</span>
-                          </div>
-                        </SelectItem>
-                      ))
-                    }
+                    <SelectItem value="universal_gps">
+                      <div className="flex items-center space-x-2">
+                        <span>Universal GPS Connector</span>
+                        <span className="text-xs text-green-400">(Works with ANY GPS API)</span>
+                      </div>
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
