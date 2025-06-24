@@ -286,8 +286,8 @@ export default function DispatcherProDashboard() {
       </div>
 
       {/* SECTION 1: Welcome Header */}
-      <div className="bg-slate-800 rounded-lg p-6 mb-6 shadow-sm">
-        <div className="flex justify-between items-center">
+      <div className="bg-[--card] rounded-lg p-6 mb-6 wave-hover relative">
+        <div className="flex justify-between items-center relative z-10">
           <h1 className="text-2xl font-bold text-white">
             👋 Welcome, {user?.firstName || 'Cosmin'}
           </h1>
