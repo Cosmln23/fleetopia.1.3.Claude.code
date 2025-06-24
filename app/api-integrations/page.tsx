@@ -964,11 +964,11 @@ export default function APIIntegrationsPage() {
                           <div className="space-y-4">
                             <div>
                               <label className="block text-sm text-slate-300 mb-2">Response Timeout (ms)</label>
-                              <input type="number" defaultValue={(api.responseTime || 500) * 2} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" />
+                              <input type="number" defaultValue={(api.responseTime || 500) * 2} className="w-full rounded-lg px-3 py-2 text-white" />
                             </div>
                             <div>
                               <label className="block text-sm text-slate-300 mb-2">Retry Attempts</label>
-                              <input type="number" defaultValue={3} className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white" />
+                              <input type="number" defaultValue={3} className="w-full rounded-lg px-3 py-2 text-white" />
                             </div>
                             <div>
                               <label className="block text-sm text-slate-300 mb-2">Health Check Interval (minutes)</label>

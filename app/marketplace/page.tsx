@@ -1004,44 +1004,44 @@ export default function MarketplacePage() {
             <form onSubmit={handlePostCargo}>
             <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="title" placeholder="Offer Title (e.g., Furniture Warsaw - Berlin)" value={newCargo.title} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
-                    <Input name="companyName" placeholder="Company Name" value={newCargo.companyName} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
+                    <Input name="title" placeholder="Offer Title (e.g., Furniture Warsaw - Berlin)" value={newCargo.title} onChange={handleInputChange} className="text-white" />
+                    <Input name="companyName" placeholder="Company Name" value={newCargo.companyName} onChange={handleInputChange} className="text-white" />
                 </div>
-                <Textarea name="requirements" placeholder="Special requirements (e.g., hydraulic lift, controlled temperature)" value={newCargo.requirements} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white"/>
+                                  <Textarea name="requirements" placeholder="Special requirements (e.g., hydraulic lift, controlled temperature)" value={newCargo.requirements} onChange={handleInputChange} className="text-white"/>
                 <div className="grid grid-cols-2 gap-4">
                     <Select name="fromCountry" onValueChange={(value) => handleSelectChange('fromCountry', value)}>
-                        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                        <SelectTrigger className="text-white">
                             <SelectValue placeholder="Origin Country" />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-800 text-white border-slate-700">
+                        <SelectContent>
                             {europeanCountries.map(c => <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                      <Select name="toCountry" onValueChange={(value) => handleSelectChange('toCountry', value)}>
-                        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                        <SelectTrigger className="text-white">
                             <SelectValue placeholder="Destination Country" />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-800 text-white border-slate-700">
+                        <SelectContent>
                             {europeanCountries.map(c => <SelectItem key={c.code} value={c.name}>{c.name}</SelectItem>)}
                         </SelectContent>
                     </Select>
                 </div>
                  <div className="grid grid-cols-2 gap-4">
-                    <Input name="fromCity" placeholder="Origin City" value={newCargo.fromCity} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
-                    <Input name="toCity" placeholder="Destination City" value={newCargo.toCity} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
+                    <Input name="fromCity" placeholder="Origin City" value={newCargo.fromCity} onChange={handleInputChange} className="text-white" />
+                    <Input name="toCity" placeholder="Destination City" value={newCargo.toCity} onChange={handleInputChange} className="text-white" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="fromAddress" placeholder="Origin Address" value={newCargo.fromAddress} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
-                    <Input name="toAddress" placeholder="Destination Address" value={newCargo.toAddress} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
+                    <Input name="fromAddress" placeholder="Origin Address" value={newCargo.fromAddress} onChange={handleInputChange} className="text-white" />
+                    <Input name="toAddress" placeholder="Destination Address" value={newCargo.toAddress} onChange={handleInputChange} className="text-white" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="fromPostalCode" placeholder="Origin Postal Code" value={newCargo.fromPostalCode} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
-                    <Input name="toPostalCode" placeholder="Destination Postal Code" value={newCargo.toPostalCode} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
+                    <Input name="fromPostalCode" placeholder="Origin Postal Code" value={newCargo.fromPostalCode} onChange={handleInputChange} className="text-white" />
+                    <Input name="toPostalCode" placeholder="Destination Postal Code" value={newCargo.toPostalCode} onChange={handleInputChange} className="text-white" />
                 </div>
                 <div className="grid grid-3 gap-4">
-                    <Input name="weight" type="number" placeholder="Weight (kg)" value={newCargo.weight} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
-                    <Input name="volume" type="number" placeholder="Volume (m³)" value={newCargo.volume} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
-                    <Input name="cargoType" placeholder="Cargo Type" value={newCargo.cargoType} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
+                    <Input name="weight" type="number" placeholder="Weight (kg)" value={newCargo.weight} onChange={handleInputChange} className="text-white" />
+                    <Input name="volume" type="number" placeholder="Volume (m³)" value={newCargo.volume} onChange={handleInputChange} className="text-white" />
+                    <Input name="cargoType" placeholder="Cargo Type" value={newCargo.cargoType} onChange={handleInputChange} className="text-white" />
                 </div>
                  <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -1052,7 +1052,7 @@ export default function MarketplacePage() {
                           type="date" 
                           value={newCargo.loadingDate} 
                           onChange={handleInputChange}
-                          className="bg-slate-700 border-slate-600 text-white"
+                          className="text-white"
                           required
                         />
                     </div>
@@ -1064,18 +1064,18 @@ export default function MarketplacePage() {
                           type="date" 
                           value={newCargo.deliveryDate} 
                           onChange={handleInputChange}
-                          className="bg-slate-700 border-slate-600 text-white"
+                          className="text-white"
                           required
                         />
                     </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="price" type="number" placeholder="Price" value={newCargo.price} onChange={handleInputChange} className="bg-slate-700 border-slate-600 text-white" />
+                    <Input name="price" type="number" placeholder="Price" value={newCargo.price} onChange={handleInputChange} className="text-white" />
                     <Select name="urgency" defaultValue="medium" onValueChange={(value) => handleSelectChange('urgency', value)}>
-                        <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
+                        <SelectTrigger className="text-white">
                             <SelectValue placeholder="Urgency" />
                         </SelectTrigger>
-                        <SelectContent className="bg-slate-800 text-white border-slate-700">
+                        <SelectContent>
                             <SelectItem value="low">Low</SelectItem>
                             <SelectItem value="medium">Medium</SelectItem>
                             <SelectItem value="high">High</SelectItem>
