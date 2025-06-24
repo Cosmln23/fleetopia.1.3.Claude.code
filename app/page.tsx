@@ -6,39 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Bot, 
-  Users, 
-  ShoppingCart, 
   Activity, 
   TrendingUp, 
-  Zap, 
-  TreePine,
-  Target,
-  Sparkles,
-  Heart,
-  Cpu,
-  Network,
-  BarChart3,
-  Clock,
-  CheckCircle,
-  AlertCircle,
   Truck,
-  MapPin,
-  Fuel,
-  Navigation,
   DollarSign,
-  Eye,
-  Star,
-  Shield,
   Wifi,
-  Globe,
-  Brain,
-  ChevronDown,
-  ChevronUp,
-  ClipboardList,
-  Map,
-  Settings,
-  Database,
-  ArrowRight
+  Globe
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
@@ -57,64 +30,6 @@ interface DashboardMetrics {
   connectedAPIs: number;
 }
 
-const getDashboardPages = (metrics: DashboardMetrics) => [
-  {
-    title: 'Fleet Management',
-    description: 'Manage your vehicles, drivers, and routes',
-    href: '/fleet-management',
-    icon: Truck,
-    color: 'bg-blue-500',
-    stats: `${metrics.activeVehicles} Vehicles Active`
-  },
-  {
-    title: 'Marketplace',
-    description: 'Find cargo offers and transport opportunities',
-    href: '/marketplace',
-    icon: ShoppingCart,
-    color: 'bg-green-500',
-    stats: `${metrics.totalTrips} Trips Today`
-  },
-  {
-    title: 'Dispatch Center',
-    description: 'Manage active jobs and deliveries',
-    href: '/dispatch',
-    icon: ClipboardList,
-    color: 'bg-orange-500',
-    stats: 'View Active Jobs'
-  },
-  {
-    title: 'Free Maps',
-    description: 'Route planning and navigation tools',
-    href: '/free-maps',
-    icon: Map,
-    color: 'bg-cyan-500',
-    stats: 'Plan Routes'
-  },
-  {
-    title: 'ML Route Optimizer',
-    description: 'AI-powered route optimization',
-    href: '/ml-route-optimizer',
-    icon: Brain,
-    color: 'bg-pink-500',
-    stats: `~${metrics.fuelEfficiency}% Efficiency`
-  },
-  {
-    title: 'API Integrations',
-    description: 'Connect external services and APIs',
-    href: '/api-integrations',
-    icon: Network,
-    color: 'bg-indigo-500',
-    stats: `${metrics.connectedAPIs} Connected`
-  },
-  {
-    title: 'Settings',
-    description: 'Configure your account and preferences',
-    href: '/settings',
-    icon: Settings,
-    color: 'bg-gray-500',
-    stats: 'Profile & Config'
-  }
-];
 
 export default function FleetopiaHome() {
   const [metrics, setMetrics] = useState<DashboardMetrics>({
@@ -178,7 +93,6 @@ export default function FleetopiaHome() {
     return () => clearInterval(interval);
   }, []);
 
-  const dashboardPages = getDashboardPages(metrics);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
@@ -277,56 +191,13 @@ export default function FleetopiaHome() {
           </Card>
         </motion.div>
 
-        {/* Main Dashboard Pages Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-8"
-        >
-          <h2 className="text-2xl font-bold text-white mb-6">Quick Access</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {dashboardPages.map((page, index) => (
-              <motion.div
-                key={page.href}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index }}
-              >
-                <Link href={page.href}>
-                  <Card className="bg-slate-800/50 border-slate-700 hover:bg-slate-800/70 transition-all duration-300 hover:scale-105 cursor-pointer group">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <div className={`p-3 rounded-lg ${page.color} group-hover:scale-110 transition-transform duration-300`}>
-                          <page.icon className="w-6 h-6 text-white" />
-                        </div>
-                        <ArrowRight className="w-5 h-5 text-slate-400 group-hover:text-white group-hover:translate-x-1 transition-all duration-300" />
-                      </div>
-                      <CardTitle className="text-white group-hover:text-blue-400 transition-colors duration-300">
-                        {page.title}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CardDescription className="text-slate-400 mb-3">
-                        {page.description}
-                      </CardDescription>
-                      <Badge variant="outline" className="text-xs text-slate-300 border-slate-600">
-                        {page.stats}
-                      </Badge>
-                    </CardContent>
-                  </Card>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
 
         {/* System Status */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="grid grid-cols-1 lg:grid-cols-4 gap-6"
+          transition={{ delay: 0.3 }}
+          className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-8"
         >
           <div className="lg:col-span-3">
             <Card className="bg-slate-800/50 border-slate-700">
