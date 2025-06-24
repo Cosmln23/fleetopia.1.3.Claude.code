@@ -50,17 +50,42 @@ interface FleetStatus {
 
 interface AISuggestion {
   id: string;
-  vehicle: string;
-  job: string;
-  description: string;
+  cargoOfferId: string;
+  vehicleId: string;
+  vehicleName: string;
+  vehicleLicensePlate: string;
+  title: string;
+  estimatedProfit: number;
+  estimatedDistance: number;
+  estimatedDuration: number;
+  priority: 'high' | 'medium' | 'low';
+  confidence: number;
+  reasoning: string;
+}
+
+interface DispatcherAnalysis {
+  availableVehicles: number;
+  newOffers: number;
+  todayProfit: number;
+  suggestions: AISuggestion[];
+  alerts: string[];
+}
+
+interface VehicleData {
+  id: string;
+  name: string;
+  licensePlate: string;
+  type: string;
+  status: string;
+  driverName: string;
 }
 
 export default function DispatcherProDashboard() {
   const { user } = useUser();
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [aiSuggestions, setAiSuggestions] = useState<AISuggestion[]>([]);
-  const [fleetStatus, setFleetStatus] = useState<FleetStatus>({ active: 5, waiting: 2, utilization: 76 });
-  const [aiActivities, setAiActivities] = useState<AIActivity[]>([]);
+  const [dispatcherAnalysis, setDispatcherAnalysis] = useState<DispatcherAnalysis | null>(null);
+  const [fleetVehicles, setFleetVehicles] = useState<VehicleData[]>([]);
+  const [dashboardMetrics, setDashboardMetrics] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -70,27 +95,39 @@ export default function DispatcherProDashboard() {
       setError(null);
       
       try {
-        // Fetch recent jobs (similar to existing logic)
-        const jobsResponse = await fetch('/api/dispatch/jobs?status=TAKEN,IN_PROGRESS,COMPLETED,CANCELED');
+        // Fetch all data in parallel for better performance
+        const [jobsResponse, dispatcherResponse, vehiclesResponse, dashboardResponse] = await Promise.all([
+          fetch('/api/dispatch/jobs?status=TAKEN,IN_PROGRESS,COMPLETED,CANCELED'),
+          fetch('/api/dispatcher/analysis'),
+          fetch('/api/vehicles?limit=10'),
+          fetch('/api/dashboard')
+        ]);
+
+        // Process jobs data
         if (jobsResponse.ok) {
           const jobsData = await jobsResponse.json();
           setJobs(jobsData.slice(0, 4)); // Show only recent 4
         }
 
-        // Initialize AI suggestions with sample data
-        setAiSuggestions([
-          { id: '1', vehicle: 'GR-1245', job: 'Job #156', description: 'High priority cargo assignment' },
-          { id: '2', vehicle: 'VH-003', job: 'Palermo → Milano', description: 'New cargo opportunity' },
-          { id: '3', vehicle: 'VH-003', job: 'Route optimization', description: 'Available optimization' }
-        ]);
+        // Process dispatcher analysis (AI suggestions, etc.)
+        if (dispatcherResponse.ok) {
+          const analysisData = await dispatcherResponse.json();
+          setDispatcherAnalysis(analysisData);
+        }
 
-        // Initialize AI activities with sample data  
-        setAiActivities([
-          { id: '1', type: 'assignment', message: 'Job #156 auto-assigned → GR-1245', timestamp: new Date(), icon: '✅' },
-          { id: '2', type: 'detection', message: 'New cargo detected Palermo → Milano', timestamp: new Date(), icon: '🔔' },
-          { id: '3', type: 'optimization', message: 'Route optimized → -12% estimated time', timestamp: new Date(), icon: '🧠' },
-          { id: '4', type: 'maintenance', message: 'Vehicle VH-003 maintenance due in 2 days', timestamp: new Date(), icon: '⚠️' }
-        ]);
+        // Process vehicles data for fleet management
+        if (vehiclesResponse.ok) {
+          const vehiclesData = await vehiclesResponse.json();
+          if (vehiclesData.success && vehiclesData.data?.vehicles) {
+            setFleetVehicles(vehiclesData.data.vehicles.slice(0, 3)); // Show only first 3
+          }
+        }
+
+        // Process dashboard metrics for fleet status
+        if (dashboardResponse.ok) {
+          const dashboardData = await dashboardResponse.json();
+          setDashboardMetrics(dashboardData);
+        }
 
       } catch (err) {
         setError(err instanceof Error ? err.message : 'An unknown error occurred.');
@@ -101,6 +138,10 @@ export default function DispatcherProDashboard() {
     };
 
     fetchDispatcherData();
+    
+    // Refresh data every 30 seconds like the main dashboard
+    const interval = setInterval(fetchDispatcherData, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const getStatusBadge = (status: string) => {
@@ -120,14 +161,14 @@ export default function DispatcherProDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 p-6 flex justify-center items-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6 flex justify-center items-center">
         <Loader className="w-12 h-12 animate-spin text-blue-400" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 p-6">
       {/* SECTION 1: Welcome Header */}
       <div className="bg-slate-800 rounded-lg p-6 mb-6 border border-slate-700">
         <div className="flex justify-between items-center">
@@ -136,12 +177,16 @@ export default function DispatcherProDashboard() {
           </h1>
           <div className="flex items-center space-x-4">
             <Button 
-              onClick={() => window.location.reload()} 
+              onClick={() => {
+                setLoading(true);
+                window.location.reload();
+              }} 
               variant="outline" 
               size="sm"
               className="text-blue-400 border-blue-400 hover:bg-blue-400/10"
+              disabled={loading}
             >
-              <RotateCcw className="w-4 h-4 mr-2" />
+              <RotateCcw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <div className="text-green-400 font-semibold">
@@ -160,12 +205,20 @@ export default function DispatcherProDashboard() {
               🤖 AI Suggestions
             </h3>
             <div className="space-y-3">
-              {aiSuggestions.map((suggestion) => (
-                <div key={suggestion.id} className="text-gray-300">
-                  <div className="text-blue-400">• Vehicle {suggestion.vehicle} →</div>
-                  <div className="ml-4 text-sm">{suggestion.job}</div>
+              {dispatcherAnalysis?.suggestions && dispatcherAnalysis.suggestions.length > 0 ? (
+                dispatcherAnalysis.suggestions.slice(0, 3).map((suggestion) => (
+                  <div key={suggestion.id} className="text-gray-300">
+                    <div className="text-blue-400">• Vehicle {suggestion.vehicleLicensePlate} →</div>
+                    <div className="ml-4 text-sm">{suggestion.title}</div>
+                    <div className="ml-4 text-xs text-green-400">Est. profit: €{suggestion.estimatedProfit.toFixed(0)}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-gray-400">
+                  <div className="text-blue-400">• No active suggestions</div>
+                  <div className="ml-4 text-sm">Add vehicles and cargo to see AI recommendations</div>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -179,15 +232,27 @@ export default function DispatcherProDashboard() {
             <div className="space-y-2">
               <div className="text-gray-300 flex justify-between">
                 <span>• Active:</span>
-                <span className="text-green-400 font-semibold">{fleetStatus.active}</span>
+                <span className="text-green-400 font-semibold">
+                  {dashboardMetrics?.activeVehicles || dispatcherAnalysis?.availableVehicles || 0}
+                </span>
               </div>
               <div className="text-gray-300 flex justify-between">
-                <span>• Waiting:</span>
-                <span className="text-yellow-400 font-semibold">{fleetStatus.waiting}</span>
+                <span>• Total:</span>
+                <span className="text-blue-400 font-semibold">
+                  {dashboardMetrics?.totalVehicles || 0}
+                </span>
               </div>
               <div className="text-gray-300 flex justify-between">
-                <span>• Utilization:</span>
-                <span className="text-blue-400 font-semibold">{fleetStatus.utilization}%</span>
+                <span>• New Offers:</span>
+                <span className="text-yellow-400 font-semibold">
+                  {dispatcherAnalysis?.newOffers || 0}
+                </span>
+              </div>
+              <div className="text-gray-300 flex justify-between">
+                <span>• Today's Profit:</span>
+                <span className="text-green-400 font-semibold">
+                  €{dispatcherAnalysis?.todayProfit || 0}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -228,12 +293,37 @@ export default function DispatcherProDashboard() {
             🔄 AI Automatic Activity
           </h3>
           <div className="space-y-3">
-            {aiActivities.map((activity) => (
-              <div key={activity.id} className="flex items-center text-gray-300">
-                <span className="mr-3 text-lg">{activity.icon}</span>
-                <span>{activity.message}</span>
+            {dispatcherAnalysis?.alerts && dispatcherAnalysis.alerts.length > 0 ? (
+              dispatcherAnalysis.alerts.map((alert, index) => (
+                <div key={index} className="flex items-center text-gray-300">
+                  <span className="mr-3 text-lg">
+                    {alert.includes('⚠️') ? '⚠️' : alert.includes('✅') ? '✅' : '🔔'}
+                  </span>
+                  <span>{alert}</span>
+                </div>
+              ))
+            ) : dispatcherAnalysis?.suggestions && dispatcherAnalysis.suggestions.length > 0 ? (
+              dispatcherAnalysis.suggestions.slice(0, 4).map((suggestion, index) => (
+                <div key={suggestion.id} className="flex items-center text-gray-300">
+                  <span className="mr-3 text-lg">
+                    {index % 4 === 0 ? '✅' : index % 4 === 1 ? '🔔' : index % 4 === 2 ? '🧠' : '📍'}
+                  </span>
+                  <span>
+                    {index % 4 === 0 && `Suggestion ready: ${suggestion.title} → ${suggestion.vehicleLicensePlate}`}
+                    {index % 4 === 1 && `New cargo detected: ${suggestion.title}`}
+                    {index % 4 === 2 && `Route optimization available: ${suggestion.estimatedDistance}km route`}
+                    {index % 4 === 3 && `High confidence match: ${suggestion.confidence}% accuracy`}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <div className="text-gray-400">
+                <div className="flex items-center">
+                  <span className="mr-3 text-lg">💤</span>
+                  <span>AI dispatcher on standby - Add vehicles and cargo to activate</span>
+                </div>
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
@@ -248,7 +338,7 @@ export default function DispatcherProDashboard() {
             </h3>
             <div className="text-gray-300 space-y-2 mb-4">
               <div>• Live vehicles on map</div>
-              <div>• {fleetStatus.active} vehicles tracked</div>
+              <div>• {dashboardMetrics?.activeVehicles || 0} vehicles tracked</div>
             </div>
             <Link href="/free-maps">
               <Button variant="outline" className="text-blue-400 hover:text-blue-300 border-blue-400 hover:border-blue-300">
@@ -265,18 +355,26 @@ export default function DispatcherProDashboard() {
               🔗 Fleet Management
             </h3>
             <div className="space-y-2 text-gray-300 mb-4">
-              <div className="flex justify-between">
-                <span>• AB-123:</span>
-                <span className="text-green-400">active</span>
-              </div>
-              <div className="flex justify-between">
-                <span>• CD-456:</span>
-                <span className="text-yellow-400">break</span>
-              </div>
-              <div className="flex justify-between">
-                <span>• GR-789:</span>
-                <span className="text-red-400">maintenance</span>
-              </div>
+              {fleetVehicles && fleetVehicles.length > 0 ? (
+                fleetVehicles.map((vehicle) => (
+                  <div key={vehicle.id} className="flex justify-between">
+                    <span>• {vehicle.licensePlate}:</span>
+                    <span className={
+                      vehicle.status === 'idle' || vehicle.status === 'assigned' ? 'text-green-400' :
+                      vehicle.status === 'in_transit' || vehicle.status === 'en_route' ? 'text-yellow-400' :
+                      vehicle.status === 'maintenance' || vehicle.status === 'out_of_service' ? 'text-red-400' :
+                      'text-gray-400'
+                    }>
+                      {vehicle.status}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="text-gray-400">
+                  <div>• No vehicles available</div>
+                  <div className="text-sm">Add vehicles to your fleet</div>
+                </div>
+              )}
             </div>
             <Link href="/fleet-management">
               <Button variant="outline" className="text-blue-400 hover:text-blue-300 border-blue-400 hover:border-blue-300">
