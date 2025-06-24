@@ -321,64 +321,6 @@ export default function DispatcherProDashboard() {
             </div>
           </div>
 
-          {/* Status Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="bg-[--card]">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-blue-500/20 rounded-lg">
-                    <Truck className="h-6 w-6 text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-300">Available Vehicles</p>
-                    <p className="text-2xl font-bold text-white">{dispatcherAnalysis?.availableVehicles || 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[--card]">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-green-500/20 rounded-lg">
-                    <ClipboardList className="h-6 w-6 text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-300">New Offers</p>
-                    <p className="text-2xl font-bold text-white">{dispatcherAnalysis?.newOffers || 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[--card]">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-yellow-500/20 rounded-lg">
-                    <Activity className="h-6 w-6 text-yellow-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-300">Today's Profit</p>
-                    <p className="text-2xl font-bold text-white">€{(dispatcherAnalysis?.todayProfit || 0).toLocaleString()}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-[--card]">
-              <CardContent className="p-6">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-purple-500/20 rounded-lg">
-                    <Bot className="h-6 w-6 text-purple-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-slate-300">AI Suggestions</p>
-                    <p className="text-2xl font-bold text-white">{dispatcherAnalysis?.suggestions?.length || 0}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </div>
 
         {/* Status Overview Cards */}
@@ -391,7 +333,7 @@ export default function DispatcherProDashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-slate-300">Available Vehicles</p>
-                  <p className="text-2xl font-bold text-white">{dispatcherAnalysis?.availableVehicles || 0}</p>
+                  <p className="text-2xl font-bold text-white">{dashboardMetrics?.activeVehicles || dispatcherAnalysis?.availableVehicles || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -405,7 +347,7 @@ export default function DispatcherProDashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-slate-300">New Offers</p>
-                  <p className="text-2xl font-bold text-white">{dispatcherAnalysis?.newOffers || 0}</p>
+                  <p className="text-2xl font-bold text-white">{cargoOffers.length || dispatcherAnalysis?.newOffers || 0}</p>
                 </div>
               </div>
             </CardContent>
@@ -419,7 +361,7 @@ export default function DispatcherProDashboard() {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-slate-300">Today's Profit</p>
-                  <p className="text-2xl font-bold text-white">€{(dispatcherAnalysis?.todayProfit || 0).toLocaleString()}</p>
+                  <p className="text-2xl font-bold text-white">€{(dashboardMetrics?.revenueToday || dispatcherAnalysis?.todayProfit || 0).toLocaleString()}</p>
                 </div>
               </div>
             </CardContent>
