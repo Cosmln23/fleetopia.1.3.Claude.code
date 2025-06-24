@@ -68,7 +68,7 @@ export default function MetricCard({
   };
 
   return (
-    <div className={`bg-[--card] rounded-lg p-6 hover:bg-gradient-to-r hover:from-white/10 hover:via-white/20 hover:to-white/10 transition-all duration-500 ${
+    <div className={`bg-[--card] rounded-lg p-6 wave-hover ${
       isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
     } ${className}`}>
       <div className="flex items-center justify-between mb-4">

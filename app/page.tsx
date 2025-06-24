@@ -141,8 +141,8 @@ export default function FleetopiaHome() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
         >
-          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
-            <CardContent className="p-6">
+          <Card className="bg-[--card] border-0 wave-hover">
+            <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-400">AI Agents</p>
@@ -153,8 +153,8 @@ export default function FleetopiaHome() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
-            <CardContent className="p-6">
+          <Card className="bg-[--card] border-0 wave-hover">
+            <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-400">Fleet Vehicles</p>
@@ -165,8 +165,8 @@ export default function FleetopiaHome() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
-            <CardContent className="p-6">
+          <Card className="bg-[--card] border-0 wave-hover">
+            <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-400">Today's Revenue</p>
@@ -177,8 +177,8 @@ export default function FleetopiaHome() {
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
-            <CardContent className="p-6">
+          <Card className="bg-[--card] border-0 wave-hover">
+            <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-slate-400">Fleet Efficiency</p>
@@ -200,14 +200,14 @@ export default function FleetopiaHome() {
           className="grid grid-cols-1 lg:grid-cols-4 gap-6 mt-8"
         >
           <div className="lg:col-span-3">
-            <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+            <Card className="bg-[--card] border-0 wave-hover">
               <CardHeader>
                 <CardTitle className="flex items-center text-white">
                   <Activity className="w-5 h-5 mr-2 text-green-400" />
                   System Status
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="relative z-10">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-green-400">{metrics.fuelEfficiency}%</div>

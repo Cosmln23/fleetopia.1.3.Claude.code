@@ -13,7 +13,7 @@ export default function SettingsPage() {
         <p className="text-muted-foreground">System configuration and preferences</p>
       </div>
       
-      <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+      <Card className="bg-[--card] border-0 wave-hover">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Settings className="h-5 w-5" />
