@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs';
 import prisma from '@/lib/prisma';
+import { createCargoOfferSchema } from '@/lib/validations';
 
 export async function GET(request: Request) {
   try {
@@ -39,7 +40,6 @@ export async function GET(request: Request) {
           weight: true,
           price: true,
           status: true,
-          description: true,
           createdAt: true,
           updatedAt: true
         }
@@ -56,5 +56,92 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error('Error fetching cargo offers:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const user = await currentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await request.json();
+    
+    // Validate request body
+    const validation = createCargoOfferSchema.safeParse(body);
+    if (!validation.success) {
+      return NextResponse.json(
+        { 
+          error: 'Validation failed', 
+          details: validation.error.errors 
+        },
+        { status: 400 }
+      );
+    }
+
+    const {
+      title,
+      fromCountry,
+      toCountry,
+      fromPostalCode,
+      toPostalCode,
+      fromCity,
+      toCity,
+      fromAddress,
+      toAddress,
+      weight,
+      volume,
+      cargoType,
+      price,
+      priceType,
+      loadingDate,
+      deliveryDate,
+      companyName,
+      requirements,
+      urgency
+    } = validation.data;
+
+    // Create cargo offer
+    const cargoOffer = await prisma.cargoOffer.create({
+      data: {
+        title: title || `${fromCity} → ${toCity}`,
+        fromCountry,
+        toCountry,
+        fromPostalCode,
+        toPostalCode,
+        fromCity,
+        toCity,
+        fromAddress,
+        toAddress,
+        weight,
+        volume,
+        cargoType,
+        price,
+        priceType,
+        loadingDate,
+        deliveryDate,
+        companyName,
+        requirements,
+        urgency,
+        userId: user.id,
+        status: 'NEW'
+      }
+    });
+
+    return NextResponse.json({ 
+      success: true, 
+      data: cargoOffer 
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('Error creating cargo offer:', error);
+    return NextResponse.json(
+      { 
+        error: 'Internal server error', 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      },
+      { status: 500 }
+    );
   }
 }
