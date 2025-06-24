@@ -159,7 +159,7 @@ function RealTimePageContent() {
       <div className="h-full w-full max-w-full mx-auto grid grid-cols-1 xl:grid-cols-8 gap-6 xl:gap-8">
         
         {/* --- Map Column --- */}
-        <div className="xl:col-span-5 h-full w-full rounded-xl overflow-hidden bg-[--card] hover:bg-gradient-to-r hover:from-white/10 hover:via-white/20 hover:to-white/10 transition-all duration-500">
+        <div className="xl:col-span-5 h-full w-full rounded-xl overflow-hidden bg-[--card] shadow-sm shadow-blue-500/20 hover:bg-gradient-to-r hover:from-white/10 hover:via-white/20 hover:to-white/10 transition-all duration-500">
           {isLoading ? (
                           <div className="h-full w-full animate-pulse bg-[--card] flex flex-col items-center justify-center">
               <div className="flex items-center space-x-2 mb-4">
