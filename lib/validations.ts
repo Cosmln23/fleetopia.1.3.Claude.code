@@ -21,6 +21,8 @@ export const createVehicleSchema = z.object({
   lng: z.number().min(-180).max(180).optional().default(0),
   currentRoute: z.string().optional(),
   fuelConsumption: z.number().min(0).max(100).optional(),
+  gpsProvider: z.string().optional(),
+  gpsEnabled: z.boolean().optional().default(false),
 });
 
 export const updateVehicleSchema = createVehicleSchema.partial();

@@ -57,7 +57,10 @@ export async function GET(request: NextRequest) {
           driverName: true,
           createdAt: true,
           lat: true,
-          lng: true
+          lng: true,
+          gpsProvider: true,
+          gpsEnabled: true,
+          fuelConsumption: true
         },
         orderBy: {
           name: 'asc',
@@ -148,7 +151,9 @@ export async function POST(request: NextRequest) {
       lat,
       lng,
       currentRoute,
-      fuelConsumption
+      fuelConsumption,
+      gpsProvider,
+      gpsEnabled
     } = validation.data;
 
     // Check for duplicate license plate
@@ -194,6 +199,8 @@ export async function POST(request: NextRequest) {
       lng,
       currentRoute,
       fuelConsumption,
+      gpsProvider,
+      gpsEnabled,
       fleetId: fleet.id,
     };
 

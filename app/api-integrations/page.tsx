@@ -503,69 +503,212 @@ export default function APIIntegrationsPage() {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className={`grid gap-4 ${category === 'gps' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
                           {categoryProviders.map((provider) => (
                             <div
                               key={provider.provider}
-                              className="p-4 bg-slate-700/30 rounded-lg border border-slate-600/50 hover:border-slate-500/50 transition-colors"
+                              className={`p-4 bg-slate-700/30 rounded-lg border border-slate-600/50 hover:border-slate-500/50 transition-colors ${
+                                category === 'gps' ? 'lg:p-6' : ''
+                              }`}
                             >
                               <div className="flex items-start justify-between mb-3">
-                                <div>
-                                  <p className="font-medium text-white text-sm">{provider.name}</p>
-                                  <p className="text-xs text-slate-400 mt-1">{provider.description}</p>
+                                <div className="flex-1">
+                                  <div className="flex items-center space-x-2 mb-2">
+                                    <p className="font-medium text-white text-sm">{provider.name}</p>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`text-xs ${
+                                        provider.tier === 'free' ? 'text-green-400 border-green-400' :
+                                        provider.tier === 'freemium' ? 'text-blue-400 border-blue-400' :
+                                        provider.tier === 'paid' ? 'text-yellow-400 border-yellow-400' :
+                                        'text-purple-400 border-purple-400'
+                                      }`}
+                                    >
+                                      {provider.tier.toUpperCase()}
+                                    </Badge>
+                                  </div>
+                                  <p className="text-xs text-slate-400 mb-3">{provider.description}</p>
+                                  
+                                  {/* Enhanced GPS API Information */}
+                                  {category === 'gps' && provider.compatibleModels && (
+                                    <div className="space-y-4 mt-4">
+                                      {/* Compatible Models */}
+                                      <div>
+                                        <h4 className="text-sm font-medium text-slate-200 mb-2 flex items-center">
+                                          <Database className="w-3 h-3 mr-1" />
+                                          Compatible Models
+                                        </h4>
+                                        <div className="flex flex-wrap gap-1">
+                                          {provider.compatibleModels.map((model, idx) => (
+                                            <Badge key={idx} variant="outline" className="text-xs text-blue-300 border-blue-400/30">
+                                              {model}
+                                            </Badge>
+                                          ))}
+                                        </div>
+                                      </div>
+                                      
+                                      {/* Integration Flow */}
+                                      {provider.integrationFlow && (
+                                        <div>
+                                          <h4 className="text-sm font-medium text-slate-200 mb-2 flex items-center">
+                                            <Navigation className="w-3 h-3 mr-1" />
+                                            Integration Flow
+                                          </h4>
+                                          <p className="text-xs text-slate-300 bg-slate-800/50 p-2 rounded border-l-2 border-orange-400">
+                                            {provider.integrationFlow}
+                                          </p>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Setup Instructions */}
+                                      {provider.setupInstructions && (
+                                        <div>
+                                          <h4 className="text-sm font-medium text-slate-200 mb-2 flex items-center">
+                                            <Settings className="w-3 h-3 mr-1" />
+                                            Setup Instructions
+                                          </h4>
+                                          <ol className="text-xs text-slate-300 space-y-1">
+                                            {provider.setupInstructions.map((instruction, idx) => (
+                                              <li key={idx} className="flex items-start space-x-2">
+                                                <span className="text-orange-400 font-medium">{idx + 1}.</span>
+                                                <span>{instruction}</span>
+                                              </li>
+                                            ))}
+                                          </ol>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Required Fields */}
+                                      {provider.requiredFields && (
+                                        <div>
+                                          <h4 className="text-sm font-medium text-slate-200 mb-2 flex items-center">
+                                            <Shield className="w-3 h-3 mr-1" />
+                                            Required Fields
+                                          </h4>
+                                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                                            {provider.requiredFields.map((field, idx) => (
+                                              <div key={idx} className="text-xs text-slate-300 bg-slate-800/30 px-2 py-1 rounded">
+                                                {field}
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Supported Features */}
+                                      {provider.supportedFeatures && (
+                                        <div>
+                                          <h4 className="text-sm font-medium text-slate-200 mb-2 flex items-center">
+                                            <CheckCircle className="w-3 h-3 mr-1" />
+                                            Supported Features
+                                          </h4>
+                                          <div className="flex flex-wrap gap-1">
+                                            {provider.supportedFeatures.map((feature, idx) => (
+                                              <Badge key={idx} variant="outline" className="text-xs text-green-300 border-green-400/30">
+                                                {feature}
+                                              </Badge>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
-                                <Badge 
-                                  variant="outline" 
-                                  className={`text-xs ${
-                                    provider.tier === 'free' ? 'text-green-400 border-green-400' :
-                                    provider.tier === 'freemium' ? 'text-blue-400 border-blue-400' :
-                                    provider.tier === 'paid' ? 'text-yellow-400 border-yellow-400' :
-                                    'text-purple-400 border-purple-400'
-                                  }`}
-                                >
-                                  {provider.tier.toUpperCase()}
-                                </Badge>
                               </div>
                               
-                              <div className="space-y-2 text-xs">
-                                <div className="flex justify-between">
-                                  <span className="text-slate-400">Setup:</span>
-                                  <span className={`font-medium ${
-                                    provider.setupComplexity === 'easy' ? 'text-green-400' :
-                                    provider.setupComplexity === 'medium' ? 'text-yellow-400' :
-                                    'text-red-400'
-                                  }`}>
-                                    {provider.setupComplexity}
-                                  </span>
+                              {/* Basic info for non-GPS APIs */}
+                              {category !== 'gps' && (
+                                <div className="space-y-2 text-xs">
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-400">Setup:</span>
+                                    <span className={`font-medium ${
+                                      provider.setupComplexity === 'easy' ? 'text-green-400' :
+                                      provider.setupComplexity === 'medium' ? 'text-yellow-400' :
+                                      'text-red-400'
+                                    }`}>
+                                      {provider.setupComplexity}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-400">Cost:</span>
+                                    <span className="text-white font-medium">
+                                      {provider.costEstimate?.free || provider.costEstimate?.paid || 'Custom'}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-slate-400">Status:</span>
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`text-xs ${getStatusColor(provider.status)}`}
+                                    >
+                                      {provider.status === 'built-in' ? 'Ready' : 'Configure'}
+                                    </Badge>
+                                  </div>
                                 </div>
-                                <div className="flex justify-between">
-                                  <span className="text-slate-400">Cost:</span>
-                                  <span className="text-white font-medium">
-                                    {provider.costEstimate?.free || provider.costEstimate?.paid || 'Custom'}
-                                  </span>
+                              )}
+                              
+                              {/* Enhanced GPS status info */}
+                              {category === 'gps' && (
+                                <div className="mt-4 pt-4 border-t border-slate-600">
+                                  <div className="grid grid-cols-2 gap-4 text-xs">
+                                    <div>
+                                      <p className="text-slate-400">Setup Complexity</p>
+                                      <div className="flex items-center space-x-2 mt-1">
+                                        <div className={`w-2 h-2 rounded-full ${
+                                          provider.setupComplexity === 'easy' ? 'bg-green-400' :
+                                          provider.setupComplexity === 'medium' ? 'bg-yellow-400' :
+                                          'bg-red-400'
+                                        }`}></div>
+                                        <span className="text-white font-medium capitalize">{provider.setupComplexity}</span>
+                                      </div>
+                                    </div>
+                                    <div>
+                                      <p className="text-slate-400">Cost Estimate</p>
+                                      <p className="text-white font-medium mt-1">
+                                        {provider.costEstimate?.free || provider.costEstimate?.paid || 'Custom'}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-slate-400">Rate Limit</p>
+                                      <p className="text-white font-medium mt-1">
+                                        {provider.rateLimit ? `${provider.rateLimit.requests}/${provider.rateLimit.period}` : 'Variable'}
+                                      </p>
+                                    </div>
+                                    <div>
+                                      <p className="text-slate-400">Status</p>
+                                      <Badge 
+                                        variant="outline" 
+                                        className={`text-xs mt-1 ${getStatusColor(provider.status)}`}
+                                      >
+                                        {provider.status === 'built-in' ? 'Ready' : 'Configure'}
+                                      </Badge>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div className="flex justify-between">
-                                  <span className="text-slate-400">Status:</span>
-                                  <Badge 
-                                    variant="outline" 
-                                    className={`text-xs ${getStatusColor(provider.status)}`}
-                                  >
-                                    {provider.status === 'built-in' ? 'Ready' : 'Configure'}
-                                  </Badge>
-                                </div>
-                              </div>
+                              )}
                               
                               {provider.status === 'client-configurable' && (
-                                <div className="mt-3 pt-3 border-t border-slate-600">
+                                <div className={`mt-3 pt-3 border-t border-slate-600 ${category === 'gps' ? 'flex space-x-2' : ''}`}>
                                   <Button 
                                     variant="outline" 
                                     size="sm" 
-                                    className="w-full text-xs"
+                                    className={`${category === 'gps' ? 'flex-1' : 'w-full'} text-xs`}
                                     onClick={() => handleSettingsClick(`${provider.category}_${provider.provider}`)}
                                   >
                                     <Settings className="w-3 h-3 mr-2" />
-                                    Configure
+                                    Configure API
                                   </Button>
+                                  {category === 'gps' && provider.documentation && (
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      className="flex-1 text-xs"
+                                      onClick={() => window.open(provider.documentation, '_blank')}
+                                    >
+                                      <Globe className="w-3 h-3 mr-2" />
+                                      Documentation
+                                    </Button>
+                                  )}
                                 </div>
                               )}
                             </div>

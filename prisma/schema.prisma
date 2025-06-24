@@ -307,6 +307,8 @@ model Vehicle {
   gpsDeviceImei         String?             @unique
   locationType          VehicleLocationType @default(MANUAL_COORDS)
   manualLocationAddress String?
+  gpsProvider           String?
+  gpsEnabled            Boolean             @default(false)
   updatedAt             DateTime            @updatedAt
   gpsLogs               GpsLog[]
   maintenances          Maintenance[]

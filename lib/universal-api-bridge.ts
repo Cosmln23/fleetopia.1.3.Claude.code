@@ -554,33 +554,210 @@ export interface APIProviderConfig {
   };
   setupComplexity: 'easy' | 'medium' | 'hard';
   documentation?: string;
+  compatibleModels?: string[];
+  setupInstructions?: string[];
+  integrationFlow?: string;
+  requiredFields?: string[];
+  supportedFeatures?: string[];
 }
 
 export const API_PROVIDERS: APIProviderConfig[] = [
   // GPS Providers
   {
     category: 'gps',
-    provider: 'tomtom',
-    name: 'TomTom Fleet Management',
-    description: 'Professional fleet tracking and management',
-    tier: 'paid',
-    credentialsRequired: ['apiKey'],
-    rateLimit: { requests: 50000, period: 'day' },
-    costEstimate: { paid: '€24-240/month' },
-    setupComplexity: 'medium',
-    documentation: 'https://developer.tomtom.com/fleet-management-api'
-  },
-  {
-    category: 'gps',
     provider: 'here',
     name: 'HERE Fleet Telematics',
-    description: 'Advanced routing and fleet tracking',
+    description: 'Advanced routing and fleet tracking with real-time GPS positioning',
     tier: 'freemium',
     credentialsRequired: ['apiKey'],
     rateLimit: { requests: 250000, period: 'month' },
     costEstimate: { free: '250K requests/month', paid: 'Pay-as-you-grow' },
     setupComplexity: 'medium',
-    documentation: 'https://developer.here.com/documentation/fleet-telematics'
+    documentation: 'https://developer.here.com/documentation/fleet-telematics',
+    compatibleModels: [
+      'HERE Tracking API v8',
+      'HERE Fleet Telematics API',
+      'HERE Location Services REST API',
+      'Custom HERE SDK implementations'
+    ],
+    setupInstructions: [
+      'Configure your HERE API credentials in the integration form',
+      'Connect vehicles in Fleet Management and assign HERE API',
+      'Enable GPS tracking toggle for each vehicle',
+      'Real-time positions will appear on Maps automatically',
+      'Access historical tracking data and analytics in dashboard'
+    ],
+    integrationFlow: 'API Setup → Vehicle Assignment → Live Tracking → Maps Display',
+    requiredFields: ['HERE API Key', 'Application ID', 'Application Code', 'Vehicle device IDs'],
+    supportedFeatures: ['Real-time tracking', 'Geofencing', 'Route optimization', 'Historical data', 'Driver analytics']
+  },
+  {
+    category: 'gps',
+    provider: 'samsara',
+    name: 'Samsara Fleet Management',
+    description: 'Complete IoT fleet management with advanced telematics',
+    tier: 'enterprise',
+    credentialsRequired: ['apiKey', 'token'],
+    rateLimit: { requests: 100000, period: 'day' },
+    costEstimate: { paid: '$30-60/vehicle/month' },
+    setupComplexity: 'easy',
+    documentation: 'https://developers.samsara.com/',
+    compatibleModels: [
+      'Samsara API v1',
+      'Samsara Vehicle Gateway (VG)',
+      'Samsara Asset Gateway (AG)',
+      'Third-party OBD devices with Samsara integration'
+    ],
+    setupInstructions: [
+      'Obtain Samsara API token from your organization dashboard',
+      'Configure API credentials in Fleetopia integration settings',
+      'Import vehicle list or manually assign vehicles to Samsara devices',
+      'Enable GPS tracking for vehicles with installed Samsara hardware',
+      'Monitor real-time positions and receive alerts on the Maps page'
+    ],
+    integrationFlow: 'Hardware Installation → API Configuration → Vehicle Mapping → Live Fleet Tracking',
+    requiredFields: ['Samsara API Token', 'Organization ID', 'Vehicle Gateway IDs'],
+    supportedFeatures: ['Real-time GPS', 'Driver behavior', 'Fuel monitoring', 'Maintenance alerts', 'Temperature tracking']
+  },
+  {
+    category: 'gps',
+    provider: 'geotab',
+    name: 'Geotab MyGeotab API',
+    description: 'Professional fleet telematics with comprehensive vehicle data',
+    tier: 'enterprise',
+    credentialsRequired: ['username', 'password', 'database'],
+    rateLimit: { requests: 50000, period: 'day' },
+    costEstimate: { paid: '$35-45/vehicle/month' },
+    setupComplexity: 'medium',
+    documentation: 'https://my.geotab.com/api/documentation/',
+    compatibleModels: [
+      'MyGeotab API v1',
+      'Geotab GO devices (GO6, GO7, GO8, GO9)',
+      'Third-party devices with Geotab certification',
+      'Custom integrations via Geotab SDK'
+    ],
+    setupInstructions: [
+      'Access your MyGeotab database credentials from Geotab portal',
+      'Configure database name, username, and password in API settings',
+      'Import vehicle and device mappings from your Geotab system',
+      'Set up real-time data polling intervals (recommended: 30 seconds)',
+      'Enable specific data types: GPS, engine data, driver identification'
+    ],
+    integrationFlow: 'Geotab Setup → Database Connection → Device Import → Data Polling → Maps Visualization',
+    requiredFields: ['MyGeotab Username', 'Password', 'Database Name', 'Device Serial Numbers'],
+    supportedFeatures: ['Precise GPS tracking', 'Engine diagnostics', 'Driver identification', 'Fuel consumption', 'Exception reporting']
+  },
+  {
+    category: 'gps',
+    provider: 'verizon_connect',
+    name: 'Verizon Connect API',
+    description: 'Enterprise fleet management with integrated communications',
+    tier: 'enterprise',
+    credentialsRequired: ['apiKey', 'clientId', 'clientSecret'],
+    rateLimit: { requests: 75000, period: 'day' },
+    costEstimate: { paid: '$40-65/vehicle/month' },
+    setupComplexity: 'medium',
+    documentation: 'https://developer.verizonconnect.com/',
+    compatibleModels: [
+      'Verizon Connect API v3',
+      'Networkfleet API',
+      'Verizon Connect Mobile devices',
+      'Integrated OBD-II solutions'
+    ],
+    setupInstructions: [
+      'Generate API credentials from Verizon Connect developer portal',
+      'Configure OAuth 2.0 authentication with client credentials',
+      'Map your fleet vehicles to Verizon Connect device IDs',
+      'Set up webhook endpoints for real-time event notifications',
+      'Configure data refresh intervals and alert thresholds'
+    ],
+    integrationFlow: 'OAuth Setup → Fleet Import → Device Mapping → Webhook Configuration → Real-time Monitoring',
+    requiredFields: ['Client ID', 'Client Secret', 'API Key', 'Device Asset IDs'],
+    supportedFeatures: ['Real-time location', 'Route replay', 'Geofence alerts', 'Driver scoring', 'Maintenance scheduling']
+  },
+  {
+    category: 'gps',
+    provider: 'fleet_complete',
+    name: 'Fleet Complete API',
+    description: 'Comprehensive fleet tracking with asset management',
+    tier: 'enterprise',
+    credentialsRequired: ['apiKey', 'username', 'password'],
+    rateLimit: { requests: 60000, period: 'day' },
+    costEstimate: { paid: '$25-50/vehicle/month' },
+    setupComplexity: 'easy',
+    documentation: 'https://developer.fleetcomplete.com/',
+    compatibleModels: [
+      'Fleet Complete REST API v2',
+      'Fleet Complete tracking devices',
+      'Mobile app integrations',
+      'Third-party GPS hardware with Fleet Complete support'
+    ],
+    setupInstructions: [
+      'Request API access from Fleet Complete customer support',
+      'Configure API key and login credentials in integration settings',
+      'Import existing vehicle and driver data from Fleet Complete',
+      'Enable real-time tracking for selected vehicles',
+      'Set up automated data synchronization every 30 seconds'
+    ],
+    integrationFlow: 'API Access Request → Credentials Setup → Data Import → Real-time Sync → Fleet Visualization',
+    requiredFields: ['API Key', 'Username', 'Password', 'Vehicle Asset IDs'],
+    supportedFeatures: ['Live GPS tracking', 'Asset management', 'Driver behavior', 'Fuel management', 'Maintenance alerts']
+  },
+  {
+    category: 'gps',
+    provider: 'tomtom',
+    name: 'TomTom Fleet Management',
+    description: 'Professional fleet tracking with advanced mapping technology',
+    tier: 'paid',
+    credentialsRequired: ['apiKey'],
+    rateLimit: { requests: 50000, period: 'day' },
+    costEstimate: { paid: '€24-240/month' },
+    setupComplexity: 'medium',
+    documentation: 'https://developer.tomtom.com/fleet-management-api',
+    compatibleModels: [
+      'TomTom Maps API',
+      'TomTom Tracking API',
+      'TomTom Fleet Management Platform',
+      'TomTom PRO navigation devices'
+    ],
+    setupInstructions: [
+      'Obtain TomTom API key from developer portal',
+      'Configure API key in Fleetopia GPS integration settings',
+      'Set up vehicle profiles with TomTom device identifiers',
+      'Enable location tracking and configure update frequency',
+      'Implement geofence and route optimization features'
+    ],
+    integrationFlow: 'Developer Account → API Key → Vehicle Setup → Location Tracking → Route Optimization',
+    requiredFields: ['TomTom API Key', 'Application Name', 'Vehicle Device IDs'],
+    supportedFeatures: ['Real-time tracking', 'Traffic integration', 'Route planning', 'Geofencing', 'Map visualization']
+  },
+  {
+    category: 'gps',
+    provider: 'custom',
+    name: 'Custom GPS API',
+    description: 'Universal adapter for any GPS tracking system with REST API',
+    tier: 'free',
+    credentialsRequired: ['baseUrl', 'apiKey'],
+    rateLimit: { requests: 10000, period: 'day' },
+    costEstimate: { free: 'Depends on your GPS provider' },
+    setupComplexity: 'hard',
+    documentation: '/docs/custom-gps-integration',
+    compatibleModels: [
+      'Any REST API returning GPS coordinates',
+      'Custom tracking hardware with API',
+      'Fleet management systems with webhook support',
+      'OBD-II devices with cloud connectivity'
+    ],
+    setupInstructions: [
+      'Prepare your GPS API endpoint that returns vehicle locations',
+      'Ensure API returns data in format: {vehicleId, lat, lng, timestamp, status}',
+      'Configure base URL and authentication in custom integration form',
+      'Map your vehicle IDs to Fleetopia vehicle records',
+      'Test API connection and verify data format compatibility'
+    ],
+    integrationFlow: 'API Preparation → Endpoint Configuration → Data Format Mapping → Connection Testing → Live Integration',
+    requiredFields: ['API Base URL', 'Authentication Method', 'Vehicle ID Mapping', 'Data Format Schema'],
+    supportedFeatures: ['Flexible integration', 'Custom data mapping', 'Webhook support', 'Real-time polling', 'Error handling']
   },
   
   // Freight Providers

@@ -19,7 +19,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
-import { Truck, User, MapPin, Settings } from 'lucide-react';
+import { Truck, User, MapPin, Settings, Navigation, Satellite } from 'lucide-react';
+import { API_PROVIDERS } from '@/lib/universal-api-bridge';
 
 // Re-using the Vehicle type from the management page
 // A centralized types file would be a good refactor for later
@@ -34,6 +35,8 @@ interface FormData extends Partial<Vehicle> {
   locationType?: string;
   manualLocationAddress?: string;
   fuelConsumption?: number;
+  gpsProvider?: string;
+  gpsEnabled?: boolean;
 }
 
 export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
@@ -49,6 +52,8 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
     lat: 0,
     lng: 0,
     fuelConsumption: 30.0,
+    gpsProvider: '',
+    gpsEnabled: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -78,6 +83,8 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
         lat: 0,
         lng: 0,
         fuelConsumption: 30.0,
+        gpsProvider: '',
+        gpsEnabled: false,
       });
     }
   }, [vehicle, isEditMode]);
@@ -139,6 +146,8 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
         lat: parseFloat(String(formData.lat)) || 0,
         lng: parseFloat(String(formData.lng)) || 0,
         fuelConsumption: parseFloat(String(formData.fuelConsumption)) || 30.0,
+        gpsProvider: formData.gpsProvider || null,
+        gpsEnabled: Boolean(formData.gpsEnabled),
       };
 
       const response = await fetch(apiEndpoint, {
@@ -275,6 +284,63 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
               className="h-11 text-white"
               placeholder="e.g., John Smith"
             />
+          </div>
+        </div>
+
+        {/* GPS Integration Section */}
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 pb-2 border-b border-slate-700">
+            <Satellite className="w-4 h-4 text-orange-400" />
+            <h3 className="text-base font-semibold text-white">GPS Integration</h3>
+          </div>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-slate-800/50">
+              <div className="flex items-center space-x-3">
+                <Navigation className="w-5 h-5 text-orange-400" />
+                <div>
+                  <p className="text-sm font-medium text-slate-200">Enable GPS Tracking</p>
+                  <p className="text-xs text-slate-400">Real-time location tracking for this vehicle</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.gpsEnabled || false}
+                  onChange={(e) => setFormData(prev => ({ ...prev, gpsEnabled: e.target.checked }))}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-orange-300 dark:peer-focus:ring-orange-800 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-orange-600"></div>
+              </label>
+            </div>
+            
+            {formData.gpsEnabled && (
+              <div className="space-y-2">
+                <Label htmlFor="gpsProvider" className="text-sm font-medium text-slate-300">GPS Provider *</Label>
+                <Select 
+                  name="gpsProvider" 
+                  onValueChange={(value) => handleSelectChange('gpsProvider', value)} 
+                  defaultValue={formData.gpsProvider}
+                >
+                  <SelectTrigger className="h-11 text-white">
+                    <SelectValue placeholder="Select GPS provider" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {API_PROVIDERS
+                      .filter(provider => provider.category === 'gps')
+                      .map(provider => (
+                        <SelectItem key={provider.provider} value={provider.provider}>
+                          <div className="flex items-center space-x-2">
+                            <span>{provider.name}</span>
+                            <span className="text-xs text-slate-400">({provider.tier})</span>
+                          </div>
+                        </SelectItem>
+                      ))
+                    }
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         </div>
 
