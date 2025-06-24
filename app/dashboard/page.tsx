@@ -197,7 +197,7 @@ export default function DashboardPage() {
           className="grid grid-cols-1 lg:grid-cols-2 gap-8"
         >
           {/* Active Operations */}
-          <div className="bg-[--card] border-0 rounded-lg p-6 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+          <div className="bg-[--card] border-0 rounded-lg p-6 wave-hover">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-light text-white matrix-text">Active Operations</h3>
               <Activity className="w-5 h-5 text-green-400" />
@@ -233,7 +233,7 @@ export default function DashboardPage() {
           </div>
 
           {/* AI Agent Status */}
-          <div className="bg-[--card] border-0 rounded-lg p-6 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+          <div className="bg-[--card] border-0 rounded-lg p-6 wave-hover">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-light text-white matrix-text">AI Agent Status</h3>
               <Bot className="w-5 h-5 text-green-400" />

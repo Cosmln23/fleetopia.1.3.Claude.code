@@ -264,7 +264,7 @@ export default function APIIntegrationsPage() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8"
         >
-          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+          <Card className="bg-[--card] border-0 wave-hover">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -277,7 +277,7 @@ export default function APIIntegrationsPage() {
             </CardContent>
           </Card>
           
-          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+          <Card className="bg-[--card] border-0 wave-hover">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -290,7 +290,7 @@ export default function APIIntegrationsPage() {
             </CardContent>
           </Card>
           
-          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+          <Card className="bg-[--card] border-0 wave-hover">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -303,7 +303,7 @@ export default function APIIntegrationsPage() {
             </CardContent>
           </Card>
           
-          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+          <Card className="bg-[--card] border-0 wave-hover">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -338,7 +338,7 @@ export default function APIIntegrationsPage() {
                 
                 {/* API List */}
                 <div className="lg:col-span-2">
-                  <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+                  <Card className="bg-[--card] border-0 wave-hover">
                     <CardHeader>
                       <CardTitle className="text-slate-200">Universal API Providers</CardTitle>
                       <CardDescription>Built-in free APIs and client-configurable services</CardDescription>
@@ -439,7 +439,7 @@ export default function APIIntegrationsPage() {
 
                 {/* Side Panel */}
                 <div className="space-y-6">
-                  <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
+                  <Card className="bg-[--card] border-0 wave-hover">
                     <CardHeader>
                       <CardTitle className="flex items-center text-slate-200">
                         <Activity className="w-5 h-5 mr-2 text-blue-400" />
