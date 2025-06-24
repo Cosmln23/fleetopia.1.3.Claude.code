@@ -73,14 +73,47 @@ export default function FreeMapsPage() {
 
   useEffect(() => {
     fetchVehicles();
+    
+    // Set up real-time updates every 30 seconds
+    const interval = setInterval(() => {
+      fetchVehicles();
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchVehicles = async () => {
     try {
+      // Try to get real-time tracking data first
+      const trackingResponse = await fetch('/api/vehicles/tracking');
+      if (trackingResponse.ok) {
+        const trackingData = await trackingResponse.json();
+        if (trackingData.success && trackingData.data.vehicles.length > 0) {
+          // Convert tracking data to vehicle format
+          const trackingVehicles = trackingData.data.vehicles.map((loc: any) => ({
+            id: loc.vehicleId,
+            name: `Vehicle ${loc.vehicleId}`,
+            lat: loc.latitude,
+            lng: loc.longitude,
+            status: loc.status,
+            gpsEnabled: true,
+            gpsProvider: 'active'
+          }));
+          setVehicles(trackingVehicles);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Fallback to regular vehicle API
       const response = await fetch('/api/vehicles');
       if (response.ok) {
         const data = await response.json();
-        setVehicles(data);
+        if (data.success) {
+          setVehicles(data.data.vehicles || data);
+        } else {
+          setVehicles(data);
+        }
       }
     } catch (error) {
       console.error('Error fetching vehicles:', error);

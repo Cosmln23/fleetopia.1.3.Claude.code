@@ -15,6 +15,9 @@ import {
 import { GmailAdapter } from './adapters/gmail-adapter';
 import { GoogleWeatherAdapter } from './adapters/google-weather-adapter';
 import { BasicFuelAdapter } from './adapters/basic-fuel-adapter';
+import { HereGPSAdapter } from './gps-adapters/here-adapter';
+import { SamsaraGPSAdapter } from './gps-adapters/samsara-adapter';
+import { CustomGPSAdapter } from './gps-adapters/custom-adapter';
 
 export interface ClientAPIConfiguration {
   userId: string;
@@ -238,12 +241,35 @@ export class UniversalAPIManager {
   private async initializeGPSAdapter(userId: string, config: { provider: string; credentials: APICredentials }): Promise<void> {
     try {
       switch (config.provider) {
-        case 'tomtom':
-          // TODO: Implement TomTomAdapter
+        case 'here':
+          const hereAdapter = new HereGPSAdapter(config.credentials);
+          APIProviderRegistry.registerProvider('gps', `${config.provider}_${userId}`, hereAdapter);
           break;
           
-        case 'here':
-          // TODO: Implement HereAdapter
+        case 'samsara':
+          const samsaraAdapter = new SamsaraGPSAdapter(config.credentials);
+          APIProviderRegistry.registerProvider('gps', `${config.provider}_${userId}`, samsaraAdapter);
+          break;
+          
+        case 'custom':
+          const customAdapter = new CustomGPSAdapter(config.credentials);
+          APIProviderRegistry.registerProvider('gps', `${config.provider}_${userId}`, customAdapter);
+          break;
+          
+        case 'geotab':
+          // TODO: Implement GeotabAdapter
+          break;
+          
+        case 'verizon_connect':
+          // TODO: Implement VerizonConnectAdapter
+          break;
+          
+        case 'fleet_complete':
+          // TODO: Implement FleetCompleteAdapter
+          break;
+          
+        case 'tomtom':
+          // TODO: Implement TomTomAdapter
           break;
           
         default:
