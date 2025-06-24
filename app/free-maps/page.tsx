@@ -20,7 +20,7 @@ export default function FreeMapsPage() {
         </div>
 
         {/* Info Card */}
-        <Card className="bg-[--card] border-0">
+        <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-slate-200 flex items-center">
               <Info className="w-5 h-5 mr-2 text-blue-400" />
@@ -44,7 +44,7 @@ export default function FreeMapsPage() {
         </Card>
 
         {/* Future Plans */}
-        <Card className="bg-[--card] border-0">
+        <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
           <CardHeader>
             <CardTitle className="text-slate-200">Future Implementation</CardTitle>
           </CardHeader>

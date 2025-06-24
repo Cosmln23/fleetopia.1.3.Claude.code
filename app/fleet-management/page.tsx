@@ -326,7 +326,7 @@ export default function FleetManagementPage() {
         transition={{ delay: index * 0.05 }}
         className="h-full"
       >
-        <Card className="bg-[--card] border-0 transition-all duration-300 min-h-[320px] relative">
+        <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300 min-h-[320px] relative">
           {/* ELIMINAT: Posted to Find Transport badge */}
           
           <div className="p-4 pb-3 pt-8">
@@ -508,7 +508,7 @@ export default function FleetManagementPage() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8"
         >
-          <Card className="bg-[--card] border-0">
+          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-slate-400">Total Vehicles</CardTitle>
               <Truck className="h-5 w-5 text-slate-500" />
@@ -518,7 +518,7 @@ export default function FleetManagementPage() {
               <p className="text-xs text-slate-500">across all fleets</p>
             </CardContent>
           </Card>
-          <Card className="bg-[--card] border-0">
+          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-slate-400">Active Vehicles</CardTitle>
               <Activity className="h-5 w-5 text-slate-500" />
@@ -528,7 +528,7 @@ export default function FleetManagementPage() {
               <p className="text-xs text-slate-500">{((fleetStats.activeVehicles / fleetStats.totalVehicles) * 100 || 0).toFixed(1)}% of fleet</p>
             </CardContent>
           </Card>
-          <Card className="bg-[--card] border-0">
+          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-slate-400">Idle Vehicles</CardTitle>
               <Users className="h-5 w-5 text-slate-500" />
@@ -538,7 +538,7 @@ export default function FleetManagementPage() {
               <p className="text-xs text-slate-500">ready for dispatch</p>
             </CardContent>
           </Card>
-          <Card className="bg-[--card] border-0">
+          <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium text-slate-400">In Maintenance</CardTitle>
               <Settings className="h-5 w-5 text-slate-500" />
@@ -592,7 +592,7 @@ export default function FleetManagementPage() {
             </TabsContent>
 
             <TabsContent value="routes">
-              <Card className="bg-[--card] border-0">
+              <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
                 <CardHeader>
                   <CardTitle className="text-slate-200">Route Optimization</CardTitle>
                   <CardDescription>AI-powered route planning and optimization</CardDescription>
@@ -615,7 +615,7 @@ export default function FleetManagementPage() {
 
             <TabsContent value="analytics">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card className="bg-[--card] border-0">
+                <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="text-slate-200">Performance Metrics</CardTitle>
                   </CardHeader>
@@ -640,7 +640,7 @@ export default function FleetManagementPage() {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-[--card] border-0">
+                <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
                   <CardHeader>
                     <CardTitle className="text-slate-200">Cost Analysis</CardTitle>
                   </CardHeader>
@@ -669,7 +669,7 @@ export default function FleetManagementPage() {
             </TabsContent>
 
             <TabsContent value="maintenance">
-              <Card className="bg-[--card] border-0">
+              <Card className="bg-[--card] border-0 hover:bg-gradient-to-r hover:from-slate-800 hover:via-slate-700 hover:to-slate-800 transition-all duration-300">
                 <CardHeader>
                   <CardTitle className="text-slate-200">Maintenance Schedule</CardTitle>
                   <CardDescription>Predictive maintenance and service planning</CardDescription>
