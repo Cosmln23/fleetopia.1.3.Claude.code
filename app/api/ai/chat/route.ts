@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { prisma } from '@/lib/prisma';
+import { CargoStatus, VehicleStatus } from '@prisma/client';
 
 // Initialize the Anthropic client with the API key from environment variables
 const anthropic = new Anthropic({
@@ -45,99 +47,119 @@ export async function POST(req: NextRequest) {
             content: msg.message,
         }));
 
-    // 4. Fetch comprehensive platform context for intelligent dispatcher
+    // 4. Fetch comprehensive platform context using direct database access
     let platformContext = '';
     try {
-      // Use absolute URLs for internal API calls - important for production
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                     (req.headers.get('host') ? `https://${req.headers.get('host')}` : 'http://localhost:3000');
-      const headers: { [key: string]: string } = {
-        'Content-Type': 'application/json'
-      };
+      console.log('AI Debug - Fetching data directly from database for user:', userId);
       
-      // Forward authentication headers
-      const authHeader = req.headers.get('Authorization');
-      const cookieHeader = req.headers.get('Cookie');
+      // Get user's fleets first
+      const userFleets = await prisma.fleet.findMany({
+        where: { userId: userId }
+      });
       
-      if (authHeader) headers['Authorization'] = authHeader;
-      if (cookieHeader) headers['Cookie'] = cookieHeader;
-      
-      console.log('AI Debug - Making API calls to:', baseUrl);
-      console.log('AI Debug - Headers:', { ...headers, Cookie: cookieHeader ? '[REDACTED]' : 'None' });
-      
-      // Fetch all dispatch center data in parallel
-      const [dashboardRes, cargoRes, vehiclesRes, jobsRes, dispatcherRes, cargoOffersRes] = await Promise.all([
-        fetch(`${baseUrl}/api/dashboard`, { headers }),
-        fetch(`${baseUrl}/api/marketplace/cargo`, { headers }),
-        fetch(`${baseUrl}/api/vehicles?limit=10`, { headers }),
-        fetch(`${baseUrl}/api/dispatch/jobs?status=TAKEN,IN_PROGRESS,COMPLETED,CANCELED`, { headers }),
-        fetch(`${baseUrl}/api/dispatcher/analysis`, { headers }),
-        fetch(`${baseUrl}/api/cargo-offers`, { headers })
+      const fleetIds = userFleets.map(fleet => fleet.id);
+      console.log('AI Debug - User has', userFleets.length, 'fleets with IDs:', fleetIds);
+
+      // Fetch all dispatch data directly from database in parallel
+      const [vehicles, cargoOffers, activeJobs] = await Promise.all([
+        // Get user's vehicles
+        fleetIds.length > 0 ? prisma.vehicle.findMany({
+          where: { fleetId: { in: fleetIds } },
+          select: {
+            id: true,
+            name: true,
+            licensePlate: true,
+            type: true,
+            status: true,
+            driverName: true,
+            lat: true,
+            lng: true,
+            fuelConsumption: true,
+            createdAt: true
+          },
+          take: 10
+        }) : [],
+        
+        // Get recent cargo offers
+        prisma.cargoOffer.findMany({
+          where: {
+            status: { in: [CargoStatus.NEW, CargoStatus.OPEN] },
+            createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // Last 7 days
+          },
+          select: {
+            id: true,
+            title: true,
+            fromCity: true,
+            toCity: true,
+            price: true,
+            weight: true,
+            urgency: true,
+            status: true,
+            createdAt: true
+          },
+          take: 10,
+          orderBy: { createdAt: 'desc' }
+        }),
+        
+        // Get active jobs (if any)
+        fleetIds.length > 0 ? prisma.cargoOffer.findMany({
+          where: {
+            acceptedByUserId: userId,
+            status: { in: [CargoStatus.TAKEN, CargoStatus.IN_PROGRESS] }
+          },
+          select: {
+            id: true,
+            title: true,
+            fromAddress: true,
+            toAddress: true,
+            status: true
+          },
+          take: 5
+        }) : []
       ]);
 
-      const dashboard = dashboardRes.ok ? await dashboardRes.json() : null;
-      const cargo = cargoRes.ok ? await cargoRes.json() : null;
-      const vehicles = vehiclesRes.ok ? await vehiclesRes.json() : null;
-      const jobs = jobsRes.ok ? await jobsRes.json() : null;
-      const dispatcherAnalysis = dispatcherRes.ok ? await dispatcherRes.json() : null;
-      const cargoOffers = cargoOffersRes.ok ? await cargoOffersRes.json() : null;
+      console.log('AI Debug - Database results:');
+      console.log('  - Vehicles found:', vehicles.length);
+      console.log('  - Cargo offers found:', cargoOffers.length);
+      console.log('  - Active jobs found:', activeJobs.length);
 
-      // Debug logging to see what data we're getting
-      console.log('AI Debug - API Response Status:');
-      console.log('  - Dashboard:', dashboardRes.status, dashboardRes.ok);
-      console.log('  - Cargo:', cargoRes.status, cargoRes.ok);
-      console.log('  - Vehicles:', vehiclesRes.status, vehiclesRes.ok);
-      console.log('  - Jobs:', jobsRes.status, jobsRes.ok);
-      console.log('  - Dispatcher:', dispatcherRes.status, dispatcherRes.ok);
-      console.log('  - Cargo Offers:', cargoOffersRes.status, cargoOffersRes.ok);
-      
-      console.log('AI Debug - Vehicle data:', vehicles?.success ? vehicles.data?.vehicles?.length : 'No vehicles data');
-      
-      // Log errors for failed requests
-      if (!vehiclesRes.ok) {
-        const errorText = await vehiclesRes.text();
-        console.log('AI Debug - Vehicles API error:', errorText);
-      }
+      // Calculate fleet metrics
+      const activeVehicles = vehicles.filter(v => v.status === VehicleStatus.idle || v.status === VehicleStatus.assigned).length;
+      const totalVehicles = vehicles.length;
+      const availableOffers = cargoOffers.filter(o => o.status === CargoStatus.NEW || o.status === CargoStatus.OPEN).length;
 
-      // Build comprehensive context
+      // Build comprehensive context with real data
       platformContext = `
 === FLEETOPIA DISPATCH CENTER - REAL-TIME STATUS ===
 
 FLEET OVERVIEW:
-- Active Vehicles: ${dashboard?.activeVehicles || 0}/${dashboard?.totalVehicles || 0}
-- AI Agents Online: ${dashboard?.aiAgentsOnline || 0}
-- Today's Revenue: €${dashboard?.revenueToday || 0}
-- Fuel Efficiency: ${dashboard?.fuelEfficiency || 0}%
+- Active Vehicles: ${activeVehicles}/${totalVehicles}
+- Fleet Name: ${userFleets[0]?.name || 'Default Fleet'}
+- Available Cargo Offers: ${availableOffers}
+- Active Jobs: ${activeJobs.length}
 
-VEHICLE FLEET DETAILS: ${vehicles?.success ? vehicles.data?.vehicles?.length || 0 : 0} vehicles tracked
-${vehicles?.success && vehicles.data?.vehicles ? vehicles.data.vehicles.map((v: any) => 
-  `- ${v.licensePlate} (${v.type}): ${v.status.toUpperCase()} - Driver: ${v.driverName}${v.lat && v.lng ? ` - GPS: ${v.lat.toFixed(2)}, ${v.lng.toFixed(2)}` : ' - No GPS'}`
-).join('\n') : 'No vehicle data available'}
+VEHICLE FLEET DETAILS: ${vehicles.length} vehicles in your fleet
+${vehicles.length > 0 ? vehicles.map((v: any) => 
+  `- ${v.licensePlate} (${v.type}): ${v.status.toUpperCase()} - Driver: ${v.driverName}${v.lat && v.lng ? ` - GPS: ${v.lat.toFixed(2)}, ${v.lng.toFixed(2)}` : ' - No GPS'} - Fuel: ${v.fuelConsumption || 'N/A'}L/100km`
+).join('\n') : 'No vehicles found in your fleet. Please add vehicles to start dispatching.'}
 
-ACTIVE JOBS: ${jobs?.length || 0} jobs in system
-${jobs?.slice(0, 4)?.map((job: any) => 
-  `- #${job.id.slice(-3)} ${job.fromAddress} → ${job.toAddress} [${job.status}]`
-).join('\n') || 'No active jobs'}
+ACTIVE JOBS: ${activeJobs.length} jobs currently assigned to you
+${activeJobs.length > 0 ? activeJobs.map((job: any) => 
+  `- #${job.id.slice(-6)} ${job.title}: ${job.fromAddress} → ${job.toAddress} [${job.status}]`
+).join('\n') : 'No active jobs assigned'}
 
-CARGO MARKETPLACE: ${cargo?.length || 0} marketplace offers
-${cargo?.slice(0, 5)?.map((offer: any) => 
-  `- ${offer.title}: ${offer.fromCity} → ${offer.toCity}, ${offer.weight}kg, €${offer.price} (${offer.urgency} priority) [${offer.status}]`
-).join('\n') || 'No marketplace offers available'}
+AVAILABLE CARGO OFFERS: ${cargoOffers.length} offers in marketplace (last 7 days)
+${cargoOffers.length > 0 ? cargoOffers.slice(0, 5).map((offer: any) => 
+  `- ${offer.title}: ${offer.fromCity} → ${offer.toCity}, ${offer.weight}kg, €${offer.price} (${offer.urgency} priority) [${offer.status}] - ${new Date(offer.createdAt).toLocaleDateString()}`
+).join('\n') : 'No cargo offers available in marketplace'}
 
-CARGO OFFERS DATABASE: ${cargoOffers?.length || 0} total offers in system
-${cargoOffers?.slice(0, 3)?.map((offer: any) => 
-  `- ${offer.title}: ${offer.fromCity} → ${offer.toCity}, €${offer.price}`
-).join('\n') || 'No cargo offers in database'}
+DISPATCHER INSIGHTS:
+- Fleet Utilization: ${totalVehicles > 0 ? Math.round((activeVehicles / totalVehicles) * 100) : 0}%
+- Available Capacity: ${totalVehicles - activeVehicles} vehicles ready for dispatch
+- New Opportunities: ${availableOffers} unassigned cargo offers
+- Revenue Potential: €${cargoOffers.reduce((sum, offer) => sum + (offer.price || 0), 0).toLocaleString()} total from available offers
 
-AI DISPATCHER ANALYSIS:
-- Available Vehicles: ${dispatcherAnalysis?.availableVehicles || 0}
-- New Offers: ${dispatcherAnalysis?.newOffers || 0}
-- AI Suggestions Generated: ${dispatcherAnalysis?.suggestions?.length || 0}
-${dispatcherAnalysis?.suggestions?.slice(0, 2)?.map((s: any) => 
-  `  • ${s.title}: €${s.estimatedProfit} profit, ${s.estimatedDistance}km, ${Math.round(s.confidence * 100)}% confidence`
-).join('\n') || ''}
-
-=== END DISPATCH DATA ===`;
+=== END REAL DISPATCH DATA ===`;
     } catch (error) {
       console.error('AI Chat - Failed to fetch platform data:', error);
       platformContext = `
