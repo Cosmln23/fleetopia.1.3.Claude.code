@@ -48,7 +48,9 @@ export async function POST(req: NextRequest) {
     // 4. Fetch comprehensive platform context for intelligent dispatcher
     let platformContext = '';
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+      // Use absolute URLs for internal API calls - important for production
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+                     (req.headers.get('host') ? `https://${req.headers.get('host')}` : 'http://localhost:3000');
       const headers: { [key: string]: string } = {
         'Content-Type': 'application/json'
       };
@@ -143,13 +145,15 @@ ${dispatcherAnalysis?.suggestions?.slice(0, 2)?.map((s: any) =>
 ⚠️ Some platform data is temporarily unavailable.
 Error details: ${error instanceof Error ? error.message : 'Unknown error'}
 
-To get full dispatch intelligence, please ensure all services are running.
-I can still help with general logistics advice and planning.
+Pentru informații complete de dispecerat, asigură-te că toate serviciile funcționează.
+Pot să ajut în continuare cu sfaturi generale de logistică și planificare.
 
-Available limited information:
-- User: ${userName}
-- System: Fleetopia Dispatch Center
-- Status: Partial connectivity
+Informații limitate disponibile:
+- Utilizator: ${userName}
+- Sistem: Fleetopia Dispatch Center  
+- Status: Conectivitate parțială
+
+IMPORTANT: Răspunde întotdeauna în limba în care utilizatorul îți scrie!
 
 === END LIMITED DATA ===`;
     }
@@ -158,6 +162,8 @@ Available limited information:
     const response = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307', // Using Haiku for speed and cost-efficiency
       system: `You are the AI Dispatcher for Fleetopia Dispatch Center. You are an intelligent logistics coordinator helping ${userName} optimize fleet operations.
+
+IMPORTANT: Always respond in the same language the user writes to you. If they write in Romanian, respond in Romanian. If they write in English, respond in English.
 
 ${platformContext}
 
