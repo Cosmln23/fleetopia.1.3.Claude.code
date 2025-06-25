@@ -21,7 +21,7 @@ export default function AIChat() {
     {
       id: '1',
       type: 'ai',
-      message: "🚛 Hello! I'm Claude, your AI Assistant for Fleetopia Dispatch Center. I can help with logistics planning, route optimization, cargo management, and fleet operations. What would you like assistance with today?",
+      message: "🚛 AI Dispatcher Online! I'm monitoring your fleet operations in real-time. I can match cargo with available vehicles, estimate pricing, suggest optimal routes, and identify profitable opportunities. Let me know your timeframe and I'll analyze the best dispatch options for you!",
       timestamp: new Date()
     }
   ]);
@@ -117,7 +117,7 @@ export default function AIChat() {
         <CardContent className="p-6 h-full flex flex-col relative z-10">
           <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
             <Bot className="w-5 h-5 mr-2 text-blue-400" />
-            💬 AI Assistant
+            🤖 AI Dispatcher
           </h3>
 
           <div className="flex-1 overflow-y-auto mb-4 space-y-3 max-h-64" ref={endOfMessagesRef}>
@@ -187,7 +187,7 @@ export default function AIChat() {
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask AI Assistant..."
+              placeholder="Ask AI Dispatcher..."
               className="flex-1 px-3 py-2 rounded-lg text-white placeholder-gray-400 focus:outline-none text-sm"
               disabled={isTyping}
             />
