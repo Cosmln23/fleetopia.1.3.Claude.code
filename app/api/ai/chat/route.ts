@@ -50,15 +50,12 @@ export async function POST(req: NextRequest) {
     // 4. Fetch comprehensive platform context using direct database access
     let platformContext = '';
     try {
-      console.log('AI Debug - Fetching data directly from database for user:', userId);
-      
       // Get user's fleets first
       const userFleets = await prisma.fleet.findMany({
         where: { userId: userId }
       });
       
       const fleetIds = userFleets.map(fleet => fleet.id);
-      console.log('AI Debug - User has', userFleets.length, 'fleets with IDs:', fleetIds);
 
       // Fetch all dispatch data directly from database in parallel
       const [vehicles, cargoOffers, activeJobs] = await Promise.all([
@@ -118,10 +115,7 @@ export async function POST(req: NextRequest) {
         }) : []
       ]);
 
-      console.log('AI Debug - Database results:');
-      console.log('  - Vehicles found:', vehicles.length);
-      console.log('  - Cargo offers found:', cargoOffers.length);
-      console.log('  - Active jobs found:', activeJobs.length);
+      // Database results successfully fetched
 
       // Calculate fleet metrics
       const activeVehicles = vehicles.filter(v => v.status === VehicleStatus.idle || v.status === VehicleStatus.assigned).length;
