@@ -49,10 +49,19 @@ export async function POST(req: NextRequest) {
     let platformContext = '';
     try {
       const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-      const headers = {
-        'Authorization': req.headers.get('Authorization') || '',
-        'Cookie': req.headers.get('Cookie') || ''
+      const headers: { [key: string]: string } = {
+        'Content-Type': 'application/json'
       };
+      
+      // Forward authentication headers
+      const authHeader = req.headers.get('Authorization');
+      const cookieHeader = req.headers.get('Cookie');
+      
+      if (authHeader) headers['Authorization'] = authHeader;
+      if (cookieHeader) headers['Cookie'] = cookieHeader;
+      
+      console.log('AI Debug - Making API calls to:', baseUrl);
+      console.log('AI Debug - Headers:', { ...headers, Cookie: cookieHeader ? '[REDACTED]' : 'None' });
       
       // Fetch all dispatch center data in parallel
       const [dashboardRes, cargoRes, vehiclesRes, jobsRes, dispatcherRes, cargoOffersRes] = await Promise.all([
@@ -72,8 +81,21 @@ export async function POST(req: NextRequest) {
       const cargoOffers = cargoOffersRes.ok ? await cargoOffersRes.json() : null;
 
       // Debug logging to see what data we're getting
-      console.log('AI Debug - Vehicles response:', vehiclesRes.status, vehicles);
-      console.log('AI Debug - Vehicle count:', vehicles?.success ? vehicles.data?.vehicles?.length : 'No vehicles');
+      console.log('AI Debug - API Response Status:');
+      console.log('  - Dashboard:', dashboardRes.status, dashboardRes.ok);
+      console.log('  - Cargo:', cargoRes.status, cargoRes.ok);
+      console.log('  - Vehicles:', vehiclesRes.status, vehiclesRes.ok);
+      console.log('  - Jobs:', jobsRes.status, jobsRes.ok);
+      console.log('  - Dispatcher:', dispatcherRes.status, dispatcherRes.ok);
+      console.log('  - Cargo Offers:', cargoOffersRes.status, cargoOffersRes.ok);
+      
+      console.log('AI Debug - Vehicle data:', vehicles?.success ? vehicles.data?.vehicles?.length : 'No vehicles data');
+      
+      // Log errors for failed requests
+      if (!vehiclesRes.ok) {
+        const errorText = await vehiclesRes.text();
+        console.log('AI Debug - Vehicles API error:', errorText);
+      }
 
       // Build comprehensive context
       platformContext = `
@@ -115,7 +137,21 @@ ${dispatcherAnalysis?.suggestions?.slice(0, 2)?.map((s: any) =>
 
 === END DISPATCH DATA ===`;
     } catch (error) {
-      platformContext = 'Real-time dispatch data temporarily unavailable.';
+      console.error('AI Chat - Failed to fetch platform data:', error);
+      platformContext = `
+=== FLEETOPIA DISPATCH CENTER - LIMITED DATA ===
+⚠️ Some platform data is temporarily unavailable.
+Error details: ${error instanceof Error ? error.message : 'Unknown error'}
+
+To get full dispatch intelligence, please ensure all services are running.
+I can still help with general logistics advice and planning.
+
+Available limited information:
+- User: ${userName}
+- System: Fleetopia Dispatch Center
+- Status: Partial connectivity
+
+=== END LIMITED DATA ===`;
     }
 
     // 5. Call the Anthropic API with intelligent dispatcher context
