@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { Truck, Bot, Euro, Fuel, Route, Clock, TrendingUp, Activity } from 'lucide-react';
 import MetricCard from '@/components/metric-card';
 import DigitalScreen from '@/components/digital-screen';
+import { GmailStatusIndicator } from '@/components/gmail-status-indicator';
+import { Suspense } from 'react';
 
 interface DashboardData {
   activeVehicles: number;
@@ -264,6 +266,20 @@ export default function DashboardPage() {
             </div>
           </div>
         </motion.div>
+
+        <div className="flex items-center justify-between space-y-2">
+          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+          <div className="flex items-center space-x-2">
+            <Suspense fallback={<div className="h-6 w-24 bg-gray-200 rounded-md animate-pulse" />}>
+              <GmailStatusIndicator />
+            </Suspense>
+          </div>
+        </div>
+
+        <div className="text-center py-12 text-muted-foreground">
+          <p>Main dashboard content will be displayed here.</p>
+          <p className="text-sm">For example: charts, statistics, recent alerts.</p>
+        </div>
       </div>
     </div>
   );

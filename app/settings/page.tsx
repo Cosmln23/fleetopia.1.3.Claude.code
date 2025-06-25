@@ -1,32 +1,28 @@
-
 'use client';
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings } from 'lucide-react';
+import { GmailConnectionCard } from '@/components/gmail-connection-card';
+import { Suspense } from 'react';
+
+// Wrapper to use `useSearchParams` inside a client component
+function SettingsPageContent() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium">External Integrations</h3>
+        <p className="text-sm text-muted-foreground">
+          Connect your external accounts to extend the platform's functionality.
+        </p>
+      </div>
+      <GmailConnectionCard />
+    </div>
+  );
+}
 
 export default function SettingsPage() {
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground">System configuration and preferences</p>
-      </div>
-      
-      <Card className="bg-[--card] border-0 wave-hover">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            System Settings
-          </CardTitle>
-          <CardDescription>Configure your Fleetopia system</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8 text-muted-foreground">
-            Settings interface coming soon...
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    // Suspense is required because useSearchParams is used inside
+    <Suspense fallback={<div>Loading...</div>}>
+      <SettingsPageContent />
+    </Suspense>
   );
 }
