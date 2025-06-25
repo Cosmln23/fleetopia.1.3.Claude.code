@@ -7,6 +7,7 @@ import MetricCard from '@/components/metric-card';
 import DigitalScreen from '@/components/digital-screen';
 import { GmailStatusIndicator } from '@/components/gmail-status-indicator';
 import { Suspense } from 'react';
+import AIChat from '@/components/AIChat';
 
 interface DashboardData {
   activeVehicles: number;
@@ -191,7 +192,7 @@ export default function DashboardPage() {
           />
         </motion.div>
 
-        {/* Fleet Status Overview */}
+        {/* Fleet Status Overview & AI Chat */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -233,42 +234,14 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-
-          {/* AI Agent Status */}
-          <div className="bg-[--card] rounded-lg p-6 space-y-4">
-            <div className="flex items-center space-x-3">
-              <Bot className="h-6 w-6 text-green-400" />
-              <h3 className="text-xl font-semibold text-white">AI Agent Status</h3>
-            </div>
-            <div className="space-y-4">
-              {[
-                { name: 'Fuel Optimizer', status: 'Active', requests: 234, efficiency: 97 },
-                { name: 'Route Genius', status: 'Active', requests: 189, efficiency: 94 },
-                { name: 'Weather Prophet', status: 'Active', requests: 156, efficiency: 91 },
-                { name: 'Maintenance Predictor', status: 'Standby', requests: 67, efficiency: 89 }
-              ].map((agent) => (
-                <div key={agent.name} className="bg-[--card]/50 border-0 rounded p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-white">{agent.name}</span>
-                    <span className={`text-xs px-2 py-1 rounded ${
-                      agent.status === 'Active' ? 'bg-green-400/20 text-green-400' :
-                      'bg-gray-400/20 text-gray-400'
-                    }`}>
-                      {agent.status}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-400">
-                    <span>{agent.requests} requests</span>
-                    <span>{agent.efficiency}% efficiency</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          
+          {/* AI Chat */}
+          <AIChat />
+          
         </motion.div>
 
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+        <div className="flex items-center justify-between space-y-2 mt-8">
+          <h2 className="text-3xl font-bold tracking-tight">System Status</h2>
           <div className="flex items-center space-x-2">
             <Suspense fallback={<div className="h-6 w-24 bg-gray-200 rounded-md animate-pulse" />}>
               <GmailStatusIndicator />
