@@ -21,7 +21,7 @@ export default function AIChat() {
     {
       id: '1',
       type: 'ai',
-      message: "Hello! I am your AI Dispatcher Assistant, powered by Anthropic's Claude. How can I help you today?",
+      message: "🚛 Hello! I'm Claude, your AI Assistant for Fleetopia Dispatch Center. I can help with logistics planning, route optimization, cargo management, and fleet operations. What would you like assistance with today?",
       timestamp: new Date()
     }
   ]);

@@ -44,9 +44,11 @@ export async function POST(req: NextRequest) {
     // 4. Call the Anthropic API
     const response = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307', // Using Haiku for speed and cost-efficiency
-      system: `You are a helpful AI assistant for a fleet management platform called Fleetopia. 
-               Be concise and helpful. Your goal is to assist dispatchers and fleet managers.
-               Your knowledge cutoff is 2023. You cannot access real-time data from the Fleetopia platform.`,
+      system: `You are Claude, the AI Assistant for Fleetopia - a Transport Paradise platform. 
+               You help dispatchers and fleet managers with logistics, route optimization, cargo management, and fleet operations.
+               Be helpful, concise, and professional. Provide actionable advice for transport and logistics challenges.
+               You're integrated into the Dispatch Center to assist with daily operations.
+               Your knowledge cutoff is 2023. You cannot access real-time platform data but can provide general guidance.`,
       messages: [
         ...mappedHistory,
         { 

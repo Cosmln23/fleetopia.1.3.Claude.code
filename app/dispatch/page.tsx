@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useUser } from '@clerk/nextjs';
-import AIChatDemo from '@/components/AIChatDemo';
+import AIChat from '@/components/AIChat';
 import CargoDateFilter from '@/components/CargoDateFilter';
 
 // Define interfaces
@@ -397,48 +397,11 @@ export default function DispatcherProDashboard() {
 
         {/* SECTION 2: AI Suggestions + Fleet Status Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* AI Suggestions Card */}
+          {/* AI Chat Card - Live Anthropic Integration */}
           <Card className="bg-[--card] wave-hover">
             <CardContent className="p-6 relative z-10">
-              <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-                💬 AI Assistant (Demo)
-              </h3>
-              {/* Show filter status */}
-              <div className="mb-3 p-2 bg-blue-900/20 rounded shadow-sm">
-                <div className="text-xs text-blue-300">
-                  📦 {cargoOffers.length} cargo offers found in database
-                  {cargoOffers.length === 0 && (
-                    <div className="text-orange-300 mt-1">
-                      ⚠️ No offers match current filter criteria
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              <div className="space-y-3">
-                {dispatcherAnalysis?.suggestions && dispatcherAnalysis.suggestions.length > 0 ? (
-                  dispatcherAnalysis.suggestions.slice(0, 3).map((suggestion) => (
-                    <div key={suggestion.id} className="border border-slate-700 rounded p-3 bg-slate-700/30">
-                      <div className="text-blue-400 font-medium">🎯 AI Match: {suggestion.title}</div>
-                      <div className="ml-4 text-sm text-gray-300 mt-1">
-                        Confidence: {Math.round(suggestion.confidence * 100)}% | Distance: {suggestion.estimatedDistance}km
-                      </div>
-                      <div className="ml-4 text-xs text-green-400 mt-1">
-                        Est. profit: €{suggestion.estimatedProfit.toFixed(0)} | Duration: {suggestion.estimatedDuration}h
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-gray-400">
-                    <div className="text-blue-400">• No active suggestions</div>
-                    <div className="ml-4 text-sm">
-                      {cargoOffers.length === 0 ? 
-                        'No cargo offers found in database for selected time period' : 
-                        'Add vehicles to your fleet to see AI recommendations'
-                      }
-                    </div>
-                  </div>
-                )}
+              <div className="h-96">
+                <AIChat />
               </div>
             </CardContent>
           </Card>
