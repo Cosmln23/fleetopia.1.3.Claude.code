@@ -1,7 +1,7 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { DispatcherAnalysis } from '@/lib/dispatcher-types';
 import { Prisma, VehicleStatus, CargoStatus } from '@prisma/client';
 
