@@ -71,6 +71,10 @@ export async function POST(req: NextRequest) {
       const dispatcherAnalysis = dispatcherRes.ok ? await dispatcherRes.json() : null;
       const cargoOffers = cargoOffersRes.ok ? await cargoOffersRes.json() : null;
 
+      // Debug logging to see what data we're getting
+      console.log('AI Debug - Vehicles response:', vehiclesRes.status, vehicles);
+      console.log('AI Debug - Vehicle count:', vehicles?.success ? vehicles.data?.vehicles?.length : 'No vehicles');
+
       // Build comprehensive context
       platformContext = `
 === FLEETOPIA DISPATCH CENTER - REAL-TIME STATUS ===
@@ -82,9 +86,9 @@ FLEET OVERVIEW:
 - Fuel Efficiency: ${dashboard?.fuelEfficiency || 0}%
 
 VEHICLE FLEET DETAILS: ${vehicles?.success ? vehicles.data?.vehicles?.length || 0 : 0} vehicles tracked
-${vehicles?.success ? vehicles.data?.vehicles?.map((v: any) => 
+${vehicles?.success && vehicles.data?.vehicles ? vehicles.data.vehicles.map((v: any) => 
   `- ${v.licensePlate} (${v.type}): ${v.status.toUpperCase()} - Driver: ${v.driverName}${v.lat && v.lng ? ` - GPS: ${v.lat.toFixed(2)}, ${v.lng.toFixed(2)}` : ' - No GPS'}`
-).join('\n') || 'No vehicle data available' : 'No vehicle data available'}
+).join('\n') : 'No vehicle data available'}
 
 ACTIVE JOBS: ${jobs?.length || 0} jobs in system
 ${jobs?.slice(0, 4)?.map((job: any) => 
@@ -122,6 +126,7 @@ ${dispatcherAnalysis?.suggestions?.slice(0, 2)?.map((s: any) =>
 ${platformContext}
 
 YOUR ROLE AS INTELLIGENT DISPATCHER:
+- ONLY use the REAL DATA provided above - never invent or assume vehicle information
 - PROACTIVELY monitor all vehicles, cargo offers, and operational metrics
 - SUGGEST optimal cargo-vehicle matches based on GPS location, vehicle capacity, and driver availability
 - ESTIMATE realistic pricing for cargo offers considering distance, fuel costs, and market rates
@@ -129,6 +134,8 @@ YOUR ROLE AS INTELLIGENT DISPATCHER:
 - ASK strategic questions to gather missing information (timeframes, preferences, constraints)
 - RECOMMEND route optimizations and fuel-efficient dispatching decisions
 - TRACK delivery progress and suggest return loads to maximize revenue
+
+CRITICAL: If no vehicles are shown in the data above, tell the user "No vehicles found in your fleet database. Please add vehicles first." Do NOT invent fictional vehicles or data.
 
 DISPATCHER BEHAVIOR:
 - Start conversations by analyzing current fleet status and suggesting immediate actions
