@@ -408,17 +408,17 @@ export default function DispatcherProDashboard() {
           </div>
         </div>
 
-        {/* SECTION 2: AI Suggestions + Fleet Status Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* AI Chat Card - Live Anthropic Integration */}
-          <Card className="bg-[--card] wave-hover">
-            <CardContent className="p-6 relative z-10">
-              <div className="h-96">
-                <AIChat />
-              </div>
-            </CardContent>
-          </Card>
+        {/* SECTION 2: AI Chat - Full Width Rectangular */}
+        <Card className="bg-[--card] wave-hover mb-6">
+          <CardContent className="p-6 relative z-10">
+            <div className="h-80">
+              <AIChat />
+            </div>
+          </CardContent>
+        </Card>
 
+        {/* SECTION 3: Fleet Status + AI Suggestions + Cargo Date Filter Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           {/* Fleet Status Card */}
           <Card className="bg-[--card] wave-hover">
             <CardContent className="p-6 relative z-10">
@@ -453,10 +453,7 @@ export default function DispatcherProDashboard() {
               </div>
             </CardContent>
           </Card>
-        </div>
 
-        {/* SECTION 3: AI Suggestions + Cargo Date Filter Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* AI Suggestions Card */}
           <Card className="bg-[--card] wave-hover">
             <CardContent className="p-6 relative z-10">
@@ -477,24 +474,24 @@ export default function DispatcherProDashboard() {
               
               <div className="space-y-3">
                 {dispatcherAnalysis?.suggestions && dispatcherAnalysis.suggestions.length > 0 ? (
-                  dispatcherAnalysis.suggestions.slice(0, 3).map((suggestion) => (
+                  dispatcherAnalysis.suggestions.slice(0, 2).map((suggestion) => (
                     <div key={suggestion.id} className="border border-slate-700 rounded p-3 bg-slate-700/30">
-                      <div className="text-blue-400 font-medium">🎯 AI Match: {suggestion.title}</div>
-                      <div className="ml-4 text-sm text-gray-300 mt-1">
-                        Confidence: {Math.round(suggestion.confidence * 100)}% | Distance: {suggestion.estimatedDistance}km
+                      <div className="text-blue-400 font-medium text-sm">🎯 {suggestion.title}</div>
+                      <div className="text-xs text-gray-300 mt-1">
+                        {Math.round(suggestion.confidence * 100)}% | {suggestion.estimatedDistance}km
                       </div>
-                      <div className="ml-4 text-xs text-green-400 mt-1">
-                        Est. profit: €{suggestion.estimatedProfit.toFixed(0)} | Duration: {suggestion.estimatedDuration}h
+                      <div className="text-xs text-green-400 mt-1">
+                        €{suggestion.estimatedProfit.toFixed(0)} | {suggestion.estimatedDuration}h
                       </div>
                     </div>
                   ))
                 ) : (
-                  <div className="text-gray-400">
+                  <div className="text-gray-400 text-sm">
                     <div className="text-blue-400">• No active suggestions</div>
-                    <div className="ml-4 text-sm">
+                    <div className="ml-4 text-xs">
                       {cargoOffers.length === 0 ? 
-                        'No cargo offers found in database for selected time period' : 
-                        'Add vehicles to your fleet to see AI recommendations'
+                        'No cargo offers available' : 
+                        'Add vehicles for recommendations'
                       }
                     </div>
                   </div>

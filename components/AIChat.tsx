@@ -120,7 +120,7 @@ export default function AIChat() {
             🤖 AI Dispatcher
           </h3>
 
-          <div className="flex-1 overflow-y-auto mb-4 space-y-3 max-h-64" ref={endOfMessagesRef}>
+          <div className="flex-1 overflow-y-auto mb-4 space-y-3 max-h-64">
             <AnimatePresence>
               {messages.map((msg) => (
                 <motion.div
@@ -180,6 +180,7 @@ export default function AIChat() {
                 </div>
               </motion.div>
             )}
+            <div ref={endOfMessagesRef} />
           </div>
 
           <div className="flex space-x-2">
@@ -191,14 +192,25 @@ export default function AIChat() {
               className="flex-1 px-3 py-2 rounded-lg text-white placeholder-gray-400 focus:outline-none text-sm"
               disabled={isTyping}
             />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!inputMessage.trim() || isTyping}
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3"
-            >
-              <Send className="w-4 h-4" />
-            </Button>
+            <div className="flex space-x-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-gray-400 hover:text-white px-2"
+                onClick={() => handleOpenEmailDialog(inputMessage)}
+                disabled={!inputMessage.trim()}
+              >
+                <Mail className="w-4 h-4" />
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={!inputMessage.trim() || isTyping}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
