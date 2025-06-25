@@ -106,9 +106,11 @@ export default function DispatcherProDashboard() {
   const [beforeDate, setBeforeDate] = useState('');
 
   useEffect(() => {
-    const fetchDispatcherData = async () => {
-      setLoading(true);
-      setError(null);
+    const fetchDispatcherData = async (isInitialLoad = false) => {
+      if (isInitialLoad) {
+        setLoading(true);
+        setError(null);
+      }
       
       try {
         // Fetch all data in parallel for better performance
@@ -146,17 +148,28 @@ export default function DispatcherProDashboard() {
         }
 
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred.');
-        console.error(err);
+        if (isInitialLoad) {
+          setError(err instanceof Error ? err.message : 'An unknown error occurred.');
+          console.error(err);
+        } else {
+          // Silent fail for background refreshes to not disrupt user experience
+          console.warn('Background refresh failed:', err);
+        }
       } finally {
-        setLoading(false);
+        if (isInitialLoad) {
+          setLoading(false);
+        }
       }
     };
 
-    fetchDispatcherData();
+    // Initial fetch on mount
+    fetchDispatcherData(true);
     
-    // Refresh data every 30 seconds like the main dashboard
-    const interval = setInterval(fetchDispatcherData, 30000);
+    // Background refresh every 30 seconds - Silent updates without affecting loading state or UI
+    const interval = setInterval(() => {
+      fetchDispatcherData(false); // Background refresh without loading indicators
+    }, 30000);
+    
     return () => clearInterval(interval);
   }, []);
 
