@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import Anthropic from '@anthropic-ai/sdk';
 
 // Deriving the Vehicle type without direct import to bypass linter issues
