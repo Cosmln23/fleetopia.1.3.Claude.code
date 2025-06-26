@@ -111,6 +111,16 @@ export default function AIChat() {
     scrollToBottom();
   }, [messages]);
 
+  useEffect(() => {
+    // Scroll to bottom after typing animation completes
+    if (!isTyping) {
+      const timer = setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isTyping]);
+
   return (
     <>
       <Card className="bg-[--card] h-full wave-hover">
@@ -136,7 +146,7 @@ export default function AIChat() {
                     <Bot className={`w-5 h-5 ${msg.type === 'error' ? 'text-red-500' : 'text-blue-400'} mt-1 flex-shrink-0`} />
                   )}
                   <div
-                    className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg text-sm ${
+                    className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
                       msg.type === 'user'
                         ? 'bg-blue-600 text-white'
                         : msg.type === 'error' 
@@ -146,16 +156,6 @@ export default function AIChat() {
                   >
                     {msg.message}
                   </div>
-                  {msg.type === 'ai' && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-gray-400 hover:text-white"
-                      onClick={() => handleOpenEmailDialog(msg.message)}
-                    >
-                      <Mail className="w-4 h-4" />
-                    </Button>
-                  )}
                   {msg.type === 'user' && (
                     <User className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
                   )}
@@ -197,8 +197,9 @@ export default function AIChat() {
                 size="sm"
                 variant="ghost"
                 className="text-gray-400 hover:text-white px-2"
-                onClick={() => handleOpenEmailDialog(inputMessage)}
-                disabled={!inputMessage.trim()}
+                onClick={() => handleOpenEmailDialog(messages.filter(m => m.type === 'ai').pop()?.message || '')}
+                disabled={messages.filter(m => m.type === 'ai').length === 0}
+                title="Send last AI response via email"
               >
                 <Mail className="w-4 h-4" />
               </Button>
