@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Bot, User, Mail, Send, AlertTriangle } from 'lucide-react';
+import { Bot, User, Mail, Send, AlertTriangle, Maximize2, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SendNotificationDialog } from './send-notification-dialog';
 import { toast } from 'sonner';
@@ -17,11 +17,12 @@ interface ChatMessage {
 }
 
 export default function AIChat() {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
       type: 'ai',
-      message: "🚛 AI Dispatcher Online! I'm monitoring your fleet operations in real-time. I can match cargo with available vehicles, estimate pricing, suggest optimal routes, and identify profitable opportunities. Let me know your timeframe and I'll analyze the best dispatch options for you!",
+      message: "🚛 AI Dispatcher ready! Ask me about vehicles, cargo matching, or routes.",
       timestamp: new Date()
     }
   ]);
@@ -123,24 +124,34 @@ export default function AIChat() {
 
   return (
     <>
-      <Card className="bg-[--card] h-full wave-hover">
-        <CardContent className="p-6 h-full flex flex-col relative z-10">
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-            <Bot className="w-5 h-5 mr-2 text-blue-400" />
-            🤖 AI Dispatcher
-          </h3>
+      <Card className="bg-[--card] wave-hover">
+        <CardContent className="p-6 flex flex-col relative z-10" style={{ height: isExpanded ? '600px' : '320px' }}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-xl font-semibold text-white flex items-center">
+              <Bot className="w-5 h-5 mr-2 text-blue-400" />
+              🤖 AI Dispatcher
+            </h3>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-gray-400 hover:text-white"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </Button>
+          </div>
 
-          <div className="flex-1 overflow-y-auto mb-4 space-y-3 max-h-64">
-            <AnimatePresence>
+          <div 
+            className="flex-1 overflow-y-auto mb-4 space-y-3"
+            style={{ height: isExpanded ? '480px' : '200px' }}
+          >
+            <div className="space-y-3">
               {messages.map((msg) => (
-                <motion.div
+                <div
                   key={msg.id}
                   className={`flex items-start space-x-2 ${
                     msg.type === 'user' ? 'justify-end' : 'justify-start'
                   }`}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
                 >
                   { (msg.type === 'ai' || msg.type === 'error') && (
                     <Bot className={`w-5 h-5 ${msg.type === 'error' ? 'text-red-500' : 'text-blue-400'} mt-1 flex-shrink-0`} />
@@ -159,17 +170,12 @@ export default function AIChat() {
                   {msg.type === 'user' && (
                     <User className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
                   )}
-                </motion.div>
+                </div>
               ))}
-            </AnimatePresence>
+            </div>
             
             {isTyping && (
-              <motion.div
-                className="flex items-start space-x-2"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-              >
+              <div className="flex items-start space-x-2">
                 <Bot className="w-5 h-5 text-blue-400 mt-1" />
                 <div className="bg-slate-700 text-gray-300 px-3 py-2 rounded-lg text-sm">
                   <div className="flex space-x-1">
@@ -178,7 +184,7 @@ export default function AIChat() {
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
             <div ref={endOfMessagesRef} />
           </div>
