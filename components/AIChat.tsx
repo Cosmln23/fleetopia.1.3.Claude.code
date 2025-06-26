@@ -125,100 +125,120 @@ export default function AIChat() {
 
   return (
     <>
-      <Card className="bg-[--card] wave-hover">
-        <CardContent className="p-6 flex flex-col relative z-10">
+      <Card className="bg-[--card] wave-hover w-full">
+        <CardContent className="p-6 flex flex-col relative z-10 w-full">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-white flex items-center">
               <Bot className="w-5 h-5 mr-2 text-blue-400" />
               🤖 AI Dispatcher
             </h3>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="text-gray-400 hover:text-white"
-              onClick={() => setIsExpanded(!isExpanded)}
-            >
-              {isExpanded ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </Button>
+            <div className="flex items-center space-x-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-blue-400 border-blue-400 hover:bg-blue-400/10 hover:text-blue-300"
+                onClick={() => setIsExpanded(!isExpanded)}
+              >
+                {isExpanded ? (
+                  <>
+                    <Minimize2 className="w-4 h-4 mr-1" />
+                    Minimize
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 className="w-4 h-4 mr-1" />
+                    Expand Chat
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
           {isExpanded && (
-            <div className="flex-1 overflow-y-auto mb-4 space-y-3" style={{ height: '480px' }}>
-            <div className="space-y-3">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex items-start space-x-2 ${
-                    msg.type === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
-                  { (msg.type === 'ai' || msg.type === 'error') && (
-                    <Bot className={`w-5 h-5 ${msg.type === 'error' ? 'text-red-500' : 'text-blue-400'} mt-1 flex-shrink-0`} />
-                  )}
-                  <div
-                    className={`max-w-[80%] px-3 py-2 rounded-lg text-sm ${
-                      msg.type === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : msg.type === 'error' 
-                        ? 'bg-red-900/50 text-red-200'
-                        : 'bg-slate-700 text-gray-300'
-                    }`}
-                  >
-                    {msg.message}
-                  </div>
-                  {msg.type === 'user' && (
-                    <User className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
-                  )}
+            <div className="w-full space-y-4">
+              <div className="w-full overflow-y-auto bg-slate-800/50 rounded-lg p-4 space-y-3" style={{ height: '400px', maxHeight: '400px' }}>
+                <div className="space-y-3">
+                  {messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={`flex items-start space-x-2 ${
+                        msg.type === 'user' ? 'justify-end' : 'justify-start'
+                      }`}
+                    >
+                      { (msg.type === 'ai' || msg.type === 'error') && (
+                        <Bot className={`w-5 h-5 ${msg.type === 'error' ? 'text-red-500' : 'text-blue-400'} mt-1 flex-shrink-0`} />
+                      )}
+                      <div
+                        className={`max-w-[80%] px-3 py-2 rounded-lg text-sm break-words ${
+                          msg.type === 'user'
+                            ? 'bg-blue-600 text-white'
+                            : msg.type === 'error' 
+                            ? 'bg-red-900/50 text-red-200'
+                            : 'bg-slate-700 text-gray-300'
+                        }`}
+                      >
+                        {msg.message}
+                      </div>
+                      {msg.type === 'user' && (
+                        <User className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            
-            {isTyping && (
-              <div className="flex items-start space-x-2">
-                <Bot className="w-5 h-5 text-blue-400 mt-1" />
-                <div className="bg-slate-700 text-gray-300 px-3 py-2 rounded-lg text-sm">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                
+                {isTyping && (
+                  <div className="flex items-start space-x-2">
+                    <Bot className="w-5 h-5 text-blue-400 mt-1" />
+                    <div className="bg-slate-700 text-gray-300 px-3 py-2 rounded-lg text-sm">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      </div>
+                    </div>
                   </div>
+                )}
+                <div ref={endOfMessagesRef} />
+              </div>
+
+              <div className="w-full flex space-x-2">
+                <Textarea
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask AI Dispatcher..."
+                  className="flex-1 px-3 py-2 rounded-lg text-white placeholder-gray-400 focus:outline-none text-sm bg-slate-800/50 border-slate-600 focus:border-blue-400"
+                  disabled={isTyping}
+                  rows={2}
+                />
+                <div className="flex flex-col space-y-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-gray-400 hover:text-white px-2"
+                    onClick={() => handleOpenEmailDialog(messages.filter(m => m.type === 'ai').pop()?.message || '')}
+                    disabled={messages.filter(m => m.type === 'ai').length === 0}
+                    title="Send last AI response via email"
+                  >
+                    <Mail className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!inputMessage.trim() || isTyping}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3"
+                  >
+                    <Send className="w-4 h-4" />
+                  </Button>
                 </div>
               </div>
-            )}
-            <div ref={endOfMessagesRef} />
             </div>
           )}
 
-          {isExpanded && (
-            <div className="flex space-x-2">
-            <Textarea
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Ask AI Dispatcher..."
-              className="flex-1 px-3 py-2 rounded-lg text-white placeholder-gray-400 focus:outline-none text-sm"
-              disabled={isTyping}
-            />
-            <div className="flex space-x-1">
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-gray-400 hover:text-white px-2"
-                onClick={() => handleOpenEmailDialog(messages.filter(m => m.type === 'ai').pop()?.message || '')}
-                disabled={messages.filter(m => m.type === 'ai').length === 0}
-                title="Send last AI response via email"
-              >
-                <Mail className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={handleSendMessage}
-                disabled={!inputMessage.trim() || isTyping}
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white px-3"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
+          {!isExpanded && (
+            <div className="w-full text-center py-8 text-gray-400">
+              <Bot className="w-12 h-12 mx-auto mb-3 text-blue-400/50" />
+              <p className="text-sm">Click "Expand Chat" to start conversation with AI Dispatcher</p>
             </div>
           )}
         </CardContent>

@@ -409,13 +409,9 @@ export default function DispatcherProDashboard() {
         </div>
 
         {/* SECTION 2: AI Chat - Full Width Rectangular */}
-        <Card className="bg-[--card] wave-hover mb-6">
-          <CardContent className="p-6 relative z-10">
-            <div className="h-80">
-              <AIChat />
-            </div>
-          </CardContent>
-        </Card>
+        <div className="w-full mb-6">
+          <AIChat />
+        </div>
 
         {/* SECTION 3: Fleet Status + AI Suggestions + Cargo Date Filter Row */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
