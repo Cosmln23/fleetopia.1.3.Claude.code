@@ -104,20 +104,21 @@ export default function AIChat() {
 
   const scrollToBottom = () => {
     if (endOfMessagesRef.current) {
-      endOfMessagesRef.current.scrollIntoView({ behavior: 'smooth' });
+      const container = endOfMessagesRef.current.parentElement;
+      if (container) {
+        container.scrollTop = container.scrollHeight;
+      }
     }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    const timer = setTimeout(scrollToBottom, 50);
+    return () => clearTimeout(timer);
   }, [messages]);
 
   useEffect(() => {
-    // Scroll to bottom after typing animation completes
     if (!isTyping) {
-      const timer = setTimeout(() => {
-        scrollToBottom();
-      }, 100);
+      const timer = setTimeout(scrollToBottom, 100);
       return () => clearTimeout(timer);
     }
   }, [isTyping]);
@@ -125,7 +126,7 @@ export default function AIChat() {
   return (
     <>
       <Card className="bg-[--card] wave-hover">
-        <CardContent className="p-6 flex flex-col relative z-10" style={{ height: isExpanded ? '600px' : '320px' }}>
+        <CardContent className="p-6 flex flex-col relative z-10">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-semibold text-white flex items-center">
               <Bot className="w-5 h-5 mr-2 text-blue-400" />
@@ -141,10 +142,8 @@ export default function AIChat() {
             </Button>
           </div>
 
-          <div 
-            className="flex-1 overflow-y-auto mb-4 space-y-3"
-            style={{ height: isExpanded ? '480px' : '200px' }}
-          >
+          {isExpanded && (
+            <div className="flex-1 overflow-y-auto mb-4 space-y-3" style={{ height: '480px' }}>
             <div className="space-y-3">
               {messages.map((msg) => (
                 <div
@@ -187,9 +186,11 @@ export default function AIChat() {
               </div>
             )}
             <div ref={endOfMessagesRef} />
-          </div>
+            </div>
+          )}
 
-          <div className="flex space-x-2">
+          {isExpanded && (
+            <div className="flex space-x-2">
             <Textarea
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
@@ -218,7 +219,8 @@ export default function AIChat() {
                 <Send className="w-4 h-4" />
               </Button>
             </div>
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
