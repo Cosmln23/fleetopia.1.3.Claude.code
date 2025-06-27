@@ -152,74 +152,85 @@ const DispatcherPanel = React.memo(function DispatcherPanel({ className = '', co
   return (
     <div className={`${className}`}>
       <Card className="border-2 border-blue-200 shadow-lg bg-gray-900">
-        <CardHeader className="pb-3">
+        <CardHeader className={isExpanded ? "pb-3" : "py-2 px-4"}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Bot className={`h-6 w-6 ${isActive ? 'text-blue-400' : 'text-gray-400'}`} />
-              <div>
-                <CardTitle className="text-lg text-gray-100">Fleet Dispatcher AI</CardTitle>
-                <CardDescription className="text-gray-300">{getStatusMessage()}</CardDescription>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              {dispatcherState.hasNewOpportunities && (
-                <Badge 
-                  variant="default" 
-                  className="animate-pulse bg-green-500 hover:bg-green-600 cursor-pointer"
-                  onClick={() => markOpportunitiesSeen()}
-                >
-                  🔥 NEW
-                </Badge>
+            <div>
+              <CardTitle className="text-lg text-gray-100">AI Dispatcher</CardTitle>
+              {!isExpanded && (
+                <p className="text-xs text-gray-400 mt-1">Click "Expand Chat" to start conversation with AI Dispatcher</p>
               )}
-              
-              {hasAlerts && (
-                <Badge variant="destructive" className="animate-pulse">
-                  {alertCount} alert{alertCount !== 1 ? 's' : ''}
-                </Badge>
-              )}
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={refresh}
-                disabled={isLoading}
-              >
-                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsExpanded(!isExpanded)}
-              >
-                {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-              </Button>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsExpanded(!isExpanded)}
+            >
+              {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </Button>
           </div>
 
-          <div className="flex items-center justify-between pt-2">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-300">Dispatcher Active:</span>
-                <Switch checked={isActive} onCheckedChange={toggle} />
+          {isExpanded && (
+            <>
+              <div className="flex items-center justify-between mt-3">
+                <div className="flex items-center space-x-2">
+                  <Bot className={`h-6 w-6 ${isActive ? 'text-blue-400' : 'text-gray-400'}`} />
+                  <div>
+                    <CardDescription className="text-gray-300">{getStatusMessage()}</CardDescription>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  {dispatcherState.hasNewOpportunities && (
+                    <Badge 
+                      variant="default" 
+                      className="animate-pulse bg-green-500 hover:bg-green-600 cursor-pointer"
+                      onClick={() => markOpportunitiesSeen()}
+                    >
+                      🔥 NEW
+                    </Badge>
+                  )}
+                  
+                  {hasAlerts && (
+                    <Badge variant="destructive" className="animate-pulse">
+                      {alertCount} alert{alertCount !== 1 ? 's' : ''}
+                    </Badge>
+                  )}
+                  
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={refresh}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  </Button>
+                </div>
               </div>
-              
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-300">Live Alerts:</span>
-                <Switch 
-                  checked={dispatcherState.liveNotificationsEnabled} 
-                  onCheckedChange={handleToggleLiveNotifications} 
-                />
+
+              <div className="flex items-center justify-between pt-2">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-300">Dispatcher Active:</span>
+                    <Switch checked={isActive} onCheckedChange={toggle} />
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-300">Live Alerts:</span>
+                    <Switch 
+                      checked={dispatcherState.liveNotificationsEnabled} 
+                      onCheckedChange={handleToggleLiveNotifications} 
+                    />
+                  </div>
+                </div>
+                
+                {metrics && (
+                  <div className="text-sm text-gray-300">
+                    Efficiency: {metrics.efficiencyScore}%
+                  </div>
+                )}
               </div>
-            </div>
-            
-            {metrics && (
-              <div className="text-sm text-gray-300">
-                Efficiency: {metrics.efficiencyScore}%
-              </div>
-            )}
-          </div>
+            </>
+          )}
         </CardHeader>
 
         {isExpanded && (
