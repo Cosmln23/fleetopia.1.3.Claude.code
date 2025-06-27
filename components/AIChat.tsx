@@ -236,8 +236,7 @@ export default function AIChat() {
           )}
 
           {!isExpanded && (
-            <div className="w-full text-center py-8 text-gray-400">
-              <Bot className="w-12 h-12 mx-auto mb-3 text-blue-400/50" />
+            <div className="w-full text-center py-2 text-gray-400">
               <p className="text-sm">Click "Expand Chat" to start conversation with AI Dispatcher</p>
             </div>
           )}
