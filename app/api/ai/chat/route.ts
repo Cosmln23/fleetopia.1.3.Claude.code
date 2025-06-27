@@ -3,6 +3,7 @@ import { auth, currentUser } from '@clerk/nextjs/server';
 import Anthropic from '@anthropic-ai/sdk';
 import prisma from '@/lib/prisma';
 import { CargoStatus, VehicleStatus } from '@prisma/client';
+import { clerkGmailIntegration } from '@/lib/services/clerk-gmail-integration';
 
 // Initialize the Anthropic client with the API key from environment variables
 const anthropic = new Anthropic({
@@ -174,7 +175,7 @@ IMPORTANT: Răspunde întotdeauna în limba în care utilizatorul îți scrie!
 === END LIMITED DATA ===`;
     }
 
-    // 5. Call the Anthropic API with intelligent dispatcher context
+    // 5. Call the Anthropic API with intelligent dispatcher context and tools
     const response = await anthropic.messages.create({
       model: 'claude-3-haiku-20240307', // Using Haiku for speed and cost-efficiency
       system: `You are the AI Dispatcher for Fleetopia Dispatch Center. You are an intelligent logistics coordinator helping ${userName} optimize fleet operations.
@@ -190,6 +191,11 @@ YOUR ROLE AS INTELLIGENT DISPATCHER:
 - SUGGEST specific cargo-vehicle matches with clear reasoning
 - ASK quick strategic questions to gather missing info
 - RECOMMEND one clear action the user should take next
+- USE THE AVAILABLE TOOLS when the user asks you to perform actions like sending emails
+
+AVAILABLE ACTIONS:
+- When user asks to send an email, use the send_email tool to actually send it
+- Always confirm successful tool usage to the user
 
 CRITICAL: If no vehicles are shown in the data above, tell the user "No vehicles found in your fleet database. Please add vehicles first." Do NOT invent fictional vehicles or data.
 
@@ -204,6 +210,30 @@ EXAMPLES:
 ✅ "3 vehicles idle. Check marketplace for new cargo?"
 ✅ "Urgent: 2h left on high-priority load. Use CT-456-DEF?"
 ❌ "I can help you with various logistics tasks and analyze your fleet..."`,
+      tools: [
+        {
+          name: "send_email",
+          description: "Send an email using the connected Gmail account",
+          input_schema: {
+            type: "object",
+            properties: {
+              to: {
+                type: "string",
+                description: "The recipient email address"
+              },
+              subject: {
+                type: "string", 
+                description: "The email subject line"
+              },
+              body: {
+                type: "string",
+                description: "The email body content"
+              }
+            },
+            required: ["to", "subject", "body"]
+          }
+        }
+      ],
       messages: [
         ...mappedHistory,
         { 
@@ -214,11 +244,44 @@ EXAMPLES:
       max_tokens: 150,
     });
 
-    // Find the first text block in the response content.
-    const textContent = response.content.find(block => block.type === 'text');
-    const aiResponse = textContent ? textContent.text : 'Sorry, I could not generate a response.';
+    // Handle tool calls if present
+    let aiResponse = '';
+    let toolResults = [];
 
-    return NextResponse.json({ reply: aiResponse });
+    for (const content of response.content) {
+      if (content.type === 'text') {
+        aiResponse += content.text;
+      } else if (content.type === 'tool_use') {
+        // Execute the tool
+        if (content.name === 'send_email') {
+          try {
+            const { to, subject, body } = content.input as { to: string; subject: string; body: string };
+            
+            // Use the Gmail service directly
+            const gmailAdapter = await clerkGmailIntegration.getGmailAdapter(userId);
+            const result = await gmailAdapter.sendEmail({
+              to: [to],
+              subject,
+              body,
+              isHTML: false,
+            });
+
+            if (result.success) {
+              toolResults.push(`✅ Email successfully sent to ${to}`);
+            } else {
+              toolResults.push(`❌ Failed to send email: ${result.error || 'Unknown error'}`);
+            }
+          } catch (error) {
+            toolResults.push(`❌ Email error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        }
+      }
+    }
+
+    // Combine AI response with tool results
+    const finalResponse = aiResponse + (toolResults.length > 0 ? '\n\n' + toolResults.join('\n') : '');
+
+    return NextResponse.json({ reply: finalResponse || 'Sorry, I could not generate a response.' });
 
   } catch (error) {
     console.error('Error in Anthropic chat route:', error);
