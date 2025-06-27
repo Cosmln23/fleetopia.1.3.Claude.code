@@ -33,23 +33,23 @@ export const vehicleQuerySchema = z.object({
 
 // Cargo offer validation schemas - SMART & FLEXIBLE
 export const createCargoOfferSchema = z.object({
-  // ===== OBLIGATORII (5 câmpuri critice) =====
-  fromCountry: z.string().min(1, 'Țara de plecare este obligatorie').max(100, 'Country name too long'),
-  toCountry: z.string().min(1, 'Țara de destinație este obligatorie').max(100, 'Country name too long'),
-  fromPostalCode: z.string().min(1, 'Codul poștal de plecare este obligatoriu').max(20, 'Postal code too long'),
-  toPostalCode: z.string().min(1, 'Codul poștal de destinație este obligatoriu').max(20, 'Postal code too long'),
-  weight: z.number().min(0.1, 'Greutatea este obligatorie (minim 0.1kg)').max(50000, 'Weight too large'),
-  price: z.number().min(0.1, 'Prețul de cerere este obligatoriu').max(1000000, 'Price too large'),
+  // ===== REQUIRED (5 critical fields) =====
+  fromCountry: z.string().min(1, 'Origin country is required').max(100, 'Country name too long'),
+  toCountry: z.string().min(1, 'Destination country is required').max(100, 'Country name too long'),
+  fromPostalCode: z.string().min(1, 'Origin postal code is required').max(20, 'Postal code too long'),
+  toPostalCode: z.string().min(1, 'Destination postal code is required').max(20, 'Postal code too long'),
+  weight: z.number().min(0.1, 'Weight is required (min 0.1kg)').max(50000, 'Weight too large'),
+  price: z.number().min(0.1, 'Price is required').max(1000000, 'Price too large'),
   
-  // ===== DATA (validare simplificată) =====
+  // ===== DATE (simplified validation) =====
   loadingDate: z.coerce.date({
-    errorMap: () => ({ message: 'Vă rugăm introduceți o dată de încărcare validă.' }),
+    errorMap: () => ({ message: 'Please enter a valid loading date.' }),
   }),
   deliveryDate: z.coerce.date({
-    errorMap: () => ({ message: 'Vă rugăm introduceți o dată de livrare validă.' }),
+    errorMap: () => ({ message: 'Please enter a valid delivery date.' }),
   }),
 
-  // ===== OPȚIONALE (cu defaults inteligente) =====
+  // ===== OPTIONAL (with smart defaults) =====
   title: z.string().max(200, 'Title too long').optional().default(''),
   fromAddress: z.string().max(200, 'Address too long').optional().default(''),
   fromCity: z.string().max(100, 'City name too long').optional().default(''),
