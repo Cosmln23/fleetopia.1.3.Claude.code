@@ -8,11 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Separator } from "@/components/ui/separator";
-import useMarketplaceStore from '@/lib/stores/marketplace-store';
-import pollingService from '@/lib/services/polling-service';
-import { AgentToggle } from '@/components/agent-toggle';
+
 import { 
   Truck, 
   Search, 
@@ -73,7 +69,7 @@ import { useUser } from '@clerk/nextjs';
 import { CargoOffer } from '@prisma/client';
 import { CargoOfferList } from "@/components/cargo-offer-list";
 import { useChat } from '@/contexts/chat-provider';
-import { DispatcherPanel } from '@/components/dispatcher-panel';
+
 import { createCargoOfferSchema } from '@/lib/validations';
 import { CargoDetailModal } from '@/components/cargo-detail-modal';
 import { SendOfferDialog } from '@/components/send-offer-dialog';
@@ -98,8 +94,7 @@ export default function MarketplacePage() {
 
   const { user, isSignedIn } = useUser();
   
-  // NEW: Expand/Collapse State - ÎNCHIS inițial pentru UI curat
-  const [isMarketplaceExpanded, setIsMarketplaceExpanded] = useState(false);
+  
   
   // NEW: Search and Filter State
   const [searchFilters, setSearchFilters] = useState<SearchFilters>({
@@ -674,50 +669,22 @@ export default function MarketplacePage() {
         </Button>
       </div>
 
-      {/* NEW: Expandable/Collapsible Marketplace Header */}
-      <Collapsible 
-        open={isMarketplaceExpanded} 
-        onOpenChange={setIsMarketplaceExpanded}
-        className="mb-6"
-      >
-        <div className="border-2 border-red-500/50 rounded-lg bg-slate-900/50 backdrop-blur-sm">
-          <CollapsibleTrigger asChild>
-            <Card className="bg-[--card] border-none cursor-pointer hover:bg-slate-800/30 transition-colors">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="flex items-center space-x-3">
-                      <Truck className="h-8 w-8 text-blue-400" />
-                      <div>
-                        <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">Logistics Marketplace</h1>
-                        <p className="mt-2 text-lg text-blue-200">The central hub for finding cargo and available transport.</p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center">
-                    <Button variant="ghost" size="icon">
-                      {isMarketplaceExpanded ? 
-                        <ChevronUp className="h-5 w-5" /> : 
-                        <ChevronDown className="h-5 w-5" />
-                      }
-                    </Button>
-                  </div>
+      {/* Marketplace Header */}
+      <Card className="bg-[--card] border-none mb-6">
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-center">
+            <div>
+              <div className="flex items-center space-x-3">
+                <Truck className="h-8 w-8 text-blue-400" />
+                <div>
+                  <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl">Logistics Marketplace</h1>
+                  <p className="mt-2 text-lg text-blue-200">The central hub for finding cargo and available transport.</p>
                 </div>
-              </CardHeader>
-            </Card>
-          </CollapsibleTrigger>
-
-          <CollapsibleContent className="space-y-4 p-6">
-            {/* Fleet Dispatcher AI */}
-            <DispatcherPanel />
-            
-            {/* Agent AI Toggle */}
-            <AgentToggle />
-            
-            <Separator className="bg-slate-700" />
-          </CollapsibleContent>
-        </div>
-      </Collapsible>
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
       
       {/* Simplificat - doar secțiunea Find Cargo */}
       <div className="w-full">
