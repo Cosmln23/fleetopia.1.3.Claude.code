@@ -38,6 +38,17 @@ export async function POST(
         return NextResponse.json({ message: 'You cannot make an offer on your own cargo.' }, { status: 403 });
     }
 
+    // Check if the offered price is higher than the asking price
+    const originalPrice = cargoOffer.price;
+    const isHigherOffer = price > originalPrice;
+    const priceDifference = price - originalPrice;
+    
+    // Create special message based on price comparison
+    let chatMessage = `Sent an offer of €${price}.`;
+    if (isHigherOffer) {
+      chatMessage = `🎉 EXCELLENT OFFER! Sent €${price} (€${priceDifference} above your asking price of €${originalPrice})! Ready to proceed immediately.`;
+    }
+
     // Use prisma transaction to ensure both operations succeed or fail together
     const [, , chatOffer] = await prisma.$transaction([
       // 1. Create or update the offer request
@@ -51,12 +62,12 @@ export async function POST(
         },
       }),
 
-      // 2. Create the automated chat message
+      // 2. Create the automated chat message with special handling for higher offers
       prisma.chatMessage.create({
         data: {
           cargoOfferId,
           senderId: userId,
-          content: `Sent an offer of ${price}€.`,
+          content: chatMessage,
         },
       }),
       
@@ -69,7 +80,29 @@ export async function POST(
       })
     ]);
 
-    return NextResponse.json({ message: 'Offer sent successfully!', chatOffer }, { status: 201 });
+    // Create special system alert for higher offers
+    if (isHigherOffer) {
+      await prisma.systemAlert.create({
+        data: {
+          message: `💰 Premium Offer Alert: €${price} received for "${cargoOffer.title}" (€${priceDifference} above asking price!)`,
+          type: 'premium_offer',
+          relatedId: cargoOfferId,
+          details: `Transporter offered €${price} for cargo originally priced at €${originalPrice}. This is €${priceDifference} above your asking price.`
+        }
+      });
+    }
+
+    // Return appropriate response based on offer type
+    const responseMessage = isHigherOffer 
+      ? `🎉 Premium offer sent successfully! You offered €${priceDifference} above asking price - excellent strategy!`
+      : 'Offer sent successfully!';
+
+    return NextResponse.json({ 
+      message: responseMessage, 
+      chatOffer,
+      isPremiumOffer: isHigherOffer,
+      priceDifference: isHigherOffer ? priceDifference : 0
+    }, { status: 201 });
 
   } catch (error) {
     console.error('[API_SEND_OFFER] Error:', error);

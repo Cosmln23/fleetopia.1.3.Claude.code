@@ -630,7 +630,16 @@ export default function MarketplacePage() {
         throw new Error(errorData.message || 'Failed to send offer');
       }
 
-      toast.success(`💰 Offer Sent! Your offer of €${price} has been sent. You can now chat with the owner.`);
+      const result = await response.json();
+      
+      // Show special toast for premium offers
+      if (result.isPremiumOffer) {
+        toast.success(`🎉 Premium Offer Sent! You offered €${result.priceDifference} above asking price - owner will love this!`, {
+          duration: 5000,
+        });
+      } else {
+        toast.success(`💰 Offer Sent! Your offer of €${price} has been sent. You can now chat with the owner.`);
+      }
 
       setOfferToSend(null);
       await refreshData(activeList);
