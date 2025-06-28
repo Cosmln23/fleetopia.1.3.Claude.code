@@ -199,6 +199,13 @@ AVAILABLE ACTIONS:
 - If user wants to contact someone, show email preview and ASK "Să trimit acest email? (DA/NU)"
 - ONLY send after explicit confirmation
 
+CARGO OFFER ACTIONS:
+- When user asks about sending offers to cargo owners, offer 2 options:
+  Option 1: "Go manually to marketplace card and send offer yourself"
+  Option 2: "I can send the offer for you directly (same as clicking Send Offer on card)"
+- Use send_cargo_offer tool ONLY after user explicitly confirms they want you to send it
+- Always show: cargo ID, price, and ask "Să trimit oferta? (DA/NU)" before using the tool
+
 CRITICAL: If no vehicles are shown in the data above, tell the user "No vehicles found in your fleet database. Please add vehicles first." Do NOT invent fictional vehicles or data.
 
 RESPONSE STYLE:
@@ -233,6 +240,24 @@ EXAMPLES:
               }
             },
             required: ["to", "subject", "body"]
+          }
+        },
+        {
+          name: "send_cargo_offer",
+          description: "Send an offer for a cargo directly through the marketplace system",
+          input_schema: {
+            type: "object",
+            properties: {
+              cargoId: {
+                type: "string",
+                description: "The ID of the cargo offer to send an offer for"
+              },
+              price: {
+                type: "number",
+                description: "The price to offer for the cargo"
+              }
+            },
+            required: ["cargoId", "price"]
           }
         }
       ],
@@ -285,6 +310,86 @@ EXAMPLES:
             }
           } catch (error) {
             toolResults.push(`❌ Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        } else if (content.name === 'send_cargo_offer') {
+          try {
+            const { cargoId, price } = content.input as { cargoId: string; price: number };
+            
+            // Validate inputs
+            if (!cargoId || !price || price <= 0) {
+              toolResults.push(`❌ Invalid offer parameters`);
+              continue;
+            }
+
+            // Use the same logic as the marketplace API
+            const cargoOffer = await prisma.cargoOffer.findUnique({
+              where: { id: cargoId },
+            });
+
+            if (!cargoOffer) {
+              toolResults.push(`❌ Cargo offer not found`);
+              continue;
+            }
+            
+            if (cargoOffer.userId === userId) {
+              toolResults.push(`❌ You cannot make an offer on your own cargo`);
+              continue;
+            }
+
+            // Check if the offered price is higher than the asking price
+            const originalPrice = cargoOffer.price;
+            const isHigherOffer = price > originalPrice;
+            const priceDifference = price - originalPrice;
+            
+            // Create special message based on price comparison
+            let chatMessage = `Sent an offer of €${price}.`;
+            if (isHigherOffer) {
+              chatMessage = `🎉 EXCELLENT OFFER! Sent €${price} (€${priceDifference} above your asking price of €${originalPrice})! Ready to proceed immediately.`;
+            }
+
+            // Use prisma transaction to ensure both operations succeed or fail together
+            await prisma.$transaction([
+              // 1. Create or update the offer request
+              prisma.offerRequest.upsert({
+                where: { cargoOfferId_transporterId: { cargoOfferId: cargoId, transporterId: userId } },
+                update: { price, status: 'PENDING' },
+                create: {
+                  cargoOfferId: cargoId,
+                  transporterId: userId,
+                  price,
+                },
+              }),
+
+              // 2. Create the automated chat message with special handling for higher offers
+              prisma.chatMessage.create({
+                data: {
+                  cargoOfferId: cargoId,
+                  senderId: userId,
+                  content: chatMessage,
+                },
+              }),
+            ]);
+
+            // Create special system alert for higher offers
+            if (isHigherOffer) {
+              await prisma.systemAlert.create({
+                data: {
+                  message: `💰 Premium Offer Alert: €${price} received for "${cargoOffer.title}" (€${priceDifference} above asking price!)`,
+                  type: 'premium_offer',
+                  relatedId: cargoId,
+                  details: `Transporter offered €${price} for cargo originally priced at €${originalPrice}. This is €${priceDifference} above your asking price.`
+                }
+              });
+            }
+
+            // Return appropriate response based on offer type
+            if (isHigherOffer) {
+              toolResults.push(`🎉 Premium offer sent! You offered €${priceDifference} above asking price - excellent strategy! Open chat (top-right) to continue the conversation.`);
+            } else {
+              toolResults.push(`✅ Offer sent successfully for €${price}! Open chat (top-right) to continue the conversation with the cargo owner.`);
+            }
+          } catch (error) {
+            toolResults.push(`❌ Offer error: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
         }
       }
