@@ -679,6 +679,19 @@ export default function FleetManagementPage() {
           </Tabs>
         </motion.div>
 
+        {/* Add Vehicle Dialog */}
+        <Dialog open={isAddVehicleOpen} onOpenChange={setAddVehicleOpen}>
+          <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md max-h-[80vh] overflow-y-auto">
+            <AddVehicleForm 
+              onFormSubmit={() => {
+                setAddVehicleOpen(false);
+                fetchVehicleData(); // Refresh the vehicle list
+              }}
+              vehicle={null} // No vehicle means "add new"
+            />
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={!!editingVehicle} onOpenChange={(isOpen) => !isOpen && handleCloseEdit()}>
           <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-md max-h-[80vh] overflow-y-auto">
             <AddVehicleForm 

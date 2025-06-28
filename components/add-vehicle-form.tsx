@@ -51,7 +51,7 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
     manualLocationAddress: '',
     lat: 0,
     lng: 0,
-    fuelConsumption: 30.0,
+    fuelConsumption: 15.0,
     gpsProvider: '',
     gpsEnabled: false,
   });
@@ -254,15 +254,25 @@ export function AddVehicleForm({ onFormSubmit, vehicle }: AddVehicleFormProps) {
             
             <div className="space-y-2">
               <Label htmlFor="fuelConsumption" className="text-sm font-medium text-slate-300">Fuel Consumption (L/100km)</Label>
-              <Input 
-                id="fuelConsumption" 
+              <Select 
                 name="fuelConsumption" 
-                type="number"
-                value={formData.fuelConsumption || ''} 
-                onChange={handleChange} 
-                className="h-11 text-white"
-                placeholder="e.g., 30"
-              />
+                onValueChange={(value) => handleSelectChange('fuelConsumption', parseFloat(value))} 
+                defaultValue={formData.fuelConsumption?.toString()}
+              >
+                <SelectTrigger className="h-11 text-white">
+                  <SelectValue placeholder="Select fuel consumption" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="8">8 L/100km - Small Van (3.5t)</SelectItem>
+                  <SelectItem value="10">10 L/100km - Medium Van (7.5t)</SelectItem>
+                  <SelectItem value="12">12 L/100km - Small Truck (7.5t)</SelectItem>
+                  <SelectItem value="15">15 L/100km - Medium Truck (12t)</SelectItem>
+                  <SelectItem value="18">18 L/100km - Large Truck (18t)</SelectItem>
+                  <SelectItem value="25">25 L/100km - Heavy Truck (24t)</SelectItem>
+                  <SelectItem value="30">30 L/100km - Extra Heavy Truck (40t)</SelectItem>
+                  <SelectItem value="35">35 L/100km - Articulated Truck (40t+)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
