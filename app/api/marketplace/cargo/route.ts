@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 import { CargoStatus } from '@prisma/client';
 import { auth } from '@clerk/nextjs/server';
-import { createCargoOfferSchema } from '@/lib/validations';
+import { createCargoOfferSchema, createCargoOfferWithGeoValidationSchema } from '@/lib/validations';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +67,22 @@ export async function POST(request: NextRequest) {
     
     const data = validation.data;
     console.log('Validated data:', JSON.stringify(data, null, 2));
+
+    // Additional geographic validation if addresses are provided
+    if ((data.fromAddress && data.fromPostalCode) || (data.toAddress && data.toPostalCode)) {
+      console.log('Performing geographic validation...');
+      
+      const geoValidation = await createCargoOfferWithGeoValidationSchema.safeParseAsync(body);
+      
+      if (!geoValidation.success) {
+        console.error('Geographic validation failed:', geoValidation.error.errors);
+        return NextResponse.json({ 
+          error: 'Address validation failed', 
+          details: geoValidation.error.errors,
+          message: 'Please verify that your addresses, cities, and postal codes are correct and exist on maps.'
+        }, { status: 400 });
+      }
+    }
 
     // Check if all required fields are present for Prisma
     const prismaData = {

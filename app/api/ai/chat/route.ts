@@ -89,6 +89,10 @@ export async function POST(req: NextRequest) {
             title: true,
             fromCity: true,
             toCity: true,
+            fromAddress: true,
+            toAddress: true,
+            fromPostalCode: true,
+            toPostalCode: true,
             price: true,
             weight: true,
             urgency: true,
@@ -145,7 +149,7 @@ ${activeJobs.length > 0 ? activeJobs.map((job: any) =>
 
 AVAILABLE CARGO OFFERS: ${cargoOffers.length} offers in marketplace (last 7 days)
 ${cargoOffers.length > 0 ? cargoOffers.slice(0, 5).map((offer: any) => 
-  `- ID: ${offer.id} | ${offer.title}: ${offer.fromCity} → ${offer.toCity}, ${offer.weight}kg, €${offer.price} (${offer.urgency} priority) [${offer.status}] - ${new Date(offer.createdAt).toLocaleDateString()}`
+  `- ID: ${offer.id} | ${offer.title}: ${offer.fromCity} (${offer.fromPostalCode || 'No postal'}) → ${offer.toCity} (${offer.toPostalCode || 'No postal'}), ${offer.weight}kg, €${offer.price} (${offer.urgency} priority) [${offer.status}] - ${new Date(offer.createdAt).toLocaleDateString()}\n  From: ${offer.fromAddress || 'No address'} | To: ${offer.toAddress || 'No address'}`
 ).join('\n') : 'No cargo offers available in marketplace'}
 
 DISPATCHER INSIGHTS:

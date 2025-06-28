@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { validateAddress } from './geo-validation';
 
 // Common validation schemas
 export const paginationSchema = z.object({
@@ -72,6 +73,32 @@ export const createCargoOfferSchema = z.object({
 });
 
 export const updateCargoOfferSchema = createCargoOfferSchema.partial();
+
+// Enhanced cargo offer schema with geographic validation
+export const createCargoOfferWithGeoValidationSchema = createCargoOfferSchema.refine(
+  async (data) => {
+    // Validate FROM address
+    if (data.fromAddress && data.fromPostalCode && data.fromCountry) {
+      const fromResult = await validateAddress(data.fromAddress, data.fromPostalCode, data.fromCountry);
+      if (!fromResult.isValid) {
+        return false;
+      }
+    }
+    
+    // Validate TO address  
+    if (data.toAddress && data.toPostalCode && data.toCountry) {
+      const toResult = await validateAddress(data.toAddress, data.toPostalCode, data.toCountry);
+      if (!toResult.isValid) {
+        return false;
+      }
+    }
+    
+    return true;
+  },
+  {
+    message: "One or more addresses could not be validated. Please check that the city, postal code, and address exist and match each other.",
+  }
+);
 
 export const cargoQuerySchema = z.object({
   fromLocation: z.string().max(100).optional(),
