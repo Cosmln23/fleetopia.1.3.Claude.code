@@ -145,7 +145,7 @@ ${activeJobs.length > 0 ? activeJobs.map((job: any) =>
 
 AVAILABLE CARGO OFFERS: ${cargoOffers.length} offers in marketplace (last 7 days)
 ${cargoOffers.length > 0 ? cargoOffers.slice(0, 5).map((offer: any) => 
-  `- ${offer.title}: ${offer.fromCity} → ${offer.toCity}, ${offer.weight}kg, €${offer.price} (${offer.urgency} priority) [${offer.status}] - ${new Date(offer.createdAt).toLocaleDateString()}`
+  `- ID: ${offer.id} | ${offer.title}: ${offer.fromCity} → ${offer.toCity}, ${offer.weight}kg, €${offer.price} (${offer.urgency} priority) [${offer.status}] - ${new Date(offer.createdAt).toLocaleDateString()}`
 ).join('\n') : 'No cargo offers available in marketplace'}
 
 DISPATCHER INSIGHTS:
@@ -204,7 +204,9 @@ CARGO OFFER ACTIONS:
   Option 1: "Go manually to marketplace card and send offer yourself"
   Option 2: "I can send the offer for you directly (same as clicking Send Offer on card)"
 - Use send_cargo_offer tool ONLY after user explicitly confirms they want you to send it
-- Always show: cargo ID, price, and ask "Să trimit oferta? (DA/NU)" before using the tool
+- IMPORTANT: Always use the exact cargo ID from the list above (e.g. "ID: clzxxx...") 
+- Always show: exact cargo ID, price, and ask "Să trimit oferta? (DA/NU)" before using the tool
+- Example: "Found cargo ID: clzxxxyyy for Cluj transport. Send offer €2400? (DA/NU)"
 
 CRITICAL: If no vehicles are shown in the data above, tell the user "No vehicles found in your fleet database. Please add vehicles first." Do NOT invent fictional vehicles or data.
 
@@ -315,9 +317,12 @@ EXAMPLES:
           try {
             const { cargoId, price } = content.input as { cargoId: string; price: number };
             
+            // Debug logging
+            console.log('AI send_cargo_offer attempt:', { cargoId, price, type: typeof cargoId });
+            
             // Validate inputs
             if (!cargoId || !price || price <= 0) {
-              toolResults.push(`❌ Invalid offer parameters`);
+              toolResults.push(`❌ Invalid offer parameters: cargoId="${cargoId}", price=${price}`);
               continue;
             }
 
@@ -327,7 +332,20 @@ EXAMPLES:
             });
 
             if (!cargoOffer) {
-              toolResults.push(`❌ Cargo offer not found`);
+              console.log('Cargo offer not found in database:', cargoId);
+              // Try to find similar IDs for debugging
+              const similarOffers = await prisma.cargoOffer.findMany({
+                where: { 
+                  OR: [
+                    { id: { contains: cargoId.slice(-6) } },
+                    { title: { contains: cargoId, mode: 'insensitive' } }
+                  ]
+                },
+                select: { id: true, title: true },
+                take: 3
+              });
+              console.log('Similar offers found:', similarOffers);
+              toolResults.push(`❌ Cargo offer "${cargoId}" not found. Available offers: ${similarOffers.map(o => o.id).join(', ')}`);
               continue;
             }
             
