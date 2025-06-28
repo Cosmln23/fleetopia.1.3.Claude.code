@@ -68,8 +68,8 @@ export async function POST(request: NextRequest) {
     const data = validation.data;
     console.log('Validated data:', JSON.stringify(data, null, 2));
 
-    // Additional geographic validation if addresses are provided
-    if ((data.fromAddress && data.fromPostalCode) || (data.toAddress && data.toPostalCode)) {
+    // Additional geographic validation if postal codes are provided
+    if (data.fromPostalCode || data.toPostalCode) {
       console.log('Performing geographic validation...');
       
       const geoValidation = await createCargoOfferWithGeoValidationSchema.safeParseAsync(body);

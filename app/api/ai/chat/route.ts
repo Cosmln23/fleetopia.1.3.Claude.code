@@ -78,11 +78,12 @@ export async function POST(req: NextRequest) {
           take: 10
         }) : [],
         
-        // Get recent cargo offers
+        // Get recent cargo offers (exclude user's own offers)
         prisma.cargoOffer.findMany({
           where: {
             status: { in: [CargoStatus.NEW, CargoStatus.OPEN] },
-            createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } // Last 7 days
+            createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }, // Last 7 days
+            userId: { not: userId } // Exclude user's own cargo offers
           },
           select: {
             id: true,
@@ -274,7 +275,7 @@ EXAMPLES:
           content: message 
         },
       ],
-      max_tokens: 150,
+      max_tokens: 500,
     });
 
     // Handle tool calls if present

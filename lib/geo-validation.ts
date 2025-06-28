@@ -26,8 +26,8 @@ export async function validateAddress(
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
   
   if (!apiKey) {
-    console.warn('Google Maps API key not found - skipping address validation');
-    return { isValid: true }; // Allow creation but don't validate
+    console.warn('Google Maps API key not found - address validation disabled');
+    return { isValid: false }; // Require API key for validation
   }
 
   try {
@@ -98,7 +98,7 @@ export async function validateAddress(
 
   } catch (error) {
     console.error('Address validation error:', error);
-    return { isValid: true }; // Allow creation on API errors
+    return { isValid: false }; // Reject on API errors to prevent fake addresses
   }
 }
 

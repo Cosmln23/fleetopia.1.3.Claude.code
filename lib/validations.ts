@@ -77,17 +77,19 @@ export const updateCargoOfferSchema = createCargoOfferSchema.partial();
 // Enhanced cargo offer schema with geographic validation
 export const createCargoOfferWithGeoValidationSchema = createCargoOfferSchema.refine(
   async (data) => {
-    // Validate FROM address
-    if (data.fromAddress && data.fromPostalCode && data.fromCountry) {
-      const fromResult = await validateAddress(data.fromAddress, data.fromPostalCode, data.fromCountry);
+    // Validate FROM location (require postal code + city/country)
+    if (data.fromPostalCode) {
+      const fromAddress = data.fromAddress || `${data.fromCity || ''}, ${data.fromPostalCode}`;
+      const fromResult = await validateAddress(fromAddress, data.fromPostalCode, data.fromCountry);
       if (!fromResult.isValid) {
         return false;
       }
     }
     
-    // Validate TO address  
-    if (data.toAddress && data.toPostalCode && data.toCountry) {
-      const toResult = await validateAddress(data.toAddress, data.toPostalCode, data.toCountry);
+    // Validate TO location (require postal code + city/country)
+    if (data.toPostalCode) {
+      const toAddress = data.toAddress || `${data.toCity || ''}, ${data.toPostalCode}`;
+      const toResult = await validateAddress(toAddress, data.toPostalCode, data.toCountry);
       if (!toResult.isValid) {
         return false;
       }
@@ -96,7 +98,7 @@ export const createCargoOfferWithGeoValidationSchema = createCargoOfferSchema.re
     return true;
   },
   {
-    message: "One or more addresses could not be validated. Please check that the city, postal code, and address exist and match each other.",
+    message: "Invalid postal code or location. Please verify that the postal codes match real locations in the specified countries.",
   }
 );
 
