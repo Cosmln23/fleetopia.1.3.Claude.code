@@ -359,10 +359,10 @@ EXAMPLES:
             const isHigherOffer = price > originalPrice;
             const priceDifference = price - originalPrice;
             
-            // Create special message based on price comparison
-            let chatMessage = `Sent an offer of €${price}.`;
+            // Create simple professional message
+            let chatMessage = `Price offer: €${price}`;
             if (isHigherOffer) {
-              chatMessage = `🎉 EXCELLENT OFFER! Sent €${price} (€${priceDifference} above your asking price of €${originalPrice})! Ready to proceed immediately.`;
+              chatMessage = `Price offer: €${price} (€${priceDifference} above asking price)`;
             }
 
             // Use prisma transaction to ensure both operations succeed or fail together
@@ -400,12 +400,8 @@ EXAMPLES:
               });
             }
 
-            // Return appropriate response based on offer type
-            if (isHigherOffer) {
-              toolResults.push(`🎉 Premium offer sent! You offered €${priceDifference} above asking price - excellent strategy! Open chat (top-right) to continue the conversation.`);
-            } else {
-              toolResults.push(`✅ Offer sent successfully for €${price}! Open chat (top-right) to continue the conversation with the cargo owner.`);
-            }
+            // Return simple confirmation message
+            toolResults.push(`Offer sent: €${price}. Check chat for responses.`);
           } catch (error) {
             toolResults.push(`❌ Offer error: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
