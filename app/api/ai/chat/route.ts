@@ -257,22 +257,32 @@ EXAMPLES:
           try {
             const { to, subject, body } = content.input as { to: string; subject: string; body: string };
             
-            // Use the Gmail service directly
-            const gmailAdapter = await clerkGmailIntegration.getGmailAdapter(userId);
-            const result = await gmailAdapter.sendEmail({
-              to: [to],
-              subject,
-              body,
-              isHTML: false,
-            });
+            // Check if user has Gmail connected before attempting to send
+            try {
+              const gmailAdapter = await clerkGmailIntegration.getGmailAdapter(userId);
+              const result = await gmailAdapter.sendEmail({
+                to: [to],
+                subject,
+                body,
+                isHTML: false,
+              });
 
-            if (result.success) {
-              toolResults.push(`✅ Email successfully sent to ${to}`);
-            } else {
-              toolResults.push(`❌ Failed to send email: ${result.error || 'Unknown error'}`);
+              if (result.success) {
+                toolResults.push(`✅ Email successfully sent to ${to}`);
+              } else {
+                toolResults.push(`❌ Failed to send email: ${result.error || 'Unknown error'}`);
+              }
+            } catch (gmailError) {
+              // Handle Gmail connection gracefully - don't make it an error
+              const errorMsg = gmailError instanceof Error ? gmailError.message : 'Unknown error';
+              if (errorMsg.includes('does not have a Gmail account connected') || errorMsg.includes('Gmail account') || errorMsg.includes('oauth')) {
+                toolResults.push(`📧 To send emails directly, you can connect your Gmail account in Settings. For now, here's what I would send:\n\n📨 To: ${to}\n📋 Subject: ${subject}\n📝 Message: ${body}\n\n💡 Connect Gmail for automatic sending!`);
+              } else {
+                toolResults.push(`❌ Email error: ${errorMsg}`);
+              }
             }
           } catch (error) {
-            toolResults.push(`❌ Email error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            toolResults.push(`❌ Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
           }
         }
       }
