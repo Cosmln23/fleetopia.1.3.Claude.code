@@ -975,7 +975,7 @@ export default function MarketplacePage() {
             <DialogHeader>
                 <DialogTitle>Post a New Cargo Offer</DialogTitle>
                 <DialogDescription>
-                Fill in the details below to publish a new transport opportunity.
+                Fill in the details below to publish a new transport opportunity. All locations must include valid city names and postal codes.
                 </DialogDescription>
             </DialogHeader>
             <form onSubmit={handlePostCargo}>
@@ -1004,16 +1004,16 @@ export default function MarketplacePage() {
                     </Select>
                 </div>
                  <div className="grid grid-cols-2 gap-4">
-                    <Input name="fromCity" placeholder="Origin City" value={newCargo.fromCity} onChange={handleInputChange} className="text-white" />
-                    <Input name="toCity" placeholder="Destination City" value={newCargo.toCity} onChange={handleInputChange} className="text-white" />
+                    <Input name="fromCity" placeholder="Origin City" value={newCargo.fromCity} onChange={handleInputChange} className="text-white" required />
+                    <Input name="toCity" placeholder="Destination City" value={newCargo.toCity} onChange={handleInputChange} className="text-white" required />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <Input name="fromAddress" placeholder="Origin Address" value={newCargo.fromAddress} onChange={handleInputChange} className="text-white" />
                     <Input name="toAddress" placeholder="Destination Address" value={newCargo.toAddress} onChange={handleInputChange} className="text-white" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                    <Input name="fromPostalCode" placeholder="Origin Postal Code" value={newCargo.fromPostalCode} onChange={handleInputChange} className="text-white" />
-                    <Input name="toPostalCode" placeholder="Destination Postal Code" value={newCargo.toPostalCode} onChange={handleInputChange} className="text-white" />
+                    <Input name="fromPostalCode" placeholder="Origin Postal Code" value={newCargo.fromPostalCode} onChange={handleInputChange} className="text-white" required />
+                    <Input name="toPostalCode" placeholder="Destination Postal Code" value={newCargo.toPostalCode} onChange={handleInputChange} className="text-white" required />
                 </div>
                 <div className="grid grid-3 gap-4">
                     <Input name="weight" type="number" placeholder="Weight (kg)" value={newCargo.weight} onChange={handleInputChange} className="text-white" />

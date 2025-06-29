@@ -32,6 +32,7 @@ interface VehicleFormData {
   lat: number;
   lng: number;
   currentRoute: string;
+  fuelConsumption: number; // ➕ ADD missing fuel consumption
 }
 
 interface VehicleFormProps {
@@ -49,12 +50,17 @@ export function VehicleForm({ onVehicleAdded }: VehicleFormProps) {
     lat: 0,
     lng: 0,
     currentRoute: '',
+    fuelConsumption: 30.0, // ➕ ADD default fuel consumption
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: name === 'lat' || name === 'lng' ? parseFloat(value) : value }));
+    // ➕ HANDLE numeric fields including fuel consumption
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: name === 'lat' || name === 'lng' || name === 'fuelConsumption' ? parseFloat(value) : value 
+    }));
   };
 
   const handleSelectChange = (name: string, value: string) => {
@@ -90,7 +96,7 @@ export function VehicleForm({ onVehicleAdded }: VehicleFormProps) {
       // Reset form
       setFormData({
         name: '', type: 'Truck', licensePlate: '', driverName: '',
-        status: 'idle', lat: 0, lng: 0, currentRoute: '',
+        status: 'idle', lat: 0, lng: 0, currentRoute: '', fuelConsumption: 30.0, // ➕ INCLUDE fuel consumption in reset
       });
     } catch (error) {
       console.error(error);
@@ -160,6 +166,29 @@ export function VehicleForm({ onVehicleAdded }: VehicleFormProps) {
             <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="lng" className="text-right">Longitude</Label>
                 <Input id="lng" name="lng" type="number" value={formData.lng} onChange={handleChange} className="col-span-3" />
+            </div>
+            {/* ➕ ADD Fuel Consumption Field */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="fuelConsumption" className="text-right">Fuel (L/100km)</Label>
+              <Select 
+                name="fuelConsumption" 
+                onValueChange={(value) => handleSelectChange('fuelConsumption', value)} 
+                defaultValue={formData.fuelConsumption?.toString()}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select fuel consumption" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="8">8 L/100km - Small Van (3.5t)</SelectItem>
+                  <SelectItem value="10">10 L/100km - Medium Van (7.5t)</SelectItem>
+                  <SelectItem value="12">12 L/100km - Small Truck (7.5t)</SelectItem>
+                  <SelectItem value="15">15 L/100km - Medium Truck (12t)</SelectItem>
+                  <SelectItem value="18">18 L/100km - Large Truck (18t)</SelectItem>
+                  <SelectItem value="25">25 L/100km - Heavy Truck (24t)</SelectItem>
+                  <SelectItem value="30">30 L/100km - Extra Heavy Truck (40t)</SelectItem>
+                  <SelectItem value="35">35 L/100km - Articulated Truck (40t+)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>

@@ -24,6 +24,14 @@ export const createVehicleSchema = z.object({
   fuelConsumption: z.number().min(0).max(100).optional(),
   gpsProvider: z.string().optional(),
   gpsEnabled: z.boolean().optional().default(false),
+  
+  // ➕ NEW FIELDS - Enhanced Vehicle Features
+  currentLat: z.number().min(-90).max(90).optional(), // current_lat - precise current position
+  currentLng: z.number().min(-180).max(180).optional(), // current_lng - precise current position
+  capacityKg: z.number().min(100).max(50000).optional(), // capacity_kg - vehicle capacity in kg
+  vehicleType: z.enum(['VAN', 'TRUCK', 'SEMI']).optional(), // vehicle_type - standardized types
+  driverId: z.string().optional(), // driver_id - link to User as driver
+  lastUpdate: z.date().optional(), // last_update - last GPS/status update
 });
 
 export const updateVehicleSchema = createVehicleSchema.partial();
@@ -53,9 +61,9 @@ export const createCargoOfferSchema = z.object({
   // ===== OPTIONAL (with smart defaults) =====
   title: z.string().max(200, 'Title too long').optional().default(''),
   fromAddress: z.string().max(200, 'Address too long').optional().default(''),
-  fromCity: z.string().max(100, 'City name too long').optional().default(''),
+  fromCity: z.string().min(1, 'Origin city is required').max(100, 'City name too long'),
   toAddress: z.string().max(200, 'Address too long').optional().default(''),
-  toCity: z.string().max(100, 'City name too long').optional().default(''),
+  toCity: z.string().min(1, 'Destination city is required').max(100, 'City name too long'),
   volume: z.number().min(0).max(1000, 'Volume too large').optional(),
   cargoType: z.string().max(50, 'Cargo type too long').optional().default('General'),
   priceType: z.enum(['fixed', 'negotiable', 'per_km']).optional().default('fixed'),
@@ -70,6 +78,14 @@ export const createCargoOfferSchema = z.object({
     return val || [];
   }).optional().default([]),
   urgency: z.enum(['low', 'medium', 'high']).optional().default('medium'),
+  
+  // ➕ NEW FIELDS - Coordinates & Enhanced Features
+  pickupLat: z.number().min(-90).max(90).optional(), // pickup_lat - precise pickup coordinates
+  pickupLng: z.number().min(-180).max(180).optional(), // pickup_lng - precise pickup coordinates
+  deliveryLat: z.number().min(-90).max(90).optional(), // delivery_lat - precise delivery coordinates
+  deliveryLng: z.number().min(-180).max(180).optional(), // delivery_lng - precise delivery coordinates
+  priceRon: z.number().min(0).optional(), // price_ron - price in RON currency
+  deadline: z.coerce.date().optional(), // deadline - specific delivery deadline
 });
 
 export const updateCargoOfferSchema = createCargoOfferSchema.partial();
@@ -130,9 +146,24 @@ export const chatMessageSchema = z.object({
 
 // System validation schemas
 export const systemConfigSchema = z.object({
-  key: z.string().min(1, 'Config key is required').max(100, 'Key too long'),
-  value: z.unknown(),
+  settingName: z.string().min(1, 'Setting name is required').max(50, 'Setting name too long'),
+  settingValue: z.string().min(1, 'Setting value is required').max(200, 'Setting value too long'),
+  description: z.string().max(1000, 'Description too long').optional(),
+  category: z.string().max(50, 'Category too long').optional().default('general'),
+  dataType: z.enum(['string', 'number', 'boolean']).optional().default('string'),
+  isEditable: z.boolean().optional().default(true),
 });
+
+export const updateSystemConfigSchema = z.object({
+  settingName: z.string().min(1, 'Setting name is required').max(50, 'Setting name too long'),
+  settingValue: z.string().max(200, 'Setting value too long').optional(),
+  description: z.string().max(1000, 'Description too long').optional(),
+});
+
+export const systemConfigQuerySchema = z.object({
+  category: z.string().optional(),
+  settingName: z.string().optional(),
+}).merge(paginationSchema);
 
 // Rate limiting validation
 export const rateLimitSchema = z.object({
@@ -154,6 +185,24 @@ export const registerSchema = z.object({
   companyName: z.string().max(100, 'Company name too long').optional(),
 });
 
+// ➕ NEW Trip validation schemas
+export const createTripSchema = z.object({
+  cargoId: z.string().min(1, 'Cargo ID is required'),
+  vehicleId: z.string().min(1, 'Vehicle ID is required'),
+  estimatedProfit: z.number().min(0, 'Estimated profit must be positive'),
+  estimatedDuration: z.number().min(1, 'Duration must be at least 1 minute'),
+  distanceKm: z.number().min(0.1, 'Distance must be at least 0.1 km'),
+  status: z.enum(['SUGGESTED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED']).optional().default('SUGGESTED'),
+});
+
+export const updateTripSchema = createTripSchema.partial();
+
+export const tripQuerySchema = z.object({
+  status: z.enum(['SUGGESTED', 'ACCEPTED', 'IN_PROGRESS', 'COMPLETED']).optional(),
+  cargoId: z.string().optional(),
+  vehicleId: z.string().optional(),
+}).merge(paginationSchema);
+
 // Export type definitions
 export type CreateVehicle = z.infer<typeof createVehicleSchema>;
 export type UpdateVehicle = z.infer<typeof updateVehicleSchema>;
@@ -168,3 +217,11 @@ export type SystemConfig = z.infer<typeof systemConfigSchema>;
 export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
 export type Pagination = z.infer<typeof paginationSchema>;
+// ➕ NEW Trip types
+export type CreateTrip = z.infer<typeof createTripSchema>;
+export type UpdateTrip = z.infer<typeof updateTripSchema>;
+export type TripQuery = z.infer<typeof tripQuerySchema>;
+// ➕ NEW SystemConfig types
+export type CreateSystemConfig = z.infer<typeof systemConfigSchema>;
+export type UpdateSystemConfig = z.infer<typeof updateSystemConfigSchema>;
+export type SystemConfigQuery = z.infer<typeof systemConfigQuerySchema>;

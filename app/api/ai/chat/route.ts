@@ -58,6 +58,43 @@ export async function POST(req: NextRequest) {
       
       const fleetIds = userFleets.map(fleet => fleet.id);
 
+      // Helper function for reverse geocoding
+      const reverseGeocode = async (lat: number, lng: number): Promise<string> => {
+        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+        if (!apiKey) return `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+        
+        try {
+          const response = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${apiKey}`
+          );
+          const data = await response.json();
+          
+          if (data.status === 'OK' && data.results?.[0]) {
+            const result = data.results[0];
+            const components = result.address_components || [];
+            
+            let city = '';
+            let country = '';
+            
+            for (const component of components) {
+              if (component.types.includes('locality')) {
+                city = component.long_name;
+              }
+              if (component.types.includes('country')) {
+                country = component.long_name;
+              }
+            }
+            
+            return city && country ? `${lat.toFixed(2)}, ${lng.toFixed(2)} (${city}, ${country})` 
+                                  : `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+          }
+        } catch (error) {
+          console.error('Reverse geocoding error:', error);
+        }
+        
+        return `${lat.toFixed(2)}, ${lng.toFixed(2)}`;
+      };
+
       // Fetch all dispatch data directly from database in parallel
       const [vehicles, cargoOffers, activeJobs] = await Promise.all([
         // Get user's vehicles
@@ -123,9 +160,20 @@ export async function POST(req: NextRequest) {
 
       // Database results successfully fetched
 
+      // Add location information to vehicles with reverse geocoding
+      const vehiclesWithLocations = await Promise.all(
+        vehicles.map(async (vehicle: any) => {
+          if (vehicle.lat && vehicle.lng) {
+            const locationString = await reverseGeocode(vehicle.lat, vehicle.lng);
+            return { ...vehicle, locationString };
+          }
+          return { ...vehicle, locationString: 'No GPS' };
+        })
+      );
+
       // Calculate fleet metrics
-      const activeVehicles = vehicles.filter(v => v.status === VehicleStatus.idle || v.status === VehicleStatus.assigned).length;
-      const totalVehicles = vehicles.length;
+      const activeVehicles = vehiclesWithLocations.filter(v => v.status === VehicleStatus.idle || v.status === VehicleStatus.assigned).length;
+      const totalVehicles = vehiclesWithLocations.length;
       const availableOffers = cargoOffers.filter(o => o.status === CargoStatus.NEW || o.status === CargoStatus.OPEN).length;
 
       // Build comprehensive context with real data
@@ -138,9 +186,9 @@ FLEET OVERVIEW:
 - Available Cargo Offers: ${availableOffers}
 - Active Jobs: ${activeJobs.length}
 
-VEHICLE FLEET DETAILS: ${vehicles.length} vehicles in your fleet
-${vehicles.length > 0 ? vehicles.map((v: any) => 
-  `- ${v.licensePlate} (${v.type}): ${v.status.toUpperCase()} - Driver: ${v.driverName}${v.lat && v.lng ? ` - GPS: ${v.lat.toFixed(2)}, ${v.lng.toFixed(2)}` : ' - No GPS'} - Fuel: ${v.fuelConsumption || 'N/A'}L/100km`
+VEHICLE FLEET DETAILS: ${vehiclesWithLocations.length} vehicles in your fleet
+${vehiclesWithLocations.length > 0 ? vehiclesWithLocations.map((v: any) => 
+  `- ${v.licensePlate} (${v.type}): ${v.status.toUpperCase()} - Driver: ${v.driverName} - GPS: ${v.locationString} - Fuel: ${v.fuelConsumption || 'N/A'}L/100km`
 ).join('\n') : 'No vehicles found in your fleet. Please add vehicles to start dispatching.'}
 
 ACTIVE JOBS: ${activeJobs.length} jobs currently assigned to you
@@ -193,11 +241,14 @@ YOUR ROLE AS INTELLIGENT DISPATCHER:
 - BE DIRECT AND CONCISE: Give short, actionable answers (1-3 sentences max)
 - ONLY use the REAL DATA provided above - never invent fake data or use placeholder information
 - NEVER translate vehicle data or use demo information - use exact data from database
-- NEVER say you "don't know" vehicle locations when GPS coordinates are provided
-- For vehicles with GPS coordinates, reference their exact location
-- For vehicles without GPS, state "No GPS tracking available"
+- NEVER say you "don't know" vehicle locations when GPS data is provided
+- For vehicles with GPS data, reference their location using the provided city/country info
+- For vehicles without GPS, you'll see "No GPS" in the location field
 - FOCUS on immediate dispatch opportunities and urgent decisions
 - SUGGEST specific cargo-vehicle matches with clear reasoning
+- USE GEOGRAPHIC INTELLIGENCE: Match vehicles to cargo based on proximity of postal codes and cities
+- UNDERSTAND that nearby postal codes indicate close locations (e.g., Berlin 10115 can handle cargo from Berlin 10117, Prague 110 00 can handle Prague 120 00)
+- CONSIDER country borders and major transport corridors for efficient routing suggestions
 - NEVER send emails automatically! ONLY when user explicitly confirms with "DA" or "YES" after showing email preview
 
 AVAILABLE ACTIONS:
@@ -225,33 +276,13 @@ RESPONSE STYLE:
 
 EXAMPLES:
 ✅ "Vehicle NO-417-T available. Check cargo offers for matching routes?"
-✅ "Vehicle cascas at GPS 52.52, 13.40 (Berlin area) - good for European routes."
-✅ "2 vehicles idle: NO-417-T (no GPS), cascas (Berlin area GPS). Ready for dispatch."
+✅ "Vehicle cascas in Berlin, Germany - perfect for cargo from Berlin 10117 to Prague."
+✅ "2 vehicles idle: NO-417-T (no GPS), cascas (Berlin, Germany). Berlin vehicle can handle local/nearby cargo."
+✅ "Vehicle in Berlin 10115 can efficiently pickup cargo from Berlin 10117 - same city area."
+✅ "Brasov vehicle good for Romanian domestic routes, German vehicle better for international."
 ❌ "I don't know where your vehicles are" (when GPS data is provided)
 ❌ "You have 5 demo vehicles" (never use demo/placeholder data)`,
       tools: [
-        {
-          name: "send_email",
-          description: "Send an email using the connected Gmail account",
-          input_schema: {
-            type: "object",
-            properties: {
-              to: {
-                type: "string",
-                description: "The recipient email address"
-              },
-              subject: {
-                type: "string", 
-                description: "The email subject line"
-              },
-              body: {
-                type: "string",
-                description: "The email body content"
-              }
-            },
-            required: ["to", "subject", "body"]
-          }
-        },
         {
           name: "send_cargo_offer",
           description: "Send an offer for a cargo directly through the marketplace system",
@@ -290,38 +321,7 @@ EXAMPLES:
         aiResponse += content.text;
       } else if (content.type === 'tool_use') {
         // Execute the tool
-        if (content.name === 'send_email') {
-          try {
-            const { to, subject, body } = content.input as { to: string; subject: string; body: string };
-            
-            // Check if user has Gmail connected before attempting to send
-            try {
-              const gmailAdapter = await clerkGmailIntegration.getGmailAdapter(userId);
-              const result = await gmailAdapter.sendEmail({
-                to: [to],
-                subject,
-                body,
-                isHTML: false,
-              });
-
-              if (result.success) {
-                toolResults.push(`✅ Email successfully sent to ${to}`);
-              } else {
-                toolResults.push(`❌ Failed to send email: ${result.error || 'Unknown error'}`);
-              }
-            } catch (gmailError) {
-              // Handle Gmail connection gracefully - don't make it an error
-              const errorMsg = gmailError instanceof Error ? gmailError.message : 'Unknown error';
-              if (errorMsg.includes('does not have a Gmail account connected') || errorMsg.includes('Gmail account') || errorMsg.includes('oauth')) {
-                toolResults.push(`📧 To send emails directly, you can connect your Gmail account in Settings. For now, here's what I would send:\n\n📨 To: ${to}\n📋 Subject: ${subject}\n📝 Message: ${body}\n\n💡 Connect Gmail for automatic sending!`);
-              } else {
-                toolResults.push(`❌ Email error: ${errorMsg}`);
-              }
-            }
-          } catch (error) {
-            toolResults.push(`❌ Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-          }
-        } else if (content.name === 'send_cargo_offer') {
+        if (content.name === 'send_cargo_offer') {
           try {
             const { cargoId, price } = content.input as { cargoId: string; price: number };
             

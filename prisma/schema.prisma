@@ -8,23 +8,24 @@ datasource db {
 }
 
 model User {
-  id             String               @id @default(cuid())
-  name           String?
-  email          String?              @unique
-  emailVerified  DateTime?
-  image          String?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  role           String               @default("client")
-  integrations   APIIntegration[]     @relation("UserIntegrations")
-  apiConnections AgentAPIConnection[] @relation("UserConnections")
-  acceptedOffers CargoOffer[]         @relation("AcceptedOffers")
-  cargoOffers    CargoOffer[]
-  messagesSent   ChatMessage[]
-  fleets         Fleet[]              @relation("OwnedFleets")
-  OfferRequest   OfferRequest[]
-  reviews        Review[]             @relation("UserReviews")
-  aiAgents       AIAgent[]            @relation("CreatedAIAgents")
+  id                String               @id @default(cuid())
+  name              String?
+  email             String?              @unique
+  emailVerified     DateTime?
+  image             String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  role              String               @default("client")
+  integrations      APIIntegration[]     @relation("UserIntegrations")
+  apiConnections    AgentAPIConnection[] @relation("UserConnections")
+  acceptedOffers    CargoOffer[]         @relation("AcceptedOffers")
+  cargoOffers       CargoOffer[]
+  messagesSent      ChatMessage[]
+  fleets            Fleet[]              @relation("OwnedFleets")
+  OfferRequest      OfferRequest[]
+  reviews           Review[]             @relation("UserReviews")
+  aiAgents          AIAgent[]            @relation("CreatedAIAgents")
+  vehiclesAsDriver  Vehicle[]            @relation("VehicleDrivers")  // ➕ NEW RELATION - user as vehicle driver
 }
 
 model AIAgent {
@@ -236,11 +237,21 @@ model CargoOffer {
   fromCity         String
   toCity           String
   acceptedAt       DateTime?
+  
+  // ➕ NEW FIELDS - Coordinates & Enhanced Features
+  pickupLat        Float?         // pickup_lat - precise pickup coordinates
+  pickupLng        Float?         // pickup_lng - precise pickup coordinates
+  deliveryLat      Float?         // delivery_lat - precise delivery coordinates
+  deliveryLng      Float?         // delivery_lng - precise delivery coordinates
+  priceRon         Float?         // price_ron - price in RON currency
+  deadline         DateTime?      // deadline - specific delivery deadline
+  
   acceptedBy       User?          @relation("AcceptedOffers", fields: [acceptedByUserId], references: [id])
   user             User           @relation(fields: [userId], references: [id])
   chatMessages     ChatMessage[]
   OfferRequest     OfferRequest[]
   SystemAlert      SystemAlert[]
+  trips            Trip[]         // ➕ NEW RELATION - trips for this cargo
 
   @@index([status])
   @@index([userId])
@@ -254,6 +265,9 @@ model CargoOffer {
   @@index([deliveryDate])
   @@index([status, userId])
   @@index([status, acceptedByUserId])
+  @@index([pickupLat, pickupLng])     // ➕ INDEX for coordinates
+  @@index([deliveryLat, deliveryLng]) // ➕ INDEX for coordinates
+  @@index([deadline])                 // ➕ INDEX for deadlines
 }
 
 model ChatMessage {
@@ -310,10 +324,21 @@ model Vehicle {
   gpsProvider           String?
   gpsEnabled            Boolean             @default(false)
   updatedAt             DateTime            @updatedAt
+  
+  // ➕ NEW FIELDS - Enhanced Vehicle Features
+  currentLat            Float?              // current_lat - precise current position
+  currentLng            Float?              // current_lng - precise current position  
+  capacityKg            Int?                // capacity_kg - vehicle capacity in kg
+  vehicleType           VehicleType?        // vehicle_type - standardized vehicle types
+  driverId              String?             // driver_id - link to User as driver
+  lastUpdate            DateTime?           // last_update - last GPS/status update
+  
   gpsLogs               GpsLog[]
   maintenances          Maintenance[]
   routes                Route[]
+  trips                 Trip[]              // ➕ NEW RELATION - trips for this vehicle
   fleet                 Fleet               @relation(fields: [fleetId], references: [id])
+  driver                User?               @relation("VehicleDrivers", fields: [driverId], references: [id])
 
   @@index([fleetId])
   @@index([status])
@@ -321,6 +346,11 @@ model Vehicle {
   @@index([type])
   @@index([createdAt])
   @@index([updatedAt])
+  @@index([currentLat, currentLng])        // ➕ INDEX for current position
+  @@index([capacityKg])                    // ➕ INDEX for capacity queries
+  @@index([vehicleType])                   // ➕ INDEX for vehicle type
+  @@index([driverId])                      // ➕ INDEX for driver queries
+  @@index([lastUpdate])                    // ➕ INDEX for last update time
 }
 
 model GpsLog {
@@ -407,4 +437,59 @@ enum OfferRequestStatus {
   PENDING
   ACCEPTED
   REJECTED
+}
+
+// ➕ NEW ENUMS - Vehicle and Trip Types
+enum VehicleType {
+  VAN     // maps to 'van'
+  TRUCK   // maps to 'truck'  
+  SEMI    // maps to 'semi'
+}
+
+enum TripStatus {
+  SUGGESTED     // maps to 'suggested'
+  ACCEPTED      // maps to 'accepted'
+  IN_PROGRESS   // maps to 'in_progress'  
+  COMPLETED     // maps to 'completed'
+}
+
+// ➕ COMPLETELY NEW Trip Model
+model Trip {
+  id                  String      @id @default(cuid())
+  cargoId             String      // cargo_id -> CargoOffer.id
+  vehicleId           String      // vehicle_id -> Vehicle.id
+  estimatedProfit     Float       // estimated_profit
+  estimatedDuration   Int         // estimated_duration (minutes)
+  distanceKm          Float       // distance_km
+  status              TripStatus  @default(SUGGESTED) // status enum
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  
+  // RELATIONS
+  cargo               CargoOffer  @relation(fields: [cargoId], references: [id], onDelete: Cascade)
+  vehicle             Vehicle     @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  
+  @@index([cargoId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([status, createdAt])
+  @@index([estimatedProfit])
+  @@index([distanceKm])
+}
+
+// ➕ NEW SystemConfig Model
+model SystemConfig {
+  settingName         String      @id // setting_name VARCHAR(50) PRIMARY KEY
+  settingValue        String      // setting_value VARCHAR(200)
+  description         String?     // description TEXT
+  category            String      @default("general") // category for organization
+  dataType            String      @default("string") // string, number, boolean
+  isEditable          Boolean     @default(true) // whether setting can be modified
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+  
+  @@index([category])
+  @@index([isEditable])
+  @@map("system_config")
 }

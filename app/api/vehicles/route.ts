@@ -60,7 +60,14 @@ export async function GET(request: NextRequest) {
           lng: true,
           gpsProvider: true,
           gpsEnabled: true,
-          fuelConsumption: true
+          fuelConsumption: true,
+          // ➕ NEW FIELDS - Enhanced Vehicle Features
+          currentLat: true,
+          currentLng: true,
+          capacityKg: true,
+          vehicleType: true,
+          driverId: true,
+          lastUpdate: true
         },
         orderBy: {
           name: 'asc',
@@ -153,7 +160,14 @@ export async function POST(request: NextRequest) {
       currentRoute,
       fuelConsumption,
       gpsProvider,
-      gpsEnabled
+      gpsEnabled,
+      // ➕ NEW FIELDS - Enhanced Vehicle Features
+      currentLat,
+      currentLng,
+      capacityKg,
+      vehicleType,
+      driverId,
+      lastUpdate
     } = validation.data;
 
     // Check for duplicate license plate
@@ -202,6 +216,13 @@ export async function POST(request: NextRequest) {
       gpsProvider,
       gpsEnabled,
       fleetId: fleet.id,
+      // ➕ NEW FIELDS - Enhanced Vehicle Features
+      currentLat,
+      currentLng,
+      capacityKg,
+      vehicleType,
+      driverId,
+      lastUpdate
     };
 
     const newVehicle = await prisma.vehicle.create({
