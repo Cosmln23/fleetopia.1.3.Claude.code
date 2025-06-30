@@ -91,7 +91,7 @@ export default function MarketplacePage() {
   const [activeTab, setActiveTab] = useState<'find-cargo'>('find-cargo');
   
   // Plan awareness - currently on BASIC plan, will be dynamic later
-  const userPlan = 'BASIC'; // TODO: get from user context/store
+  const userPlan = 'BASIC'; // Will be dynamic when user management is implemented
 
   const { user, isSignedIn } = useUser();
   

@@ -54,7 +54,7 @@ export function AgentToggle({ className = '', variant = 'default' }: AgentToggle
         action: {
           label: 'Upgrade',
           onClick: () => {
-            // TODO: Implement upgrade flow
+            // Upgrade flow will be implemented when pricing system is ready
             console.log('Redirect to upgrade page')
           }
         }

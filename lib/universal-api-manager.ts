@@ -184,7 +184,7 @@ export class UniversalAPIManager {
           break;
           
         case 'outlook':
-          // TODO: Implement OutlookAdapter
+          // Outlook adapter not implemented yet
           break;
           
         default:
@@ -205,7 +205,7 @@ export class UniversalAPIManager {
           break;
           
         case 'openweathermap':
-          // TODO: Implement OpenWeatherMapAdapter
+          // OpenWeatherMap adapter not implemented yet
           break;
           
         default:
@@ -226,7 +226,7 @@ export class UniversalAPIManager {
           break;
           
         case 'dkv':
-          // TODO: Implement DKVAdapter
+          // DKV adapter not implemented yet
           break;
           
         default:
@@ -257,19 +257,11 @@ export class UniversalAPIManager {
           break;
           
         case 'geotab':
-          // TODO: Implement GeotabAdapter
-          break;
-          
         case 'verizon_connect':
-          // TODO: Implement VerizonConnectAdapter
-          break;
-          
         case 'fleet_complete':
-          // TODO: Implement FleetCompleteAdapter
-          break;
-          
         case 'tomtom':
-          // TODO: Implement TomTomAdapter
+          // Professional GPS integrations not implemented yet
+          throw new Error(`${config.provider} integration requires enterprise configuration`);
           break;
           
         default:
@@ -285,11 +277,9 @@ export class UniversalAPIManager {
     try {
       switch (config.provider) {
         case 'trans_eu':
-          // TODO: Implement TransEuAdapter
-          break;
-          
         case 'timocom':
-          // TODO: Implement TimocomAdapter
+          // European freight platforms not implemented yet
+          throw new Error(`${config.provider} integration requires specialized configuration`);
           break;
           
         default:

@@ -97,7 +97,7 @@ export class VehicleSpecificOptimizer {
         ...dataToSave,
         driverName: "N/A", // Câmp obligatoriu
         type: "N/A", // Câmp obligatoriu
-        fleetId: "clxrosq1o00007shg6w1g8q0o" // TODO: Replace with a valid Fleet ID
+        fleetId: "demo-fleet-001" // Demo fleet ID - will be dynamic based on user data
       },
     });
 
